@@ -1,0 +1,10 @@
+{
+  "name": "ChatGPTCLIBot",
+  "version-string": "0.0.1",
+  "dependencies": [
+    "boost",
+    "curl",
+    "nlohmann-json",
+    "libproxy"
+  ]
+}
