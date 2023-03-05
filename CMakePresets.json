@@ -1,5 +1,5 @@
 {
-  "version": 6,
+  "version": 3,
   "cmakeMinimumRequired": {
     "major": 3,
     "minor": 24,
@@ -91,24 +91,5 @@
       "name": "default-vs",
       "configurePreset": "msbuild-vcpkg"
     }
-  ],
-  "workflowPresets": [
-    {
-      "name": "ninja-workflow",
-      "steps": [
-        {
-          "type": "configure",
-          "name": "ninja-multi-vcpkg"
-        },
-        {
-          "type": "build",
-          "name": "ninja-multi-vcpkg"
-        },
-        {
-          "type": "test",
-          "name": "ninja-multi-vcpkg"
-        }
-      ]
-    }
-  ]  
+  ]
 }
