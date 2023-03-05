@@ -23,7 +23,7 @@ jobs:
     - name: Get cmake
       uses: lukka/get-cmake@latest
     - name: Run vcpkg
-      uses: lukka/run-vcpkg@latest
+      uses: lukka/run-vcpkg@v10.7
       with:
         vcpkgGitCommitId: 8daf70c56ba9581f5251a5d4675eb771b6b34957
         vcpkgArguments: 'boost:${{matrix.triplet}} nlohmann-json:${{matrix.triplet}} curl:${{matrix.triplet}} libproxy:${{matrix.triplet}}'
