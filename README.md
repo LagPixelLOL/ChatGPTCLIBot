@@ -1,8 +1,9 @@
 # ChatGPTCLIBot
-Run `gpt-3.5-turbo` or any other GPT-3 models (`text-davinci-003`) with this program!
-
-It's like https://chat.openai.com/ but in your CMD and better (in terms of memory). \
-You can switch models in the `config.json` file.
+Run `gpt-3.5-turbo` or any other GPT-3 models(`text-davinci-003`) with this program! \
+You can switch models in the `config.json` file. \
+It's like https://chat.openai.com/ but in your CMD and better(in terms of memory). \
+You can add custom initial prompts and save/load your chat history! \
+Download and double-click the `GPT3Bot.exe` or `run.bat` to run the program!
 
 # Features/Manual:
 
