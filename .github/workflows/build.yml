@@ -17,7 +17,7 @@ jobs:
           - os: macos-latest
             triplet: x64-osx
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3.3.0
       with:
         submodules: 'recursive'
     - name: Get cmake
@@ -29,7 +29,7 @@ jobs:
         vcpkgArguments: 'boost:${{matrix.triplet}} nlohmann-json:${{matrix.triplet}} curl:${{matrix.triplet}} libproxy:${{matrix.triplet}}'
         vcpkgDirectory: '${{github.workspace}}/vcpkg'
     - name: Run cmake(Build Release)
-      uses: lukka/run-cmake@latest
+      uses: lukka/run-cmake@v10.3
       with:
         cmakeListsTxtPath: '${{github.workspace}}/CMakeLists.txt'
         configurePreset: 'ninja-multi-vcpkg'
@@ -39,7 +39,7 @@ jobs:
       working-directory: ${{github.workspace}}/build
       run: ctest -C ${{env.BUILD_TYPE}}
     - name: Upload build artifact
-      uses: actions/upload-artifact@latest
+      uses: actions/upload-artifact@v3.1.2
       with:
         path: ${{github.workspace}}/build/*.tar.gz
         name: artifact_${{matrix.os}}_${{matrix.configs}}.tar.gz
