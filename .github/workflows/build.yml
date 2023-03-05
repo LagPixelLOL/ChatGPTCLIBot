@@ -24,7 +24,7 @@ jobs:
       uses: lukka/run-vcpkg@v4
       with:
         vcpkgGitCommitId: 8daf70c56ba9581f5251a5d4675eb771b6b34957
-        vcpkgArguments: 'boost nlohmann-json curl libproxy'
+        vcpkgArguments: 'boost:x64 nlohmann-json:x64 curl:x64 libproxy:x64'
         vcpkgDirectory: '${{github.workspace}}/vcpkg'
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
