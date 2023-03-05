@@ -96,6 +96,9 @@ namespace GPT {
         start_loop();
     }
 
+    /**
+     * The main loop for GPT3Bot.
+     */
     void start_loop() {
         while (true) {
             print_prompt();
