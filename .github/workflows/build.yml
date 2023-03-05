@@ -26,7 +26,7 @@ jobs:
       uses: lukka/run-vcpkg@v10.7
       with:
         vcpkgGitCommitId: 8daf70c56ba9581f5251a5d4675eb771b6b34957
-        vcpkgArguments: 'boost:${{matrix.triplet}} nlohmann-json:${{matrix.triplet}} curl:${{matrix.triplet}} libproxy:${{matrix.triplet}}'
+        vcpkgArguments: 'boost boost:${{matrix.triplet}} nlohmann-json nlohmann-json:${{matrix.triplet}} curl curl:${{matrix.triplet}} libproxy libproxy:${{matrix.triplet}}'
         vcpkgDirectory: '${{github.workspace}}/vcpkg'
     - name: Run cmake(Build Release)
       uses: lukka/run-cmake@v10.3
