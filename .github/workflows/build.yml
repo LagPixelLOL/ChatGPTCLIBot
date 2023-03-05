@@ -1,6 +1,6 @@
 name: CMake
 
-on: [push, pull_request]
+on: []
 
 jobs:
   build:
@@ -8,7 +8,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [windows-latest, ubuntu-latest, macos-latest]
         include:
           - os: windows-latest
             triplet: x64-windows
@@ -21,18 +21,23 @@ jobs:
       with:
         submodules: 'recursive'
     - name: Run vcpkg
-      uses: lukka/run-vcpkg@v4
+      uses: lukka/run-vcpkg@v10.7
       with:
         vcpkgGitCommitId: 8daf70c56ba9581f5251a5d4675eb771b6b34957
         vcpkgArguments: 'boost:${{matrix.triplet}} nlohmann-json:${{matrix.triplet}} curl:${{matrix.triplet}} libproxy:${{matrix.triplet}}'
         vcpkgDirectory: '${{github.workspace}}/vcpkg'
-    - name: Build
-      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+    - name: Run cmake(Build Release)
+      uses: lukka/run-cmake@v10.3
+      with:
+        cmakeListsTxtPath: '${{github.workspace}}/CMakeLists.txt'
+        configurePreset: 'ninja-multi-vcpkg'
+        buildPreset: 'ninja-multi-vcpkg'
+        buildPresetAdditionalArgs: '[`--config Release`]'
     - name: Test
       working-directory: ${{github.workspace}}/build
       run: ctest -C ${{env.BUILD_TYPE}}
     - name: Upload build artifact
       uses: actions/upload-artifact@v3.1.2
       with:
-        path: build/*.tar.gz
+        path: ${{github.workspace}}/build/*.tar.gz
         name: artifact_${{matrix.os}}_${{matrix.configs}}.tar.gz
