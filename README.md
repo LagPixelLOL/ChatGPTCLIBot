@@ -1,7 +1,8 @@
 # ChatGPTCLIBot
 Run `gpt-3.5-turbo` or any other GPT-3 models (`text-davinci-003`) with this program!
 
-It's like https://chat.openai.com/ but in your CMD and better (in terms of memory). You can switch models in the `config.json` file.
+It's like https://chat.openai.com/ but in your CMD and better (in terms of memory). \
+You can switch models in the `config.json` file.
 
 # Features/Manual:
 
