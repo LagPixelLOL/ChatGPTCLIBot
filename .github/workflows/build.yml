@@ -1,6 +1,6 @@
 name: CMake
 
-on: [push, pull_request]
+on: []
 
 jobs:
   build:
@@ -20,14 +20,16 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: 'recursive'
+    - name: Get cmake
+      uses: lukka/get-cmake@latest
     - name: Run vcpkg
-      uses: lukka/run-vcpkg@v10.7
+      uses: lukka/run-vcpkg@latest
       with:
         vcpkgGitCommitId: 8daf70c56ba9581f5251a5d4675eb771b6b34957
         vcpkgArguments: 'boost:${{matrix.triplet}} nlohmann-json:${{matrix.triplet}} curl:${{matrix.triplet}} libproxy:${{matrix.triplet}}'
         vcpkgDirectory: '${{github.workspace}}/vcpkg'
     - name: Run cmake(Build Release)
-      uses: lukka/run-cmake@v10.3
+      uses: lukka/run-cmake@latest
       with:
         cmakeListsTxtPath: '${{github.workspace}}/CMakeLists.txt'
         configurePreset: 'ninja-multi-vcpkg'
@@ -37,7 +39,7 @@ jobs:
       working-directory: ${{github.workspace}}/build
       run: ctest -C ${{env.BUILD_TYPE}}
     - name: Upload build artifact
-      uses: actions/upload-artifact@v3.1.2
+      uses: actions/upload-artifact@latest
       with:
         path: ${{github.workspace}}/build/*.tar.gz
         name: artifact_${{matrix.os}}_${{matrix.configs}}.tar.gz
