@@ -36,10 +36,10 @@ jobs:
         buildPreset: 'ninja-multi-vcpkg'
         buildPresetAdditionalArgs: '[`--config Release`]'
     - name: Test
-      working-directory: ${{github.workspace}}/build
+      working-directory: ${{github.workspace}}/build/ninja-multi-vcpkg
       run: ctest -C ${{env.BUILD_TYPE}}
     - name: Upload build artifact
       uses: actions/upload-artifact@v3.1.2
       with:
-        path: ${{github.workspace}}/build/*.tar.gz
+        path: ${{github.workspace}}/build/ninja-multi-vcpkg/*.tar.gz
         name: artifact_${{matrix.os}}_${{matrix.configs}}.tar.gz
