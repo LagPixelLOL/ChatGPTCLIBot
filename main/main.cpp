@@ -6,10 +6,6 @@ void shutdown_hook();
 int main() {
     atexit(shutdown_hook); //Setup shutdown hook
     curl_global_init(CURL_GLOBAL_ALL); //CURL global init
-    //UTF-8
-    std::locale::global(std::locale(std::locale(), new std::codecvt_utf8<wchar_t>));
-    std::wcin.imbue(std::locale());
-    std::wcout.imbue(std::locale());
 
     setup_console_encoding();
 
