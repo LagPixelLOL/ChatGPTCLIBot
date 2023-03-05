@@ -18,9 +18,9 @@ namespace chat {
     Exchange::~Exchange() = default;
 
     /**
-     * Compare the similarity between this and other.
-     * @param other The other Exchange object.
-     * @return The similarity between this and other, value > 0.8 is considered similar.
+     * Compare the similarity between this and another embeddings.
+     * @param embeddings The embeddings to compare with.
+     * @return The similarity between this and embeddings, value > 0.8 is considered similar.
      */
     double Exchange::compare_similarity(const vector<float>& embeddings) const {
         return emb::cosine_similarity(input_embeddings_, embeddings);

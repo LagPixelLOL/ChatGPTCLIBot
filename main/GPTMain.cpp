@@ -31,6 +31,9 @@ namespace GPT {
     unsigned int max_reference_length = 4;
     bool debug_reference = false;
 
+    /**
+     * The main function for GPT3Bot.
+     */
     void pre_settings() {
         cout << "   ********    *******    **********            ****        ******                  **  \n"
                 "  **//////**  /**////**  /////**///            */// *      /*////**                /**  \n"
