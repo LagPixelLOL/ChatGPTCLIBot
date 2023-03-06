@@ -148,14 +148,8 @@ namespace GPT {
             curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
             curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
             curl_easy_setopt(curl, CURLOPT_TIMEOUT, 30);
-            const string& proxy = util::system_proxy();
-            if (!proxy.empty()) {
-                curl_easy_setopt(curl, CURLOPT_PROXY, proxy.c_str());
-                curl_easy_setopt(curl, CURLOPT_PROXYTYPE, CURLPROXY_HTTP);
-            }
-#ifdef __linux__
-            curl_easy_setopt(curl, CURLOPT_CAINFO, "/etc/ssl/certs/ca-bundle.crt");
-#endif
+            util::set_curl_proxy(curl, util::system_proxy());
+            util::set_curl_ssl_cert(curl);
             struct curl_slist* headers = nullptr;
             headers = curl_slist_append(headers, "Content-Type: application/json");
             string auth = "Authorization: Bearer ";

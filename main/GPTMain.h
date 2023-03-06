@@ -9,7 +9,6 @@
 #include "boost/algorithm/string/regex.hpp"
 #include "boost/format.hpp"
 #include "util/PromptUtils.h"
-#include "chat/Exchange.h"
 #include "fstream"
 
 namespace GPT {
