@@ -13,7 +13,6 @@
 namespace prompt {
     using namespace std;
     using namespace boost;
-    using format = boost::format;
 
     void print_prompt(const string& initial_prompt, const vector<std::shared_ptr<chat::Exchange>>& prompts,
                       const string& me_id, const string& bot_id, const unsigned int& max_length, const bool& is_new_api);

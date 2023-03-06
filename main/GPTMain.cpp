@@ -19,7 +19,7 @@ namespace GPT {
     float presence_penalty = 0.6;
     const string me_id = "Me";
     const string bot_id = "You";
-    string initial_prompt = (format(
+    string initial_prompt = (boost::format(
             "The following conversation is set to:\n"
             "%1%: is the prefix of the user, texts start with it are the user input\n"
             "%2%: is the prefix of your response, texts start with it are your response\n"

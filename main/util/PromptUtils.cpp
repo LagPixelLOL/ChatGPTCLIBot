@@ -27,9 +27,9 @@ namespace prompt {
                      const string& me_id, const string& bot_id, const unsigned int& max_length) {
         delete_front_keep_back(prompts, max_length);
         for (const auto& exchange : prompts) {
-            initial_prompt.append((format("\n%1%: %2%") % me_id % exchange->getInput()).str());
+            initial_prompt.append((boost::format("\n%1%: %2%") % me_id % exchange->getInput()).str());
             if (exchange->hasResponse()) {
-                initial_prompt.append((format("\n%1%: %2%") % bot_id % exchange->getResponse()).str());
+                initial_prompt.append((boost::format("\n%1%: %2%") % bot_id % exchange->getResponse()).str());
             }
         }
         return initial_prompt;
@@ -109,7 +109,7 @@ namespace ChatGPT {
     json to_payload(string initial_prompt, vector<std::shared_ptr<chat::Exchange>> prompts,
                     const string& me_id, const string& bot_id, const unsigned int& max_length) {
         prompt::delete_front_keep_back(prompts, max_length);
-        replace_all(initial_prompt, (format(
+        replace_all(initial_prompt, (boost::format(
                 "The following conversation is set to:\n"
                 "%1%: is the prefix of the user, texts start with it are the user input\n"
                 "%2%: is the prefix of your response, texts start with it are your response\n")

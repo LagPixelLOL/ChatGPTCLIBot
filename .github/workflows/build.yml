@@ -26,7 +26,6 @@ jobs:
       uses: lukka/run-vcpkg@v10.7
       with:
         vcpkgGitCommitId: 8daf70c56ba9581f5251a5d4675eb771b6b34957
-        #vcpkgArguments: 'boost nlohmann-json curl libproxy libmodman'
         vcpkgDirectory: '${{github.workspace}}/vcpkg'
     - name: Run cmake(Build Release)
       uses: lukka/run-cmake@v10.3
@@ -34,7 +33,6 @@ jobs:
         cmakeListsTxtPath: '${{github.workspace}}/CMakeLists.txt'
         configurePreset: 'ninja-multi-vcpkg'
         buildPreset: 'ninja-multi-vcpkg'
-        buildPresetAdditionalArgs: '[`--config Release`]'
     - name: Test
       working-directory: ${{github.workspace}}/build/ninja-multi-vcpkg
       run: ctest -C ${{env.BUILD_TYPE}}
