@@ -173,7 +173,7 @@ namespace GPT {
                 string dr_prefix = "<Debug Reference> ";
                 cout << "\n" << dr_prefix << "Constructed initial prompt:\n----------\n" << constructed_initial << "\n----------\n";
                 cout << dr_prefix << "Press Enter to continue: ";
-                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                util::ignore_line();
                 cout << bot_id << (is_new_api ? suffix : ":");
             }
             if (!is_new_api) {
@@ -278,7 +278,7 @@ namespace GPT {
 
     void print_enter_next_cycle() {
         cout << "Press Enter to run the next cycle: ";
-        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        util::ignore_line();
     }
 
     void clear_console() {

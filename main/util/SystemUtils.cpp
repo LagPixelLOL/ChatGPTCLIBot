@@ -2,6 +2,10 @@
 // Created by v2ray on 2023/3/3.
 //
 
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
 #include "SystemUtils.h"
 
 #ifdef _WIN32
@@ -26,6 +30,10 @@ namespace util {
         char buffer[80];
         strftime(buffer, 80, "%Y-%m-%d %H:%M:%S", localtime(&time));
         return buffer;
+    }
+
+    void ignore_line() {
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
     }
 
     /**

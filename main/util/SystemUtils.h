@@ -6,6 +6,7 @@
 #define GPT3BOT_SYSTEMUTILS_H
 
 #include "boost/algorithm/string.hpp"
+#include "iostream"
 #include "string"
 #include "vector"
 #include "chrono"
@@ -18,6 +19,7 @@ namespace util {
     long long currentTimeMillis();
     string currentTimeFormatted();
     string ms_to_formatted_time(long long timeMillis);
+    void ignore_line();
     string system_proxy();
     void free_proxy_factory();
 } // util
