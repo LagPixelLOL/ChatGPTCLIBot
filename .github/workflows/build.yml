@@ -8,13 +8,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
+        os: [windows-2022, ubuntu-18.04, macos-12]
         include:
-          - os: windows-latest
+          - os: windows-2022
             triplet: x64-windows
-          - os: ubuntu-latest
+          - os: ubuntu-18.04
             triplet: x64-linux
-          - os: macos-latest
+          - os: macos-12
             triplet: x64-osx
     steps:
     - uses: actions/checkout@v3.3.0
