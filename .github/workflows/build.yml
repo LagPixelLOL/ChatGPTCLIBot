@@ -38,4 +38,4 @@ jobs:
       uses: actions/upload-artifact@v3.1.2
       with:
         path: ${{github.workspace}}/build/ninja-multi-vcpkg/Release/*
-        name: ChatGPT_CLI_Bot_${{matrix.os}}-${{matrix.triplet}}.tar.gz
+        name: ChatGPT_CLI_Bot_${{matrix.os}}-${{matrix.triplet}}
