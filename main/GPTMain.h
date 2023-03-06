@@ -18,6 +18,7 @@ namespace GPT {
     using namespace nlohmann;
     using namespace filesystem;
     using namespace chat;
+    using format = boost::format;
 
     void pre_settings();
     void start_loop();

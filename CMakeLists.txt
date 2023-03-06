@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.24)
 project(GPT3Bot)
 
 set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_EXE_LINKER_FLAGS "-static")
+#set(CMAKE_EXE_LINKER_FLAGS "-static")
 
 set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost REQUIRED)
@@ -20,4 +20,4 @@ add_executable(${PROJECT_NAME} main/main.cpp main/GPTMain.cpp main/GPTMain.h mai
 
 target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} PRIVATE CURL::libcurl nlohmann_json::nlohmann_json ${LIBPROXY_LIBRARIES} ${LIBMODMAN_LIBRARIES})
-#set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -Wl,-Bstatic,--whole-archive -lpthread -Wl,-Bdynamic,--no-whole-archive")
+set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -Wl,-Bstatic,--whole-archive -lpthread -Wl,-Bdynamic,--no-whole-archive")
