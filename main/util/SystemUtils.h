@@ -6,7 +6,6 @@
 #define GPT3BOT_SYSTEMUTILS_H
 
 #include "boost/algorithm/string.hpp"
-#include "proxy.h"
 #include "string"
 #include "vector"
 #include "chrono"

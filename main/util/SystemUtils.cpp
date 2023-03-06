@@ -4,8 +4,14 @@
 
 #include "SystemUtils.h"
 
+#ifdef _WIN32
+#include "proxy.h"
+#endif
+
 namespace util {
+#ifdef _WIN32
     pxProxyFactory* pf = px_proxy_factory_new();
+#endif
 
     long long currentTimeMillis() {
         return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
@@ -28,6 +34,7 @@ namespace util {
      */
     string system_proxy() {
         string proxy;
+#ifdef _WIN32
         if (pf) {
             char** p_proxy = px_proxy_factory_get_proxies(pf, "https://www.google.com");
             if (p_proxy != nullptr) {
@@ -38,10 +45,13 @@ namespace util {
                 proxy = "";
             }
         }
+#endif
         return proxy;
     }
 
     void free_proxy_factory() {
+#ifdef _WIN32
         px_proxy_factory_free(pf);
+#endif
     }
 } // util
