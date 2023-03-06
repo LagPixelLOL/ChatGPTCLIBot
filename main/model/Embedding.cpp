@@ -42,6 +42,9 @@ namespace emb {
                 curl_easy_setopt(curl, CURLOPT_PROXY, proxy.c_str());
                 curl_easy_setopt(curl, CURLOPT_PROXYTYPE, CURLPROXY_HTTP);
             }
+#ifdef __linux__
+            curl_easy_setopt(curl, CURLOPT_CAINFO, "/etc/ssl/certs/ca-bundle.crt");
+#endif
             struct curl_slist* headers = nullptr;
             headers = curl_slist_append(headers, "Content-Type: application/json");
             string auth = "Authorization: Bearer ";
