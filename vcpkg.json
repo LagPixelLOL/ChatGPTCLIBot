@@ -5,7 +5,6 @@
     "boost",
     "nlohmann-json",
     "curl",
-    "libproxy",
-    "libmodman"
+    "libproxy"
   ]
 }
