@@ -15,8 +15,8 @@
 namespace GPT {
     using namespace std;
     using namespace boost;
-    using namespace nlohmann;
     using namespace filesystem;
+    using namespace nlohmann;
     using namespace chat;
 
     void pre_settings();
