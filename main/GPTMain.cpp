@@ -46,7 +46,7 @@ namespace GPT {
         if (!create_folders(vector<string>{f_initial, f_saved}) || !p_load_config() || !p_default_prompt()) {
             return;
         }
-        is_new_api = starts_with(model, "gpt-3.5");
+        is_new_api = api::is_new_api(model);
         if (api_key.empty()) {
             while (true) {
                 cout << "Please enter your OpenAI API key: ";
@@ -130,142 +130,46 @@ namespace GPT {
             if (input_embeddings) {
                 prompts.emplace_back(make_shared<Exchange>(input, *input_embeddings, util::currentTimeMillis()));
                 print_prompt();
-                call_api();
-            } else {
-                print_enter_next_cycle();
-            }
-        }
-    }
-
-    void call_api() {
-        CURL* curl;
-        CURLcode res;
-        string response;
-        curl = curl_easy_init();
-        if (curl) {
-            string url = is_new_api ? "https://api.openai.com/v1/chat/completions" : "https://api.openai.com/v1/completions";
-            curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
-            curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-            curl_easy_setopt(curl, CURLOPT_TIMEOUT, 30);
-            util::set_curl_proxy(curl, util::system_proxy());
-            util::set_curl_ssl_cert(curl);
-            struct curl_slist* headers = nullptr;
-            headers = curl_slist_append(headers, "Content-Type: application/json");
-            string auth = "Authorization: Bearer ";
-            headers = curl_slist_append(headers, auth.append(api_key).c_str());
-            curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-            string suffix = ": ";
-            json payload = {{"model", model},
-                            {"temperature", temperature},
-                            {"max_tokens", max_tokens},
-                            {"top_p", top_p},
-                            {"frequency_penalty", frequency_penalty},
-                            {"presence_penalty", presence_penalty},
-                            {"stream", true}};
-            string constructed_initial = prompt::construct_reference(
-                    initial_prompt, prompts.back()->getInputEmbeddings(),
-                    prompts, max_reference_length, max_short_memory_length, me_id, bot_id);
-            if (debug_reference) {
-                string dr_prefix = "<Debug Reference> ";
-                cout << "\n" << dr_prefix << "Constructed initial prompt:\n----------\n" << constructed_initial << "\n----------\n";
-                cout << dr_prefix << "Press Enter to continue: ";
-                util::ignore_line();
-                cout << bot_id << (is_new_api ? suffix : ":");
-            }
-            if (!is_new_api) {
-                payload["prompt"] = to_payload(
-                        constructed_initial, prompts, me_id, bot_id, max_short_memory_length);
-                payload["stop"] = {me_id + suffix, bot_id + suffix};
-            } else {
-                payload["messages"] = ChatGPT::to_payload(
-                        constructed_initial, prompts, me_id, bot_id, max_short_memory_length);
-            }
-            string payload_str = payload.dump();
-            curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload_str.c_str());
-            res = curl_easy_perform(curl);
-            bool error = false;
-            if (res != CURLE_OK) {
-                error = true;
-                cerr << "\nAPI request failed: " << curl_easy_strerror(res) << "\n";
-            } else {
-                try {
-                    json j = json::parse(response);
-                    if (j.count("error") > 0 && j["error"].is_object()) {
-                        auto error_obj = j["error"];
-                        error = true;
-                        if (error_obj.count("message") > 0 && error_obj["message"].is_string()) {
-                            cerr << "\nAPI returned error: " << error_obj["message"].get<string>() << "\n";
-                        } else {
-                            cerr << "\nAPI returned unknown error. Json: " << response << "\n";
+                string response;
+                if (api::call_api(initial_prompt, prompts, api_key, model, temperature, max_tokens, top_p,
+                                  frequency_penalty, presence_penalty, max_short_memory_length, max_reference_length,
+                                  me_id, bot_id, [&response](const auto& streamed_response){
+                    try {
+                        json j = json::parse(streamed_response);
+                        if (j.count("error") > 0 && j["error"].is_object()) {
+                            response = j.dump(4);
+                            return;
                         }
-                    }
-                } catch (const json::parse_error& e) {}
-            }
-            if (error) {
-                print_enter_next_cycle();
-                prompts.pop_back();
-            } else {
-                if (!is_new_api) {
-                    if (starts_with(response, " ")) {
+                    } catch (const json::parse_error& e) {}
+                    response.append(streamed_response);
+                    cout << streamed_response;
+                    }, debug_reference)) {
+                    try {
+                        json j = json::parse(response);
+                        if (j.count("error") > 0 && j["error"].is_object()) {
+                            auto error_obj = j["error"];
+                            if (error_obj.count("message") > 0 && error_obj["message"].is_string()) {
+                                cerr << "\nAPI returned error: " << error_obj["message"].get<string>() << "\n";
+                            } else {
+                                cerr << "\nAPI returned unknown error. Json: " << response << "\n";
+                            }
+                            print_enter_next_cycle();
+                            prompts.pop_back();
+                            continue;
+                        }
+                    } catch (const json::parse_error& e) {}
+                    if (!is_new_api && starts_with(response, " ")) {
                         response.erase(0, 1);
                     }
-                }
-                prompts.back()->setResponse(response);
-            }
-            curl_slist_free_all(headers);
-            curl_easy_cleanup(curl);
-        }
-    }
-
-    size_t write_callback(char* char_ptr, size_t size, size_t mem, string* base_str) {
-        size_t length = size * mem;
-        string s(char_ptr, length);
-        vector<string> split_str;
-        split_regex(split_str, s, regex("[\n][\n][d][a][t][a][:][ ]"));
-        for (auto& str : split_str) {
-            if (starts_with(str, "data: ")) {
-                str.erase(0, 6);
-            }
-            if (ends_with(str, "\n\n")) {
-                str.erase(str.size() - 2);
-            }
-            if (str != "[DONE]") {
-                try {
-                    json j = json::parse(str);
-                    if (j.count("choices") > 0 && j["choices"].is_array()) {
-                        auto choices = j["choices"];
-                        if (!is_new_api) {
-                            for (const auto& choice : choices) {
-                                if (choice.count("text") > 0 && choice["text"].is_string()) {
-                                    string text = choice["text"].get<string>();
-                                    base_str->append(text);
-                                    cout << text;
-                                }
-                            }
-                        } else {
-                            for (const auto& choice : choices) {
-                                if (choice.count("delta") > 0 && choice["delta"].is_object()) {
-                                    auto delta = choice["delta"];
-                                    if (delta.count("content") > 0 && delta["content"].is_string()) {
-                                        string content = delta["content"].get<string>();
-                                        base_str->append(content);
-                                        cout << content;
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        *base_str = j.dump();
-                    }
-                } catch (const json::parse_error& e) {
-                    cerr << "Error parsing JSON: " << e.what() << endl;
+                    prompts.back()->setResponse(response);
+                } else {
+                    print_enter_next_cycle();
+                    prompts.pop_back();
                 }
             } else {
-                cout << endl;
+                print_enter_next_cycle();
             }
         }
-        return length;
     }
 
     void print_prompt() {

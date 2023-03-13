@@ -16,7 +16,7 @@ if (WIN32)
     find_package(libproxy REQUIRED)
 endif ()
 
-add_executable(${PROJECT_NAME} main/main.cpp main/GPTMain.cpp main/GPTMain.h main/util/PromptUtils.cpp main/util/PromptUtils.h main/util/SystemUtils.cpp main/util/SystemUtils.h main/model/Embedding.cpp main/model/Embedding.h main/chat/Exchange.cpp main/chat/Exchange.h main/util/CURLUtils.cpp main/util/CURLUtils.h)
+add_executable(${PROJECT_NAME} main/main.cpp main/GPTMain.cpp main/GPTMain.h main/util/PromptUtils.cpp main/util/PromptUtils.h main/util/SystemUtils.cpp main/util/SystemUtils.h main/model/Embedding.cpp main/model/Embedding.h main/chat/Exchange.cpp main/chat/Exchange.h main/util/CURLUtils.cpp main/util/CURLUtils.h main/network/Network.cpp main/network/Network.h)
 
 target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} PRIVATE CURL::libcurl nlohmann_json::nlohmann_json)

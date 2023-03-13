@@ -25,7 +25,7 @@ void setup_console_encoding() {
     info.cbSize = sizeof(info);
     info.dwFontSize.Y = 16;
     info.FontWeight = FW_NORMAL;
-    wcscpy(info.FaceName, L"SimSun-ExtB");
+    wcscpy_s(info.FaceName, L"SimSun-ExtB");
     SetCurrentConsoleFontEx(GetStdHandle(STD_OUTPUT_HANDLE), 0, &info);
 #endif
 }

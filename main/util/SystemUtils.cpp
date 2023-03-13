@@ -27,8 +27,10 @@ namespace util {
 
     string ms_to_formatted_time(long long timeMillis) {
         time_t time = timeMillis / 1000;
+        struct tm time_info{};
+        localtime_s(&time_info, &time);
         char buffer[80];
-        strftime(buffer, 80, "%Y-%m-%d %H:%M:%S", localtime(&time));
+        strftime(buffer, 80, "%Y-%m-%d %H:%M:%S", &time_info);
         return buffer;
     }
 

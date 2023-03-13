@@ -5,7 +5,6 @@
 #ifndef GPT3BOT_EMBEDDING_H
 #define GPT3BOT_EMBEDDING_H
 
-#include "curl/curl.h"
 #include "nlohmann/json.hpp"
 #include "../util/SystemUtils.h"
 #include "../util/CURLUtils.h"
