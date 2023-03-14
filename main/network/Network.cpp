@@ -125,6 +125,6 @@ namespace api {
     }
 
     bool is_new_api(const string& model_name) {
-        return starts_with(model_name, "gpt-3.5");
+        return starts_with(model_name, "gpt-3.5") || starts_with(model_name, "gpt-4");
     }
 } // api
