@@ -1,6 +1,6 @@
 # ChatGPT CLI Bot
 Run `gpt-3.5-turbo` or any other GPT-3 models(`text-davinci-003`) with this program! \
-Use `gpt-4-8k` or `gpt-4-32k` to use the new GPT-4 models if you have access. \
+Use `gpt-4` or `gpt-4-32k` to use the new GPT-4 models if you have access. \
 You can switch models in the `config.json` file. \
 It's like https://chat.openai.com/ but in your CMD and better(in terms of memory). \
 You can add custom initial prompts and save/load your chat history! \
