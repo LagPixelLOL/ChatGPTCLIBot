@@ -30,6 +30,7 @@ namespace api {
             curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
             curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
             std::function<size_t(char*, size_t, size_t)> callback_lambda = [&](char* char_ptr, size_t size, size_t mem){
+                curl_easy_setopt(curl, CURLOPT_TIMEOUT, max_tokens / 10);
                 size_t length = size * mem;
                 string s(char_ptr, length);
                 vector<string> split_str;
@@ -75,7 +76,7 @@ namespace api {
                 return length;
             };
             curl_easy_setopt(curl, CURLOPT_WRITEDATA, &callback_lambda);
-            curl_easy_setopt(curl, CURLOPT_TIMEOUT, 30);
+            curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10);
             util::set_curl_proxy(curl, util::system_proxy());
             util::set_curl_ssl_cert(curl);
             struct curl_slist* headers = nullptr;
