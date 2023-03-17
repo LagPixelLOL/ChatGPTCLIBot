@@ -6,6 +6,7 @@
     "nlohmann-json",
     "curl",
     "libproxy",
-	"ftxui"
+	"ftxui",
+    "clipboardxx"
   ]
 }
