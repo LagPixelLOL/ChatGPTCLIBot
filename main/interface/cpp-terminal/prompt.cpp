@@ -6,6 +6,9 @@
 #include "tty.hpp"
 
 #include <iostream>
+#if !defined(__APPLE__)
+#include <clipboardxx.hpp>
+#endif
 
 Term::Result Term::prompt(const std::string& message, const std::string& first_option, const std::string& second_option, const std::string& prompt_indicator, bool immediate)
 {
@@ -176,7 +179,7 @@ void Term::print_left_curly_bracket(Term::Window& scr, int x, int y1, int y2)
 void Term::render(Term::Window& scr, const Model& m, const std::size_t& cols)
 {
   scr.clear();
-  print_left_curly_bracket(scr, cols, 1, m.lines.size());
+  print_left_curly_bracket(scr, (int)cols, 1, (int)m.lines.size());
   scr.print_str(cols - 6, m.lines.size(), std::to_string(m.cursor_row) + "," + std::to_string(m.cursor_col));
   for(std::size_t j = 0; j < m.lines.size(); j++)
   {
@@ -193,6 +196,17 @@ void Term::render(Term::Window& scr, const Model& m, const std::size_t& cols)
     scr.print_str(m.prompt_string.size() + 1, j + 1, m.lines[j]);
   }
   scr.set_cursor_pos(m.prompt_string.size() + m.cursor_col, m.cursor_row);
+}
+
+void replace_all(std::string& str, const std::string& from, const std::string& to) {
+    if (from.empty()) {
+        return;
+    }
+    size_t startPos = 0;
+    while ((startPos = str.find(from, startPos)) != std::string::npos) {
+        str.replace(startPos, from.length(), to);
+        startPos += to.length(); //In case 'to' contains 'from', like replacing 'x' with 'yx'.
+    }
 }
 
 std::string Term::prompt_multiline(const std::string& prompt_string, std::vector<std::string>& m_history,
@@ -246,14 +260,14 @@ std::string Term::prompt_multiline(const std::string& prompt_string, std::vector
                     CPP_TERMINAL_FALLTHROUGH;
                 case Key::BACKSPACE:
                     if (m.cursor_col > 1) {
-                        std::string before        = m.lines[m.cursor_row - 1].substr(0, m.cursor_col - 2);
-                        std::string after         = m.lines[m.cursor_row - 1].substr(m.cursor_col - 1);
+                        std::string before = m.lines[m.cursor_row - 1].substr(0, m.cursor_col - 2);
+                        std::string after = m.lines[m.cursor_row - 1].substr(m.cursor_col - 1);
                         m.lines[m.cursor_row - 1] = before + after;
                         m.cursor_col--;
                     } else if (m.cursor_col == 1 && m.cursor_row > 1) {
                         m.cursor_col = m.lines[m.cursor_row - 2].size() + 1;
                         m.lines[m.cursor_row - 2] += m.lines[m.cursor_row - 1];
-                        m.lines.erase(m.lines.begin() + m.cursor_row - 1);
+                        m.lines.erase(m.lines.begin() + (long long)m.cursor_row - 1);
                         m.cursor_row--;
                     }
                     break;
@@ -338,16 +352,34 @@ std::string Term::prompt_multiline(const std::string& prompt_string, std::vector
                     }
                     break;
                 }
-                case Key::CTRL_V: {
-                    //ToDo: Implement ctrl+v pasting.
-                    std::string before = m.lines[m.cursor_row - 1].substr(0, m.cursor_col - 1);
-                    std::string new_char;
-                    new_char.push_back('V');
-                    std::string after = m.lines[m.cursor_row - 1].substr(m.cursor_col - 1);
-                    m.lines[m.cursor_row - 1] = before += new_char += after;
-                    m.cursor_col++;
+                case Key::CTRL_V:
+#if !defined(__APPLE__)
+                    try {
+                        clipboardxx::clipboard clipboard;
+                        std::string paste_text;
+                        clipboard >> paste_text;
+                        replace_all(paste_text, "\r\n", "\n");
+                        replace_all(paste_text, "\r", "\n");
+                        std::vector<std::string> split_str = split(paste_text);
+                        std::string before = m.lines[m.cursor_row - 1].substr(0, m.cursor_col - 1);
+                        std::string after = m.lines[m.cursor_row - 1].substr(m.cursor_col - 1);
+                        m.lines[m.cursor_row - 1] = before + split_str[0];
+                        for (size_t i = 1; i < split_str.size(); ++i) {
+                            m.cursor_row++;
+                            if (m.cursor_row <= m.lines.size()) {
+                                m.lines.insert(m.lines.begin() + (long long)m.cursor_row - 1, split_str[i]);
+                            } else {
+                                m.lines.push_back(split_str[i]);
+                            }
+                        }
+                        m.lines[m.cursor_row - 1] += after;
+                        m.cursor_col = m.lines[m.cursor_row - 1].size() - after.size() + 1;
+                        if (m.lines.size() > scr.get_h()) {
+                            scr.set_h(m.lines.size());
+                        }
+                    } catch (const std::exception& e) {}
+#endif
                     break;
-                }
                 default:
                     break;
             }

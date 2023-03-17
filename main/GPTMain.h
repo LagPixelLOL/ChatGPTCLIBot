@@ -5,7 +5,7 @@
 #ifndef GPT3BOT_GPTMAIN_H
 #define GPT3BOT_GPTMAIN_H
 
-#include "network/Network.h"
+#include "interface/network/Network.h"
 #include "fstream"
 
 namespace GPT {
@@ -19,6 +19,7 @@ namespace GPT {
     void start_loop();
     void print_prompt();
     void print_enter_next_cycle();
+    void print_uwu();
     void clear_console();
     int handle_command(const string& input);
     bool create_folders(const vector<string>& folders);

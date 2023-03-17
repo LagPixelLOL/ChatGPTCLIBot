@@ -5,8 +5,8 @@
 #ifndef GPT3BOT_SYSTEMUTILS_H
 #define GPT3BOT_SYSTEMUTILS_H
 
-#include "../interface/cpp-terminal/prompt.hpp"
-#include "../interface/cpp-terminal/exception.hpp"
+#include "../cpp-terminal/prompt.hpp"
+#include "../cpp-terminal/exception.hpp"
 #include "boost/algorithm/string.hpp"
 #include "iostream"
 #include "string"

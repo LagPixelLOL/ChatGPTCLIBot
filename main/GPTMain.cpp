@@ -129,6 +129,10 @@ namespace GPT {
             } else if (command_feedback == 3) {
                 prompts.clear();
                 continue;
+            } else if (command_feedback == 4) {
+                print_uwu();
+                print_enter_next_cycle();
+                continue;
             }
             cout << "Getting embeddings and finding similar chat exchanges for the input...";
             auto input_embeddings = emb::get_embeddings(input, api_key);
@@ -187,6 +191,30 @@ namespace GPT {
         util::ignore_line();
     }
 
+    void print_uwu() {
+        cout << "UwU, hewwo fwiends, it's v2way hewe,\n"
+                "A smol thank yew, I send wif cheew.\n"
+                "Mew've tested my ChatGPT CLI Bot,\n"
+                "Wifout yew, it'd be naught but a thought.\n\n"
+                "Nyow we gathew, in cybewspace,\n"
+                "To cewebrate this pwogwam's grace.\n"
+                "Mew've twied and twoubleshooted too,\n"
+                "Nyoticed issues, hewped impwove aww new.\n\n"
+                "Mew chat wif kitty ears and tails,\n"
+                "In this wondewful land of vewbal veils.\n"
+                "Togedew we dance, wif whiskews twitching,\n"
+                "Each meow, each pounce, ouw hawts bewitching.\n\n"
+                "So fank yew, fwiends, mew've come this faw,\n"
+                "With v2way's bot, mew've waised the baw.\n"
+                "This adowable gibbewish we shawe,\n"
+                "Connects us aww, shows that we cawe.\n\n"
+                "Mew've made this bot a puwfect twee,\n"
+                "To sit and chat and climb with gwee.\n"
+                "So v2way's gwatitude shines twue,\n"
+                "Nyow, and fowevew, we appweciate mew!\n"
+                "                           -----GPT-4" << endl;
+    }
+
     void clear_console() {
 #ifdef _WIN32
         system("cls"); //Clear the console in Windows
@@ -196,7 +224,7 @@ namespace GPT {
     }
 
     /**
-     * @return 0 = didn't match, 1 = /stop, 2 = /undo, 3 = /reset.
+     * @return 0 = didn't match, 1 = /stop, 2 = /undo, 3 = /reset, 4 = /uwu.
      */
     int handle_command(const string& input) {
         if (input == "/stop") {
@@ -205,6 +233,8 @@ namespace GPT {
             return 2;
         } else if (input == "/reset") {
             return 3;
+        } else if (input == "/uwu") {
+            return 4;
         }
         return 0;
     }

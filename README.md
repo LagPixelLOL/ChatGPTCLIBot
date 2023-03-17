@@ -16,10 +16,11 @@ In Linux and macOS, you can run `./GPT3Bot` to run the program.
 6. After you execute `/stop`, the program will ask you to input the filename to save. You can press enter directly to skip this and not save the chat. If you input any other text and then press enter, the chat will be saved into a json in the "saved" folder. When you open the program next time, you can simply input "s"(which means saved), press enter, then type the saved chat's json file's name to load your saved chat.
 7. Easy config file in `config.json`, can be easily modified.
 8. Unlike other bots, this one actually streams. This means it will display the output as soon as a token is sent from the API(Just like what ChatGPT's website is doing), no need to wait until the entire response is generated!
-9. Automatically use the system proxy.
-10. Multiline input support, you need to press Ctrl+N/Alt+Enter to enter a new line.
+9. Automatically use the system proxy. Note: This feature is only supported on Windows, because there's a bug in my proxy library that causes it fail to compile on Linux and macOS.
+10. Multiline input support, you need to press Ctrl+N or Alt+Enter to enter a new line.
+11. Ctrl+V pasting support, you can paste text from your clipboard by pressing Ctrl+V. Note: This feature is not supported on macOS because my clipboard library doesn't support it, and I don't have a macOS device for testing.
 
-Written in C++ (Libraries used: Boost, cURL, nlohmann/json, libproxy)
+Written in C++ (Libraries used: Boost, cURL, nlohmann/json, libproxy, cpp-terminal, ftxui, ClipboardXX)
 
 # Supported OS:
 * Windows 10/11 64-bit
