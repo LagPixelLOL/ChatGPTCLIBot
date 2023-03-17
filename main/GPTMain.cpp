@@ -5,6 +5,7 @@
 #include "GPTMain.h"
 
 namespace GPT {
+    vector<string> input_history;
     const string f_initial = "initial";
     const string f_saved = "saved";
     const string f_suffix = ".txt";
@@ -103,7 +104,12 @@ namespace GPT {
         while (true) {
             print_prompt();
             string input;
-            getline(cin, input);
+            try {
+                input = util::get_multi_lines(input_history, me_id + ": ");
+            } catch (const std::exception& e) {
+                cerr << "An error occurred while getting input: " << e.what() << endl;
+                break;
+            }
             int command_feedback = handle_command(input);
             if (command_feedback == 1) {
                 cout << "Do you want to save the chat history?\n"
@@ -124,7 +130,6 @@ namespace GPT {
                 prompts.clear();
                 continue;
             }
-            replace_all(input, "\\n", "\n");
             cout << "Getting embeddings and finding similar chat exchanges for the input...";
             auto input_embeddings = emb::get_embeddings(input, api_key);
             if (input_embeddings) {

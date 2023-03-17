@@ -1,16 +1,17 @@
 #include "GPTMain.h"
+//Big thanks to https://github.com/jupyter-xeus/cpp-terminal for cross-platform terminal support.
 
 void setup_console_encoding();
 void shutdown_hook();
 
 int main() {
-    atexit(shutdown_hook); //Setup shutdown hook
-    curl_global_init(CURL_GLOBAL_ALL); //CURL global init
+    atexit(shutdown_hook); //Setup shutdown hook.
+    curl_global_init(CURL_GLOBAL_ALL); //CURL global init.
 
-    setup_console_encoding();
+    setup_console_encoding(); //Setup console encoding.
 
     //Main
-    GPT::pre_settings();
+    GPT::pre_settings(); //Start the bot.
     return 0;
 }
 

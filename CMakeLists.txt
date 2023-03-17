@@ -12,14 +12,15 @@ endif ()
 
 find_package(CURL CONFIG REQUIRED)
 find_package(nlohmann_json REQUIRED)
+find_package(ftxui REQUIRED)
 if (WIN32)
     find_package(libproxy REQUIRED)
 endif ()
 
-add_executable(${PROJECT_NAME} main/main.cpp main/GPTMain.cpp main/GPTMain.h main/util/PromptUtils.cpp main/util/PromptUtils.h main/util/SystemUtils.cpp main/util/SystemUtils.h main/model/Embedding.cpp main/model/Embedding.h main/chat/Exchange.cpp main/chat/Exchange.h main/util/CURLUtils.cpp main/util/CURLUtils.h main/network/Network.cpp main/network/Network.h)
+add_executable(${PROJECT_NAME} main/main.cpp main/GPTMain.cpp main/GPTMain.h main/util/PromptUtils.cpp main/util/PromptUtils.h main/util/SystemUtils.cpp main/util/SystemUtils.h main/model/Embedding.cpp main/model/Embedding.h main/chat/Exchange.cpp main/chat/Exchange.h main/util/CURLUtils.cpp main/util/CURLUtils.h main/network/Network.cpp main/network/Network.h main/interface/cpp-terminal/platforms/conversion.hpp main/interface/cpp-terminal/platforms/platform.hpp main/interface/cpp-terminal/platforms/platform.cpp main/interface/cpp-terminal/platforms/input.cpp main/interface/cpp-terminal/platforms/macros.hpp main/interface/cpp-terminal/platforms/tty.cpp main/interface/cpp-terminal/platforms/terminfo.cpp main/interface/cpp-terminal/platforms/terminal.cpp main/interface/cpp-terminal/base.cpp main/interface/cpp-terminal/base.hpp main/interface/cpp-terminal/color.cpp main/interface/cpp-terminal/color.hpp main/interface/cpp-terminal/exception.hpp main/interface/cpp-terminal/input.cpp main/interface/cpp-terminal/input.hpp main/interface/cpp-terminal/prompt.cpp main/interface/cpp-terminal/prompt.hpp main/interface/cpp-terminal/terminal.cpp main/interface/cpp-terminal/terminal.hpp main/interface/cpp-terminal/terminfo.hpp main/interface/cpp-terminal/tty.hpp main/interface/cpp-terminal/window.cpp main/interface/cpp-terminal/window.hpp)
 
 target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
-target_link_libraries(${PROJECT_NAME} PRIVATE CURL::libcurl nlohmann_json::nlohmann_json)
+target_link_libraries(${PROJECT_NAME} PRIVATE CURL::libcurl nlohmann_json::nlohmann_json ftxui::component)
 if (WIN32)
     target_link_libraries(${PROJECT_NAME} PRIVATE ${LIBPROXY_LIBRARIES})
 endif ()

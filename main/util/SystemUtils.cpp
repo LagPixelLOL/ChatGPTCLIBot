@@ -38,6 +38,27 @@ namespace util {
         return buffer;
     }
 
+    /**
+     * Get multiple lines of input from the user.
+     * Press Ctrl + N to enter a new line.
+     * Note: Remember to do error handling by catching std::exception.
+     * @param history Input history.
+     * @param prompt_string The text that's displayed before the user's input.
+     * @return The user's input.
+     */
+    string get_multi_lines(vector<string>& history, const string& prompt_string) {
+        if (!Term::stdin_connected()) {
+            throw Term::Exception("The terminal is not attached to a TTY and therefore can't catch user input.");
+        }
+        Term::Terminal t(false, false, false); //Initialize the terminal.
+        return Term::prompt_multiline(prompt_string, history, [](const auto& s){
+            if (s.size() > 1 && s.substr(s.size() - 2, 1) == "\\") {
+                return false;
+            }
+            return true;
+        });
+    }
+
     void ignore_line() {
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
     }

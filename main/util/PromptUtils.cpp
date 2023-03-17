@@ -10,9 +10,9 @@ namespace prompt {
                       const string& me_id, const string& bot_id, const unsigned int& max_length, const bool& is_new_api) {
         cout << to_string(initial_prompt, prompts, me_id, bot_id, max_length);
         if (prompts.empty() || prompts.back()->hasResponse()) {
-            cout << "\n" << me_id << ": ";
+            cout << endl;
         } else {
-            cout << "\n" << bot_id << (is_new_api ? ": " : ":");
+            cout << endl << bot_id << (is_new_api ? ": " : ":");
         }
     }
 
