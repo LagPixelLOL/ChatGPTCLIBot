@@ -107,8 +107,9 @@ namespace GPT {
             try {
                 input = util::get_multi_lines(input_history, me_id + ": ");
             } catch (const std::exception& e) {
-                cerr << "An error occurred while getting input: " << e.what() << endl;
-                break;
+                cerr << "\nAn error occurred while getting input: " << e.what() << endl;
+                print_enter_next_cycle();
+                continue;
             }
             int command_feedback = handle_command(input);
             if (command_feedback == 1) {

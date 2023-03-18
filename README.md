@@ -18,9 +18,9 @@ In Linux and macOS, you can run `./GPT3Bot` to run the program.
 8. Unlike other bots, this one actually streams. This means it will display the output as soon as a token is sent from the API(Just like what ChatGPT's website is doing), no need to wait until the entire response is generated!
 9. Automatically use the system proxy. Note: This feature is only supported on Windows, because there's a bug in my proxy library that causes it fail to compile on Linux and macOS.
 10. Multiline input support, you need to press Ctrl+N or Alt+Enter to enter a new line.
-11. Ctrl+V pasting support, you can paste text from your clipboard by pressing Ctrl+V. Note: This feature is not supported on macOS because my clipboard library doesn't support it, and I don't have a macOS device for testing.
+11. Ctrl+V pasting support, you can paste text from your clipboard by pressing Ctrl+V.
 
-Written in C++ (Libraries used: Boost, cURL, nlohmann/json, libproxy, cpp-terminal, ftxui, ClipboardXX)
+Written in C++ (Libraries used: Boost, cURL, nlohmann/json, libproxy, cpp-terminal, ftxui, clip)
 
 # Supported OS:
 * Windows 10/11 64-bit

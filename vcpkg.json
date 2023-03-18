@@ -6,10 +6,6 @@
     "nlohmann-json",
     "curl",
     "libproxy",
-    "ftxui",
-    {
-      "name": "clipboardxx",
-      "platform": "!osx"
-    }
+    "ftxui"
   ]
 }

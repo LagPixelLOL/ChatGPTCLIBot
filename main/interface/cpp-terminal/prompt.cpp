@@ -5,10 +5,8 @@
 #include "terminal.hpp"
 #include "tty.hpp"
 
-#include <iostream>
-#if !defined(__APPLE__)
-#include <clipboardxx.hpp>
-#endif
+#include "../clip/clip.h"
+#include "iostream"
 
 Term::Result Term::prompt(const std::string& message, const std::string& first_option, const std::string& second_option, const std::string& prompt_indicator, bool immediate)
 {
@@ -352,12 +350,10 @@ std::string Term::prompt_multiline(const std::string& prompt_string, std::vector
                     }
                     break;
                 }
-                case Key::CTRL_V:
-#if !defined(__APPLE__)
-                    try {
-                        clipboardxx::clipboard clipboard;
-                        std::string paste_text;
-                        clipboard >> paste_text;
+                case Key::CTRL_V: {
+                    std::string paste_text;
+                    clip::get_text(paste_text);
+                    if (!paste_text.empty()) {
                         replace_all(paste_text, "\r\n", "\n");
                         replace_all(paste_text, "\r", "\n");
                         std::vector<std::string> split_str = split(paste_text);
@@ -377,9 +373,9 @@ std::string Term::prompt_multiline(const std::string& prompt_string, std::vector
                         if (m.lines.size() > scr.get_h()) {
                             scr.set_h(m.lines.size());
                         }
-                    } catch (const std::exception& e) {}
-#endif
+                    }
                     break;
+                }
                 default:
                     break;
             }
