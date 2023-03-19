@@ -155,11 +155,12 @@ std::vector<std::string> Term::split(std::string s) {
     return lines;
 }
 
-char32_t Term::UU(const std::string& s)
-{
-  std::u32string s2 = Private::utf8_to_utf32(s);
-  if(s2.size() != 1) throw Term::Exception("U(s): s not a codepoint.");
-  return s2[0];
+char32_t Term::UU(const std::string& s) {
+    std::u32string s2 = Private::utf8_to_utf32(s);
+    if (s2.size() != 1) {
+        throw Term::Exception("U(s): s not a codepoint.");
+    }
+    return s2[0];
 }
 
 void Term::print_left_curly_bracket(Term::Window& scr, int x, int y1, int y2)

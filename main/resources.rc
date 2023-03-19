@@ -1,0 +1,8 @@
+#ifdef _WIN32
+#include <windows.h>
+#include <winuser.h>
+
+IDI_ICON1 ICON DISCARDABLE "../icon.ico"
+
+1 ICON "../icon.ico"
+#endif
