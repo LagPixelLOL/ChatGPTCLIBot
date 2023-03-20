@@ -6,6 +6,7 @@
 #include "tty.hpp"
 
 #include "../clip/clip.h"
+#include "algorithm"
 #include "iostream"
 
 Term::Result Term::prompt(const std::string& message, const std::string& first_option, const std::string& second_option, const std::string& prompt_indicator, bool immediate)
@@ -163,6 +164,48 @@ char32_t Term::UU(const std::string& s) {
     return s2[0];
 }
 
+/**
+ * Calculate how many chars the cursor should shift because utf-8 encoding might have multiple chars to represent 1 utf-8 char.
+ * @param str The utf-8 string.
+ * @param cursor_col Is the one-indexed current position of the cursor within the utf-8 string,
+ * it can be +1 position of the last char, just like when you type in a terminal,
+ * it's been converted to the correspond u32string position first.
+ * @param shift_amount Is how many chars should be shifted within the u32string,
+ * it could be negative to shift to the left and positive to the right.
+ * @return The number of chars the cursor should shift within the utf-8 string,
+ * it could be negative to shift to the left and positive to the right,
+ * the return value is snapped to the nearest valid utf-8 position to make sure it's not inside the characters of a single utf-8 character.
+ */
+long long Term::calc_cursor_move(const std::string& str, const size_t& cursor_col, const long long& shift_amount) {
+    std::u32string u32s = Private::utf8_to_utf32(str);
+    if (cursor_col < 1 || cursor_col > str.size() + 1) { //cursor_col is 1-indexed, +1 for the cursor being after the last character.
+        throw Term::Exception("calc_cursor_move: cursor position out of range.");
+    }
+    long long zero_indexed_cursor_col = static_cast<long long>(cursor_col) - 1; //-1 to convert to 0-indexed.
+    //Snap zero_indexed_cursor_col to the nearest valid position if it's inside an utf-8 character.
+    long long snapped_zero_indexed_cursor_col = zero_indexed_cursor_col; //Copy the value.
+    while (snapped_zero_indexed_cursor_col > 0 && (str[snapped_zero_indexed_cursor_col] & 0xC0) == 0x80) {
+        --snapped_zero_indexed_cursor_col;
+    }
+    long long snap_shift_amount = snapped_zero_indexed_cursor_col - zero_indexed_cursor_col;
+    //Check if the cursor will move out of the string.
+    if (snapped_zero_indexed_cursor_col + shift_amount < 0 || snapped_zero_indexed_cursor_col + shift_amount > str.size()) {
+        return snap_shift_amount;
+    }
+    //Calculate the number of columns the cursor will move.
+    size_t u32_cursor_col = Private::utf8_to_utf32(str.substr(0, snapped_zero_indexed_cursor_col)).size();
+    long long u32_target_col = static_cast<long long>(u32_cursor_col) + shift_amount;
+    if (u32_target_col < 0 || u32_target_col > u32s.size()) {
+        return snap_shift_amount;
+    }
+    std::string utf8_initial = Private::utf32_to_utf8(u32s.substr(0, u32_cursor_col));
+    std::string utf8_target = Private::utf32_to_utf8(u32s.substr(0, u32_target_col));
+    long long utf8_shift_amount = static_cast<long long>(utf8_target.size()) - static_cast<long long>(utf8_initial.size());
+    //Account for the snapped zero_indexed_cursor_col.
+    utf8_shift_amount += snap_shift_amount;
+    return utf8_shift_amount;
+}
+
 void Term::print_left_curly_bracket(Term::Window& scr, int x, int y1, int y2)
 {
   int h = y2 - y1 + 1;
@@ -175,26 +218,23 @@ void Term::print_left_curly_bracket(Term::Window& scr, int x, int y1, int y2)
   }
 }
 
-void Term::render(Term::Window& scr, const Model& m, const std::size_t& cols)
-{
-  scr.clear();
-  print_left_curly_bracket(scr, (int)cols, 1, (int)m.lines.size());
-  scr.print_str(cols - 6, m.lines.size(), std::to_string(m.cursor_row) + "," + std::to_string(m.cursor_col));
-  for(std::size_t j = 0; j < m.lines.size(); j++)
-  {
-    if(j == 0)
-    {
-      scr.fill_fg(1, j + 1, m.prompt_string.size(), m.lines.size(), Term::Color::Name::BrightGreen);
-      scr.fill_style(1, j + 1, m.prompt_string.size(), m.lines.size(), Term::Style::BOLD);
-      scr.print_str(1, j + 1, m.prompt_string);
+void Term::render(Term::Window& scr, const Model& m, const std::size_t& cols) {
+    scr.clear();
+    print_left_curly_bracket(scr, (int)cols, 1, (int)m.lines.size());
+    scr.print_str(cols - 6, m.lines.size(), std::to_string(m.cursor_row) + "," + std::to_string(m.cursor_col));
+    for (std::size_t j = 0; j < m.lines.size(); j++) {
+        if (j == 0) {
+            scr.fill_fg(1, j + 1, m.prompt_string.size(), m.lines.size(), Term::Color::Name::BrightGreen);
+            scr.fill_style(1, j + 1, m.prompt_string.size(), m.lines.size(), Term::Style::BOLD);
+            scr.print_str(1, j + 1, m.prompt_string);
+        } else {
+            for (std::size_t i = 0; i < m.prompt_string.size() - 1; i++) {
+                scr.set_char(i + 1, j + 1, '.');
+            }
+        }
+        scr.print_str(m.prompt_string.size() + 1, j + 1, m.lines[j]);
     }
-    else
-    {
-      for(std::size_t i = 0; i < m.prompt_string.size() - 1; i++) { scr.set_char(i + 1, j + 1, '.'); }
-    }
-    scr.print_str(m.prompt_string.size() + 1, j + 1, m.lines[j]);
-  }
-  scr.set_cursor_pos(m.prompt_string.size() + m.cursor_col, m.cursor_row);
+    scr.set_cursor_pos(m.prompt_string.size() + m.cursor_col, m.cursor_row);
 }
 
 void replace_all(std::string& str, const std::string& from, const std::string& to) {
@@ -217,15 +257,12 @@ std::string Term::prompt_multiline(const std::string& prompt_string, std::vector
         std::tie(row, col) = cursor_position();
         std::tie(rows, cols) = get_size();
     }
-
     Model m;
     m.prompt_string = prompt_string;
-
     //Make a local copy of history that can be modified by the user. All changes will be forgotten once a command is submitted.
     std::vector<std::string> history = m_history;
     std::size_t history_pos = history.size();
     history.push_back(concat(m.lines));  //Push back empty input.
-
     Term::Window scr(cols, 1);
     Key key{NO_KEY};
     render(scr, m, cols);
@@ -259,10 +296,12 @@ std::string Term::prompt_multiline(const std::string& prompt_string, std::vector
                     CPP_TERMINAL_FALLTHROUGH;
                 case Key::BACKSPACE:
                     if (m.cursor_col > 1) {
-                        std::string before = m.lines[m.cursor_row - 1].substr(0, m.cursor_col - 2);
-                        std::string after = m.lines[m.cursor_row - 1].substr(m.cursor_col - 1);
-                        m.lines[m.cursor_row - 1] = before + after;
-                        m.cursor_col--;
+                        std::string& line = m.lines[m.cursor_row - 1];
+                        long long chars_to_erase = calc_cursor_move(line, m.cursor_col, -1);
+                        std::string before = line.substr(0, m.cursor_col - 1 + chars_to_erase);
+                        std::string after = line.substr(m.cursor_col - 1);
+                        line = before + after;
+                        m.cursor_col += chars_to_erase;
                     } else if (m.cursor_col == 1 && m.cursor_row > 1) {
                         m.cursor_col = m.lines[m.cursor_row - 2].size() + 1;
                         m.lines[m.cursor_row - 2] += m.lines[m.cursor_row - 1];
@@ -270,22 +309,21 @@ std::string Term::prompt_multiline(const std::string& prompt_string, std::vector
                         m.cursor_row--;
                     }
                     break;
-                case Key::DEL:
-                    if (m.cursor_col <= m.lines[m.cursor_row - 1].size()) {
-                        std::string before = m.lines[m.cursor_row - 1].substr(0, m.cursor_col - 1);
-                        std::string after = m.lines[m.cursor_row - 1].substr(m.cursor_col);
-                        m.lines[m.cursor_row - 1] = before + after;
+                case Key::DEL: {
+                    std::string& line = m.lines[m.cursor_row - 1];
+                    if (m.cursor_col <= line.size()) {
+                        long long chars_to_erase = calc_cursor_move(line, m.cursor_col, 1);
+                        std::string before = line.substr(0, m.cursor_col - 1);
+                        std::string after = line.substr(m.cursor_col - 1 + chars_to_erase);
+                        line = before + after;
                     }
                     break;
+                }
                 case Key::ARROW_LEFT:
-                    if (m.cursor_col > 1) {
-                        m.cursor_col--;
-                    }
+                    m.cursor_col += calc_cursor_move(m.lines[m.cursor_row - 1], m.cursor_col, -1);
                     break;
                 case Key::ARROW_RIGHT:
-                    if (m.cursor_col <= m.lines[m.cursor_row - 1].size()) {
-                        m.cursor_col++;
-                    }
+                    m.cursor_col += calc_cursor_move(m.lines[m.cursor_row - 1], m.cursor_col, 1);
                     break;
                 case Key::HOME:
                     m.cursor_col = 1;
@@ -310,6 +348,8 @@ std::string Term::prompt_multiline(const std::string& prompt_string, std::vector
                         size_t col_ = m.lines[m.cursor_row - 1].size() + 1;
                         if (m.cursor_col > col_) {
                             m.cursor_col = col_;
+                        } else {
+                            m.cursor_col += calc_cursor_move(m.lines[m.cursor_row - 1], m.cursor_col, 0);
                         }
                     }
                     break;
@@ -330,6 +370,8 @@ std::string Term::prompt_multiline(const std::string& prompt_string, std::vector
                         size_t col_ = m.lines[m.cursor_row - 1].size() + 1;
                         if (m.cursor_col > col_) {
                             m.cursor_col = col_;
+                        } else {
+                            m.cursor_col += calc_cursor_move(m.lines[m.cursor_row - 1], m.cursor_col, 0);
                         }
                     }
                     break;

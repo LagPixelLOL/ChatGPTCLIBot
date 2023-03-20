@@ -76,7 +76,7 @@ namespace api {
                 return length;
             };
             curl_easy_setopt(curl, CURLOPT_WRITEDATA, &callback_lambda);
-            curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10);
+            curl_easy_setopt(curl, CURLOPT_TIMEOUT, 20);
             util::set_curl_proxy(curl, util::system_proxy());
             util::set_curl_ssl_cert(curl);
             struct curl_slist* headers = nullptr;

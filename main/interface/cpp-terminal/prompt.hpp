@@ -60,14 +60,10 @@ public:
 };
 
 std::string concat(const std::vector<std::string>&);
-
 std::vector<std::string> split(std::string);
-
 char32_t UU(const std::string&);
-
+long long calc_cursor_move(const std::string& str, const size_t& cursor_col, const long long& shift_amount);
 void print_left_curly_bracket(Term::Window&, int, int, int);
-
 void render(Term::Window&, const Model&, const std::size_t&);
-
 std::string prompt_multiline(const std::string&, std::vector<std::string>&, const std::function<bool(std::string)>&);
 }  // namespace Term

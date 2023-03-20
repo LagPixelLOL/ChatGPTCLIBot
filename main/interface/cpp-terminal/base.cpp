@@ -35,31 +35,29 @@ std::string Term::cursor_right(std::size_t columns) { return "\033[" + std::to_s
 
 std::string Term::cursor_left(std::size_t columns) { return "\033[" + std::to_string(columns) + 'D'; }
 
-std::pair<std::size_t, std::size_t> Term::cursor_position()
-{
-  // write cursor position report
-  std::cout << cursor_position_report() << std::flush;
-  // read input buffer
-  std::string buf;
-  char        c{'\0'};
-  do {
-    while(!Platform::read_raw(&c))
-      ;
-    buf.push_back(c);
-  } while(c != 'R');
-
-  bool        found{false};
-  std::size_t row{0};
-  std::size_t column{0};
-  for(std::size_t i = 2; i < buf.size(); i++)
-  {
-    if(buf[i] == ';') found = true;
-    else if(found == false && buf[i] >= '0' && buf[i] <= '9')
-      row = row * 10 + (buf[i] - '0');
-    else if(found == true && buf[i] >= '0' && buf[i] <= '9')
-      column = column * 10 + (buf[i] - '0');
-  }
-  return std::pair<std::size_t, std::size_t>(row, column);
+std::pair<std::size_t, std::size_t> Term::cursor_position() {
+    // write cursor position report
+    std::cout << cursor_position_report() << std::flush;
+    // read input buffer
+    std::string buf;
+    char c{'\0'};
+    do {
+        while (!Platform::read_raw(&c)) {}
+        buf.push_back(c);
+    } while (c != 'R');
+    bool found{false};
+    std::size_t row{0};
+    std::size_t column{0};
+    for (std::size_t i = 2; i < buf.size(); i++) {
+        if (buf[i] == ';') {
+            found = true;
+        } else if (!found && buf[i] >= '0' && buf[i] <= '9') {
+            row = row * 10 + (buf[i] - '0');
+        } else if (found && buf[i] >= '0' && buf[i] <= '9') {
+            column = column * 10 + (buf[i] - '0');
+        }
+    }
+    return {row, column};
 }
 
 std::string Term::cursor_position_report() { return "\x1b[6n"; }
