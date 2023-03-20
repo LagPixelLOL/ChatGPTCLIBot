@@ -53,7 +53,7 @@ Result_simple prompt_simple(const std::string& message);
 class Model {
 public:
   std::string              prompt_string;  // The string to show as the prompt
-  std::vector<std::string> lines{""};      // The current input string in the prompt as a vector of lines, without '\n' at the end.
+  std::vector<std::string> lines{""};      // The current input string in the prompt as a vector of lines.
   // The current cursor position in the "input" string, starting from (1,1)
   std::size_t              cursor_col{1};
   std::size_t              cursor_row{1};
@@ -62,8 +62,11 @@ public:
 std::string concat(const std::vector<std::string>&);
 std::vector<std::string> split(std::string);
 char32_t UU(const std::string&);
-long long calc_cursor_move(const std::string& str, const size_t& cursor_col, const long long& shift_amount);
-void print_left_curly_bracket(Term::Window&, int, int, int);
+void print_left_curly_bracket(Term::Window& scr, const size_t& x, const size_t& y1, const size_t& y2, const Model& m);
+size_t display_length(const std::u32string& u32str);
+size_t display_length(const std::string& str);
+size_t cursor_render_col(const std::string& str, const size_t& cursor_col);
 void render(Term::Window&, const Model&, const std::size_t&);
+long long calc_cursor_move(const std::string& str, const size_t& cursor_col, const long long& shift_amount);
 std::string prompt_multiline(const std::string&, std::vector<std::string>&, const std::function<bool(std::string)>&);
 }  // namespace Term

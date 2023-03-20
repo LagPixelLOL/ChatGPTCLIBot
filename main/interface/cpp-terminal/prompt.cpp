@@ -9,7 +9,8 @@
 #include "algorithm"
 #include "iostream"
 
-Term::Result Term::prompt(const std::string& message, const std::string& first_option, const std::string& second_option, const std::string& prompt_indicator, bool immediate)
+Term::Result Term::prompt(const std::string& message, const std::string& first_option, const std::string& second_option,
+                          const std::string& prompt_indicator, bool immediate)
 {
   Terminal term(false, true, false);
   std::cout << message << " [" << first_option << '/' << second_option << ']' << prompt_indicator << ' ' << std::flush;
@@ -164,6 +165,78 @@ char32_t Term::UU(const std::string& s) {
     return s2[0];
 }
 
+void Term::print_left_curly_bracket(Term::Window& scr, const size_t& x, const size_t& y1, const size_t& y2, const Model& m) {
+    size_t h = y2 - y1 + 1;
+    std::u32string u32s_f = Private::utf8_to_utf32(m.lines[0]);
+    auto x_c = static_cast<long long>(x);
+    long long pos_f = std::max(x_c - static_cast<long long>(display_length(u32s_f) - u32s_f.size()), 1LL);
+    if (h == 1) {
+        scr.set_char(pos_f, y1, UU("]"));
+    } else {
+        scr.set_char(pos_f, y1, UU("┐"));
+        for (size_t i = y1 + 1; i <= y2 - 1; i++) {
+            std::u32string u32s_m = Private::utf8_to_utf32(m.lines[i - y1]);
+            scr.set_char(std::max(x_c - static_cast<long long>(display_length(u32s_m) - u32s_m.size()), 1LL), i, UU("│"));
+        }
+        std::u32string u32s_b = Private::utf8_to_utf32(m.lines.back());
+        scr.set_char(std::max(x_c - static_cast<long long>(display_length(u32s_b) - u32s_b.size()), 1LL), y2, UU("┘"));
+    }
+}
+
+size_t Term::display_length(const std::u32string& u32str) {
+    size_t len = 0;
+    for (const auto& c : u32str) {
+        len += Private::c32_display_width(c);
+    }
+    return len;
+}
+
+size_t Term::display_length(const std::string& str) {
+    return display_length(Private::utf8_to_utf32(str));
+}
+
+/**
+ * Calculate the column number of the cursor in the rendered string, an ascii char is 1 column, an utf-8 char is 2 columns.
+ * @param str The string that's on the current line.
+ * @param cursor_col The raw cursor column number, one-indexed.
+ * @return The rendered cursor column number.
+ */
+size_t Term::cursor_render_col(const std::string& str, const size_t& cursor_col) {
+    return display_length(str.substr(0, cursor_col - 1)) + 1;
+}
+
+void Term::render(Term::Window& scr, const Model& m, const std::size_t& cols) {
+    scr.clear();
+    print_left_curly_bracket(scr, cols, 1, m.lines.size(), m);
+    std::u32string u32s_b = Private::utf8_to_utf32(m.lines.back());;
+    scr.print_str(std::max(static_cast<long long>(cols) - 6 - static_cast<long long>(display_length(u32s_b) - u32s_b.size()), 1LL),
+                  m.lines.size(), std::to_string(m.cursor_row) + "," + std::to_string(m.cursor_col));
+    for (std::size_t j = 0; j < m.lines.size(); j++) {
+        if (j == 0) {
+            scr.fill_fg(1, j + 1, m.prompt_string.size(), m.lines.size(), Term::Color::Name::BrightGreen);
+            scr.fill_style(1, j + 1, m.prompt_string.size(), m.lines.size(), Term::Style::BOLD);
+            scr.print_str(1, j + 1, m.prompt_string);
+        } else {
+            for (std::size_t i = 0; i < m.prompt_string.size() - 1; i++) {
+                scr.set_char(i + 1, j + 1, '.');
+            }
+        }
+        scr.print_str(m.prompt_string.size() + 1, j + 1, m.lines[j]);
+    }
+    scr.set_cursor_pos(m.prompt_string.size() + cursor_render_col(m.lines[m.cursor_row - 1], m.cursor_col), m.cursor_row);
+}
+
+void replace_all(std::string& str, const std::string& from, const std::string& to) {
+    if (from.empty()) {
+        return;
+    }
+    size_t startPos = 0;
+    while ((startPos = str.find(from, startPos)) != std::string::npos) {
+        str.replace(startPos, from.length(), to);
+        startPos += to.length(); //In case 'to' contains 'from', like replacing 'x' with 'yx'.
+    }
+}
+
 /**
  * Calculate how many chars the cursor should shift because utf-8 encoding might have multiple chars to represent 1 utf-8 char.
  * @param str The utf-8 string.
@@ -206,48 +279,6 @@ long long Term::calc_cursor_move(const std::string& str, const size_t& cursor_co
     return utf8_shift_amount;
 }
 
-void Term::print_left_curly_bracket(Term::Window& scr, int x, int y1, int y2)
-{
-  int h = y2 - y1 + 1;
-  if(h == 1) { scr.set_char(x, y1, UU("]")); }
-  else
-  {
-    scr.set_char(x, y1, UU("┐"));
-    for(int j = y1 + 1; j <= y2 - 1; j++) { scr.set_char(x, j, UU("│")); }
-    scr.set_char(x, y2, UU("┘"));
-  }
-}
-
-void Term::render(Term::Window& scr, const Model& m, const std::size_t& cols) {
-    scr.clear();
-    print_left_curly_bracket(scr, (int)cols, 1, (int)m.lines.size());
-    scr.print_str(cols - 6, m.lines.size(), std::to_string(m.cursor_row) + "," + std::to_string(m.cursor_col));
-    for (std::size_t j = 0; j < m.lines.size(); j++) {
-        if (j == 0) {
-            scr.fill_fg(1, j + 1, m.prompt_string.size(), m.lines.size(), Term::Color::Name::BrightGreen);
-            scr.fill_style(1, j + 1, m.prompt_string.size(), m.lines.size(), Term::Style::BOLD);
-            scr.print_str(1, j + 1, m.prompt_string);
-        } else {
-            for (std::size_t i = 0; i < m.prompt_string.size() - 1; i++) {
-                scr.set_char(i + 1, j + 1, '.');
-            }
-        }
-        scr.print_str(m.prompt_string.size() + 1, j + 1, m.lines[j]);
-    }
-    scr.set_cursor_pos(m.prompt_string.size() + m.cursor_col, m.cursor_row);
-}
-
-void replace_all(std::string& str, const std::string& from, const std::string& to) {
-    if (from.empty()) {
-        return;
-    }
-    size_t startPos = 0;
-    while ((startPos = str.find(from, startPos)) != std::string::npos) {
-        str.replace(startPos, from.length(), to);
-        startPos += to.length(); //In case 'to' contains 'from', like replacing 'x' with 'yx'.
-    }
-}
-
 std::string Term::prompt_multiline(const std::string& prompt_string, std::vector<std::string>& m_history,
                                    const std::function<bool(std::string)>& is_complete) {
     std::size_t row{1}, col{1};
@@ -262,7 +293,7 @@ std::string Term::prompt_multiline(const std::string& prompt_string, std::vector
     //Make a local copy of history that can be modified by the user. All changes will be forgotten once a command is submitted.
     std::vector<std::string> history = m_history;
     std::size_t history_pos = history.size();
-    history.push_back(concat(m.lines));  //Push back empty input.
+    history.push_back(concat(m.lines)); //Push back empty input.
     Term::Window scr(cols, 1);
     Key key{NO_KEY};
     render(scr, m, cols);
@@ -312,9 +343,8 @@ std::string Term::prompt_multiline(const std::string& prompt_string, std::vector
                 case Key::DEL: {
                     std::string& line = m.lines[m.cursor_row - 1];
                     if (m.cursor_col <= line.size()) {
-                        long long chars_to_erase = calc_cursor_move(line, m.cursor_col, 1);
                         std::string before = line.substr(0, m.cursor_col - 1);
-                        std::string after = line.substr(m.cursor_col - 1 + chars_to_erase);
+                        std::string after = line.substr(m.cursor_col - 1 + calc_cursor_move(line, m.cursor_col, 1));
                         line = before + after;
                     }
                     break;

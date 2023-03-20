@@ -90,4 +90,12 @@ namespace Term::Private {
         for(char i: vector) { string.push_back(i); }
         return string;
     }
+
+    inline unsigned int c32_display_width(char32_t c32) {
+        if (c32 > 0x7F) {
+            return 2;
+        } else {
+            return 1;
+        }
+    }
 } // namespace Term
