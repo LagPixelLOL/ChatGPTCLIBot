@@ -16,7 +16,7 @@ int main() {
 }
 
 /**
- * Setup console encoding to correctly display Chinese characters.
+ * Setup console encoding to correctly display UTF-8 characters.
  */
 void setup_console_encoding() {
 #ifdef _WIN32

@@ -69,7 +69,7 @@ namespace api {
                             }
                             callback(response);
                         } catch (const json::parse_error& e) {
-                            cerr << "Error parsing JSON: " << e.what() << endl;
+                            util::println_err("Error parsing JSON: " + string(e.what()));
                         }
                     }
                 }
@@ -96,13 +96,15 @@ namespace api {
                     chat_exchanges, max_reference_length, max_short_memory_length, me_id, bot_id);
             string suffix = ": ";
             if (debug_reference) {
-                string dr_prefix = "<Debug Reference> ";
-                cout << "\n" << dr_prefix << "Constructed initial prompt:\n----------\n" << constructed_initial << "\n----------\n";
+                string dr_prefix = Term::color_fg(255, 200, 0) + "<Debug Reference> " + Term::color_fg(Term::Color::Name::Default);
+                util::print_cs("\n" + dr_prefix + Term::color_fg(255, 225, 0)
+                + "Constructed initial prompt:\n----------\n" + constructed_initial + "\n----------", true);
                 if (pause_when_showing_reference) {
-                    cout << dr_prefix << "Press Enter to continue: ";
+                    util::print_cs(dr_prefix + "Press " + Term::color_fg(70, 200, 255) + "Enter"
+                    + Term::color_fg(Term::Color::Name::Default) + " to continue: ");
                     util::ignore_line();
                 }
-                cout << bot_id << (is_new_api_ ? suffix : ":");
+                util::print_cs(Term::color_fg(175, 255, 225) + bot_id + (is_new_api_ ? suffix : ":"), false, false);
             }
             if (!is_new_api_) {
                 payload["prompt"] = GPT::to_payload(
@@ -117,7 +119,7 @@ namespace api {
             res = curl_easy_perform(curl);
             if (res != CURLE_OK) {
                 error = true;
-                cerr << "\nAPI request failed: " << curl_easy_strerror(res) << "\n";
+                util::println_err("\nAPI request failed: " + string(curl_easy_strerror(res)));
             }
             curl_slist_free_all(headers);
             curl_easy_cleanup(curl);

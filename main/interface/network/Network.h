@@ -6,11 +6,8 @@
 #define GPT3BOT_NETWORK_H
 
 #include "boost/algorithm/string/regex.hpp"
-#include "nlohmann/json.hpp"
-#include "../util/CURLUtils.h"
-#include "../util/SystemUtils.h"
 #include "../util/PromptUtils.h"
-#include "../chat/Exchange.h"
+#include "../util/TermUtils.h"
 
 namespace api {
     using namespace std;

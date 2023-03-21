@@ -4,6 +4,9 @@
 
 #include "GPTMain.h"
 
+#define ENTER Term::color_fg(70, 200, 255) + "Enter" + Term::color_fg(Color::Name::Default)
+#define PATH(path) Term::color_fg(125, 225, 255) + "\"" + path.string() + "\""
+
 namespace GPT {
     vector<string> input_history;
     const string f_initial = "initial";
@@ -36,14 +39,17 @@ namespace GPT {
      * The main function for GPT3Bot.
      */
     void pre_settings() {
-        cout << "   ********    *******    **********            ****        ******                  **  \n"
+        util::print_m_clr(
+                "   ********    *******    **********            ****        ******                  **  \n"
                 "  **//////**  /**////**  /////**///            */// *      /*////**                /**  \n"
                 " **      //   /**   /**      /**              /    /*      /*   /**     ******    ******\n"
                 "/**           /*******       /**       *****     ***       /******     **////**  ///**/ \n"
                 "/**    *****  /**////        /**      /////     /// *      /*//// **  /**   /**    /**  \n"
                 "//**  ////**  /**            /**               *   /*      /*    /**  /**   /**    /**  \n"
                 " //********   /**            /**              / ****       /*******   //******     //** \n"
-                "  ////////    //             //                ////        ///////     //////       //  \n\n";
+                "  ////////    //             //                ////        ///////     //////       //  ",
+                {{255, 15, 125}, {125, 40, 255}}, true);
+        cout << "\n\n";
         if (!create_folders(vector<string>{f_initial, f_saved}) || !p_load_config() || !p_default_prompt()) {
             return;
         }
@@ -53,7 +59,7 @@ namespace GPT {
                 cout << "Please enter your OpenAI API key: ";
                 getline(cin, api_key);
                 if (api_key.empty()) {
-                    cout << "API key cannot be empty, please try again.\n";
+                    util::println_warn("API key cannot be empty, please try again.");
                     continue;
                 }
                 break;
@@ -63,13 +69,16 @@ namespace GPT {
             }
         }
         while (true) {
-            cout << "Please choose whether you want to load the initial prompt or saved chat history.\n"
-                    "(Input i for initial, s for saved, press Enter to use initial): ";
+            util::print_cs("Please choose whether you want to load the initial prompt or saved chat history.\n"
+                           "(Input " + Term::color_fg(255, 200, 0) + "i" + Term::color_fg(Color::Name::Default) + " for initial, "
+                           + Term::color_fg(255, 200, 0) + "s" + Term::color_fg(Color::Name::Default) + " for saved, press "
+                           + ENTER + " to use initial): ");
             string lInitial_or_lSaved;
             getline(cin, lInitial_or_lSaved);
             transform(lInitial_or_lSaved.begin(), lInitial_or_lSaved.end(), lInitial_or_lSaved.begin(), ::tolower);
             if (lInitial_or_lSaved.empty() || lInitial_or_lSaved == "i") {
-                cout << "Please enter the initial prompt's filename you want to load.\n(Press Enter to use default): ";
+                util::print_cs("Please enter the initial prompt's filename you want to load.\n"
+                               "(Press " + ENTER + " to use default): ");
                 string i_p_filename;
                 getline(cin, i_p_filename);
                 if (ends_with(i_p_filename, f_suffix)) {
@@ -91,7 +100,7 @@ namespace GPT {
                 }
                 break;
             } else {
-                cout << "Invalid input, please try again." << endl;
+                util::println_warn("Invalid input, please try again.");
             }
         }
         start_loop();
@@ -107,20 +116,21 @@ namespace GPT {
             try {
                 input = util::get_multi_lines(input_history, me_id + ": ");
             } catch (const std::exception& e) {
-                cerr << "\nAn error occurred while getting input: " << e.what() << endl;
+                util::println_err("\nAn error occurred while getting input: " + string(e.what()));
                 print_enter_next_cycle();
                 continue;
             }
             int command_feedback = handle_command(input);
             if (command_feedback == 1) {
-                cout << "Do you want to save the chat history?\n"
-                        "(Input the file name to save, press Enter to skip): ";
+                util::print_cs("Do you want to save the chat history?\n"
+                               "(Input the file name to save, press " + ENTER + " to skip): ");
                 string save_name;
                 getline(cin, save_name);
                 if (!save_name.empty()) {
                     p_save_chat(save_name);
                 }
-                cout << "₪ GPT-3 Bot Stopped." << endl;
+                util::print_clr("₪", {255, 50, 50});
+                util::print_m_clr(" GPT-3 Bot Stopped.", {{255, 50, 50}, {255, 255, 50}});
                 break;
             } else if (command_feedback == 2) {
                 if (!prompts.empty()) {
@@ -135,15 +145,14 @@ namespace GPT {
                 print_enter_next_cycle();
                 continue;
             }
-            cout << "Getting embeddings and finding similar chat exchanges for the input...";
-            auto input_embeddings = emb::get_embeddings(input, api_key);
-            if (input_embeddings) {
+            util::println_info("Getting embeddings and finding similar chat exchanges for the input...", false);
+            if (auto input_embeddings = emb::get_embeddings(input, api_key)) {
                 prompts.emplace_back(make_shared<Exchange>(input, *input_embeddings, util::currentTimeMillis()));
                 print_prompt();
                 string response;
-                if (api::call_api(initial_prompt, prompts, api_key, model, temperature, max_tokens, top_p,
-                                  frequency_penalty, presence_penalty, max_short_memory_length, max_reference_length,
-                                  me_id, bot_id, [&response](const auto& streamed_response){
+                bool api_success = api::call_api(initial_prompt, prompts, api_key, model, temperature, max_tokens, top_p,
+                                                 frequency_penalty, presence_penalty, max_short_memory_length, max_reference_length,
+                                                 me_id, bot_id, [&response](const auto& streamed_response){
                     try {
                         json j = json::parse(streamed_response);
                         if (j.count("error") > 0 && j["error"].is_object()) {
@@ -152,16 +161,18 @@ namespace GPT {
                         }
                     } catch (const json::parse_error& e) {}
                     response.append(streamed_response);
-                    cout << streamed_response;
-                    }, debug_reference)) {
+                    util::print_cs(streamed_response, false, false);
+                    }, debug_reference);
+                util::print_cs("");
+                if (api_success) {
                     try {
                         json j = json::parse(response);
                         if (j.count("error") > 0 && j["error"].is_object()) {
                             auto error_obj = j["error"];
                             if (error_obj.count("message") > 0 && error_obj["message"].is_string()) {
-                                cerr << "\nAPI returned error: " << error_obj["message"].get<string>() << "\n";
+                                util::println_err("\nAPI returned error: " + error_obj["message"].get<string>());
                             } else {
-                                cerr << "\nAPI returned unknown error. Json: " << response << "\n";
+                                util::println_err("\nAPI returned unknown error. Json: " + response);
                             }
                             print_enter_next_cycle();
                             prompts.pop_back();
@@ -188,39 +199,39 @@ namespace GPT {
     }
 
     void print_enter_next_cycle() {
-        cout << "Press Enter to run the next cycle: ";
+        util::print_cs("Press " + ENTER + " to run the next cycle: ");
         util::ignore_line();
     }
 
     void print_uwu() {
-        cout << "UwU, hewwo fwiends, it's v2way hewe,\n"
-                "A smol thank yew, I send wif cheew.\n"
-                "Mew've tested my ChatGPT CLI Bot,\n"
-                "Wifout yew, it'd be naught but a thought.\n\n"
-                "Nyow we gathew, in cybewspace,\n"
-                "To cewebrate this pwogwam's grace.\n"
-                "Mew've twied and twoubleshooted too,\n"
-                "Nyoticed issues, hewped impwove aww new.\n\n"
-                "Mew chat wif kitty ears and tails,\n"
-                "In this wondewful land of vewbal veils.\n"
-                "Togedew we dance, wif whiskews twitching,\n"
-                "Each meow, each pounce, ouw hawts bewitching.\n\n"
-                "So fank yew, fwiends, mew've come this faw,\n"
-                "With v2way's bot, mew've waised the baw.\n"
-                "This adowable gibbewish we shawe,\n"
-                "Connects us aww, shows that we cawe.\n\n"
-                "Mew've made this bot a puwfect twee,\n"
-                "To sit and chat and climb with gwee.\n"
-                "So v2way's gwatitude shines twue,\n"
-                "Nyow, and fowevew, we appweciate mew!\n"
-                "                           -----GPT-4" << endl;
+        util::print_m_clr("UwU, hewwo fwiends, it's v2way hewe,\n"
+                          "A smol thank yew, I send wif cheew.\n"
+                          "Mew've tested my ChatGPT CLI Bot,\n"
+                          "Wifout yew, it'd be naught but a thought.\n\n"
+                          "Nyow we gathew, in cybewspace,\n"
+                          "To cewebrate this pwogwam's grace.\n"
+                          "Mew've twied and twoubleshooted too,\n"
+                          "Nyoticed issues, hewped impwove aww new.\n\n"
+                          "Mew chat wif kitty ears and tails,\n"
+                          "In this wondewful land of vewbal veils.\n"
+                          "Togedew we dance, wif whiskews twitching,\n"
+                          "Each meow, each pounce, ouw hawts bewitching.\n\n"
+                          "So fank yew, fwiends, mew've come this faw,\n"
+                          "With v2way's bot, mew've waised the baw.\n"
+                          "This adowable gibbewish we shawe,\n"
+                          "Connects us aww, shows that we cawe.\n\n"
+                          "Mew've made this bot a puwfect twee,\n"
+                          "To sit and chat and climb with gwee.\n"
+                          "So v2way's gwatitude shines twue,\n"
+                          "Nyow, and fowevew, we appweciate mew!\n"
+                          "                           -----GPT-4\n", {{125, 40, 255}, {255, 15, 125}});
     }
 
     void clear_console() {
 #ifdef _WIN32
-        system("cls"); //Clear the console in Windows
+        system("cls"); //Clear the console in Windows.
 #else
-        system("clear"); //Clear the console in Unix-based systems (e.g. Linux, macOS)
+        system("clear"); //Clear the console in Unix-based systems(e.g. Linux, macOS).
 #endif
     }
 
@@ -244,20 +255,20 @@ namespace GPT {
      * @return True if the folders were created or already exist, false if an error occurred.
      */
     bool create_folders(const vector<string>& folders) {
-        cout << "Creating folders...\n";
+        util::println_info("Creating folders...");
         for (const auto& folder : folders) {
             try {
                 if (!exists(folder)) {
                     create_directory(folder);
-                    cout << "Created folder: " << folder << '\n';
+                    util::println_info("Created folder: " + folder);
                 }
             } catch (const std::exception& e) {
-                cerr << "Error creating folder: " << folder << '\n';
-                cerr << "Reason: " << e.what() << '\n';
+                util::println_err("Error creating folder: " + folder);
+                util::println_err("Reason: " + string(e.what()));
                 return false;
             }
         }
-        cout << "Creating folders completed.\n";
+        util::println_info("Creating folders completed.");
         return true;
     }
 
@@ -269,49 +280,49 @@ namespace GPT {
         const auto path_ = path(f_initial) / (default_filename + f_suffix);
         if (!exists(path_)) {
             try {
-                cout << "Creating default prompt file: " << path_ << "\n";
+                util::println_info("Creating default prompt file: " + PATH(path_));
                 ofstream file(path_);
                 if (file.is_open()) {
                     file << initial_prompt;
                     file.close();
                 } else {
-                    cerr << "Error opening file for writing: " << path_ << endl;
+                    util::println_err("Error opening file for writing: " + PATH(path_));
                     return false;
                 }
             } catch (const std::exception& e) {
-                cerr << "Error creating file: " << path_ << endl;
-                cerr << "Reason: " << e.what() << endl;
+                util::println_err("Error creating file: " + PATH(path_));
+                util::println_err("Reason: " + string(e.what()));
                 return false;
             }
         } else {
             return p_load_prompt(default_filename);
         }
-        cout << "Default prompt file processing completed.\n";
+        util::println_info("Default prompt file processing completed.");
         return true;
     }
 
     bool p_load_prompt(string filename) {
         const auto path_ = path(f_initial) / filename.append(f_suffix);
         if (!exists(path_)) {
-            cerr << "Prompt file does not exist: " << path_ << endl;
+            util::println_err("Prompt file does not exist: " + PATH(path_));
             return false;
         }
         try {
-            cout << "Reading prompt file: " << path_ << "\n";
+            util::println_info("Reading prompt file: " + PATH(path_));
             ifstream file(path_);
             if (file.is_open()) {
                 initial_prompt = string(istreambuf_iterator<char>(file), istreambuf_iterator<char>());
                 file.close();
             } else {
-                cerr << "Error opening file for reading: " << path_ << endl;
+                util::println_err("Error opening file for reading: " + PATH(path_));
                 return false;
             }
         } catch (const std::exception& e) {
-            cerr << "Error reading file: " << path_ << endl;
-            cerr << "Reason: " << e.what() << endl;
+            util::println_err("Error reading file: " + PATH(path_));
+            util::println_err("Reason: " + string(e.what()));
             return false;
         }
-        cout << "Prompt file processing completed.\n";
+        util::println_info("Prompt file processing completed.");
         return true;
     }
 
@@ -324,11 +335,11 @@ namespace GPT {
     bool p_load_saved(string filename) {
         const auto path_ = path(f_saved) / filename.append(json_suffix);
         if (!exists(path_)) {
-            cerr << "Saved chat file does not exist: " << path_ << endl;
+            util::println_err("Saved chat file does not exist: " + PATH(path_));
             return false;
         }
         try {
-            cout << "Reading saved chat file: " << path_ << "\n";
+            util::println_info("Reading saved chat file: " + PATH(path_));
             ifstream file(path_);
             if (file.is_open()) {
                 json j;
@@ -337,8 +348,8 @@ namespace GPT {
                 if (j.count("initial") > 0 && j["initial"].is_string()) {
                     initial_prompt = j["initial"].get<string>();
                 } else {
-                    cerr << "Error reading saved chat file: " << path_ << endl;
-                    cerr << "Reason: initial is not a string." << endl;
+                    util::println_err("Error reading saved chat file: " + PATH(path_));
+                    util::println_err("Reason: initial is not a string.");
                     return false;
                 }
                 if (j.count("histories") > 0) {
@@ -353,15 +364,15 @@ namespace GPT {
                                 if (history.count("input") > 0 && history["input"].is_string()) {
                                     input = history["input"].get<string>();
                                 } else {
-                                    cerr << "Error reading saved chat file: " << path_ << endl;
-                                    cerr << "Reason: input is not a string." << endl;
+                                    util::println_err("Error reading saved chat file: " + PATH(path_));
+                                    util::println_err("Reason: input is not a string.");
                                     return false;
                                 }
                                 if (history.count("input_embeddings") > 0 && history["input_embeddings"].is_array()) {
                                     input_embeddings = history["input_embeddings"].get<vector<float>>();
                                 } else {
-                                    cerr << "Error reading saved chat file: " << path_ << endl;
-                                    cerr << "Reason: input_embeddings is not an array." << endl;
+                                    util::println_err("Error reading saved chat file: " + PATH(path_));
+                                    util::println_err("Reason: input_embeddings is not an array.");
                                     return false;
                                 }
                                 if (history.count("response") > 0 && history["response"].is_string()) {
@@ -370,8 +381,8 @@ namespace GPT {
                                 if (history.count("time_stamp") > 0 && history["time_stamp"].is_number_integer()) {
                                     time_ms = history["time_stamp"].get<long long>();
                                 } else {
-                                    cerr << "Error reading saved chat file: " << path_ << endl;
-                                    cerr << "Reason: time_stamp is not an integer." << endl;
+                                    util::println_err("Error reading saved chat file: " + PATH(path_));
+                                    util::println_err("Reason: time_stamp is not an integer.");
                                     return false;
                                 }
                                 if (response.empty()) {
@@ -380,31 +391,31 @@ namespace GPT {
                                     prompts.push_back(make_shared<Exchange>(input, input_embeddings, response, time_ms));
                                 }
                             } else {
-                                cerr << "Error reading saved chat file: " << path_ << endl;
-                                cerr << "Reason: history is not an object." << endl;
+                                util::println_err("Error reading saved chat file: " + PATH(path_));
+                                util::println_err("Reason: history is not an object.");
                                 return false;
                             }
                         }
                     } else if (histories.is_null()) {} else {
-                        cerr << "Error reading saved chat file: " << path_ << endl;
-                        cerr << "Reason: histories is not an array." << endl;
+                        util::println_err("Error reading saved chat file: " + PATH(path_));
+                        util::println_err("Reason: histories is not an array.");
                         return false;
                     }
                 } else {
-                    cerr << "Error reading saved chat file: " << path_ << endl;
-                    cerr << "Reason: histories is not found." << endl;
+                    util::println_err("Error reading saved chat file: " + PATH(path_));
+                    util::println_err("Reason: histories is not found.");
                     return false;
                 }
             } else {
-                cerr << "Error opening saved chat file for reading: " << path_ << endl;
+                util::println_err("Error opening saved chat file for reading: " + PATH(path_));
                 return false;
             }
         } catch (const std::exception& e) {
-            cerr << "Error reading saved chat file: " << path_ << endl;
-            cerr << "Reason: " << e.what() << endl;
+            util::println_err("Error reading saved chat file: " + PATH(path_));
+            util::println_err("Reason: " + string(e.what()));
             return false;
         }
-        cout << "Saved chat file reading completed.\n";
+        util::println_info("Saved chat file reading completed.");
         return true;
     }
 
@@ -416,7 +427,7 @@ namespace GPT {
     bool p_save_chat(string name) {
         const auto path_ = path(f_saved) / name.append(json_suffix);
         try {
-            cout << "Saving chat to file: " << path_ << "\n";
+            util::println_info("Saving chat to file: " + PATH(path_));
             ofstream file(path_);
             if (file.is_open()) {
                 json j;
@@ -436,15 +447,15 @@ namespace GPT {
                 file << j.dump(4);
                 file.close();
             } else {
-                cerr << "Error opening file for writing: " << path_ << endl;
+                util::println_err("Error opening file for writing: " + PATH(path_));
                 return false;
             }
         } catch (const std::exception& e) {
-            cerr << "Error creating file: " << path_ << endl;
-            cerr << "Reason: " << e.what() << endl;
+            util::println_err("Error creating file: " + PATH(path_));
+            util::println_err("Reason: " + string(e.what()));
             return false;
         }
-        cout << "Chat saved to file: " << path_ << "\n";
+        util::println_info("Chat saved to file: " + PATH(path_));
         return true;
     }
 
@@ -457,12 +468,12 @@ namespace GPT {
     bool p_load_config() {
         const auto path_ = path("config.json");
         if (!exists(path_)) {
-            cerr << "Config file does not exist: " << path_ << endl;
-            cerr << "Creating new config file: " << path_ << endl;
+            util::println_err("Config file does not exist: " + PATH(path_));
+            util::println_err("Creating new config file: " + PATH(path_));
             return p_save_config();
         }
         try {
-            cout << "Reading config file: " << path_ << "\n";
+            util::println_info("Reading config file: " + PATH(path_));
             ifstream file(path_);
             if (file.is_open()) {
                 json j;
@@ -472,111 +483,111 @@ namespace GPT {
                 if (j.count("api_key") > 0 && j["api_key"].is_string()) {
                     api_key = j["api_key"].get<string>();
                 } else {
-                    cerr << "Error reading config file: " << path_ << endl;
-                    cerr << "Reason: api_key is not a string." << endl;
+                    util::println_err("Error reading config file: " + PATH(path_));
+                    util::println_err("Reason: api_key is not a string.");
                     error = true;
                 }
                 if (j.count("model") > 0 && j["model"].is_string()) {
                     model = j["model"].get<string>();
                 } else {
-                    cerr << "Error reading config file: " << path_ << endl;
-                    cerr << "Reason: model is not a string." << endl;
+                    util::println_err("Error reading config file: " + PATH(path_));
+                    util::println_err("Reason: model is not a string.");
                     error = true;
                 }
                 if (j.count("temperature") > 0 && j["temperature"].is_number()) {
                     temperature = j["temperature"].get<float>();
                 } else {
-                    cerr << "Error reading config file: " << path_ << endl;
-                    cerr << "Reason: temperature is not a number." << endl;
+                    util::println_err("Error reading config file: " + PATH(path_));
+                    util::println_err("Reason: temperature is not a number.");
                     error = true;
                 }
                 if (j.count("max_tokens") > 0 && j["max_tokens"].is_number()) {
                     max_tokens = j["max_tokens"].get<int>();
                 } else {
-                    cerr << "Error reading config file: " << path_ << endl;
-                    cerr << "Reason: max_tokens is not a number." << endl;
+                    util::println_err("Error reading config file: " + PATH(path_));
+                    util::println_err("Reason: max_tokens is not a number.");
                     error = true;
                 }
                 if (j.count("top_p") > 0 && j["top_p"].is_number()) {
                     top_p = j["top_p"].get<float>();
                 } else {
-                    cerr << "Error reading config file: " << path_ << endl;
-                    cerr << "Reason: top_p is not a number." << endl;
+                    util::println_err("Error reading config file: " + PATH(path_));
+                    util::println_err("Reason: top_p is not a number.");
                     error = true;
                 }
                 if (j.count("frequency_penalty") > 0 && j["frequency_penalty"].is_number()) {
                     frequency_penalty = j["frequency_penalty"].get<float>();
                 } else {
-                    cerr << "Error reading config file: " << path_ << endl;
-                    cerr << "Reason: frequency_penalty is not a number." << endl;
+                    util::println_err("Error reading config file: " + PATH(path_));
+                    util::println_err("Reason: frequency_penalty is not a number.");
                     error = true;
                 }
                 if (j.count("presence_penalty") > 0 && j["presence_penalty"].is_number()) {
                     presence_penalty = j["presence_penalty"].get<float>();
                 } else {
-                    cerr << "Error reading config file: " << path_ << endl;
-                    cerr << "Reason: presence_penalty is not a number." << endl;
+                    util::println_err("Error reading config file: " + PATH(path_));
+                    util::println_err("Reason: presence_penalty is not a number.");
                     error = true;
                 }
                 if (j.count("max_display_length") > 0 && j["max_display_length"].is_number_unsigned()) {
                     max_display_length = j["max_display_length"].get<unsigned int>();
                     if (max_display_length == 0) {
-                        cerr << "Error reading config file: " << path_ << endl;
-                        cerr << "Reason: max_display_length cannot be 0." << endl;
+                        util::println_err("Error reading config file: " + PATH(path_));
+                        util::println_err("Reason: max_display_length cannot be 0.");
                         max_display_length = 1;
                         error = true;
                     }
                 } else {
-                    cerr << "Error reading config file: " << path_ << endl;
-                    cerr << "Reason: max_display_length is not an unsigned integer." << endl;
+                    util::println_err("Error reading config file: " + PATH(path_));
+                    util::println_err("Reason: max_display_length is not an unsigned integer.");
                     error = true;
                 }
                 if (j.count("max_short_memory_length") > 0 && j["max_short_memory_length"].is_number_unsigned()) {
                     max_short_memory_length = j["max_short_memory_length"].get<unsigned int>();
                     if (max_short_memory_length == 0) {
-                        cerr << "Error reading config file: " << path_ << endl;
-                        cerr << "Reason: max_short_memory_length cannot be 0." << endl;
+                        util::println_err("Error reading config file: " + PATH(path_));
+                        util::println_err("Reason: max_short_memory_length cannot be 0.");
                         max_short_memory_length = 1;
                         error = true;
                     }
                 } else {
-                    cerr << "Error reading config file: " << path_ << endl;
-                    cerr << "Reason: max_short_memory_length is not an unsigned integer." << endl;
+                    util::println_err("Error reading config file: " + PATH(path_));
+                    util::println_err("Reason: max_short_memory_length is not an unsigned integer.");
                     error = true;
                 }
                 if (j.count("max_reference_length") > 0 && j["max_reference_length"].is_number_unsigned()) {
                     max_reference_length = j["max_reference_length"].get<unsigned int>();
                 } else {
-                    cerr << "Error reading config file: " << path_ << endl;
-                    cerr << "Reason: max_reference_length is not an unsigned integer." << endl;
+                    util::println_err("Error reading config file: " + PATH(path_));
+                    util::println_err("Reason: max_reference_length is not an unsigned integer.");
                     error = true;
                 }
                 if (j.count("debug_reference") > 0 && j["debug_reference"].is_boolean()) {
                     debug_reference = j["debug_reference"].get<bool>();
                 } else {
-                    cerr << "Error reading config file: " << path_ << endl;
-                    cerr << "Reason: debug_reference is not a boolean." << endl;
+                    util::println_err("Error reading config file: " + PATH(path_));
+                    util::println_err("Reason: debug_reference is not a boolean.");
                     error = true;
                 }
                 if (j.count("me_id") > 0 && j["me_id"].is_string()) {
-                    cerr << "Outdated element in config file: me_id" << endl;
+                    util::println_warn("Outdated element in config file: me_id");
                     error = true;
                 }
                 if (j.count("bot_id") > 0 && j["bot_id"].is_string()) {
-                    cerr << "Outdated element in config file: bot_id" << endl;
+                    util::println_warn("Outdated element in config file: bot_id");
                     error = true;
                 }
                 if (error) {
-                    cerr << "Error detected, creating new config file: " << path_ << endl;
+                    util::println_err("Error detected, creating new config file: " + PATH(path_));
                     return p_save_config();
                 }
             }
         } catch (const std::exception& e) {
-            cerr << "Error reading config file: " << path_ << endl;
-            cerr << "Reason: " << e.what() << endl;
+            util::println_err("Error reading config file: " + PATH(path_));
+            util::println_err("Reason: " + string(e.what()));
             return false;
         }
-        cout << "Config loaded from file: " << path_ << "\n";
+        util::println_info("Config loaded from file: " + PATH(path_));
         return true;
     }
 
@@ -588,7 +599,7 @@ namespace GPT {
     bool p_save_config() {
         const auto path_ = path("config.json");
         try {
-            cout << "Saving config to file: " << path_ << "\n";
+            util::println_info("Saving config to file: " + PATH(path_));
             ofstream file(path_);
             if (file.is_open()) {
                 json j;
@@ -606,15 +617,15 @@ namespace GPT {
                 file << j.dump(4);
                 file.close();
             } else {
-                cerr << "Error opening file for writing: " << path_ << endl;
+                util::println_err("Error opening file for writing: " + PATH(path_));
                 return false;
             }
         } catch (const std::exception& e) {
-            cerr << "Error creating file: " << path_ << endl;
-            cerr << "Reason: " << e.what() << endl;
+            util::println_err("Error creating file: " + PATH(path_));
+            util::println_err("Reason: " + string(e.what()));
             return false;
         }
-        cout << "Config saved to file: " << path_ << "\n";
+        util::println_info("Config saved to file: " + PATH(path_));
         return true;
     }
 }

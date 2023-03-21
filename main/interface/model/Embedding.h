@@ -8,6 +8,7 @@
 #include "nlohmann/json.hpp"
 #include "../util/SystemUtils.h"
 #include "../util/CURLUtils.h"
+#include "../util/TermUtils.h"
 #include "iostream"
 #include "string"
 #include "vector"

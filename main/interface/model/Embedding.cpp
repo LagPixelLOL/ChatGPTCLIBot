@@ -49,16 +49,16 @@ namespace emb {
             curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload_str.c_str());
             res = curl_easy_perform(curl);
             if (res != CURLE_OK) {
-                cerr << "\nAPI request failed: " << curl_easy_strerror(res) << "\n";
+                util::println_err("\nAPI request failed: " + string(curl_easy_strerror(res)));
             } else {
                 try {
                     json j = json::parse(response);
                     if (j.count("error") > 0 && j["error"].is_object()) {
                         auto error_obj = j["error"];
                         if (error_obj.count("message") > 0 && error_obj["message"].is_string()) {
-                            cerr << "\nAPI returned error: " << error_obj["message"].get<string>() << "\n";
+                            util::println_err("\nAPI returned error: " + error_obj["message"].get<string>());
                         } else {
-                            cerr << "\nAPI returned unknown error. Json: " << response << "\n";
+                            util::println_err("\nAPI returned unknown error. Json: " + response);
                         }
                     } else if (j.count("data") > 0 && j["data"].is_array()) {
                         auto data = j["data"];
@@ -76,10 +76,10 @@ namespace emb {
                             }
                         }
                     } else {
-                        cerr << "\nAPI returned unknown response. Json: " << response << "\n";
+                        util::println_err("\nAPI returned unknown response. Json: " + response);
                     }
                 } catch (const json::parse_error& e) {
-                    cerr << "\nAPI returned string is not a valid json. String: " << response << "\n";
+                    util::println_err("\nAPI returned string is not a valid json. String: " + response);
                 }
             }
             curl_slist_free_all(headers);

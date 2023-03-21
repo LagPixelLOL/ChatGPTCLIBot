@@ -4,15 +4,16 @@
 
 #include "PromptUtils.h"
 
+#define ME_COLOR Term::color_fg(175, 200, 255)
+#define BOT_COLOR Term::color_fg(175, 255, 225)
+
 namespace prompt {
 
     void print_prompt(const string& initial_prompt, const vector<std::shared_ptr<chat::Exchange>>& prompts,
                       const string& me_id, const string& bot_id, const unsigned int& max_length, const bool& is_new_api) {
-        cout << to_string(initial_prompt, prompts, me_id, bot_id, max_length);
-        if (prompts.empty() || prompts.back()->hasResponse()) {
-            cout << endl;
-        } else {
-            cout << endl << bot_id << (is_new_api ? ": " : ":");
+        util::print_cs(to_string(initial_prompt, prompts, me_id, bot_id, max_length, true), true);
+        if (!prompts.empty() && !prompts.back()->hasResponse()) {
+            util::print_cs(BOT_COLOR + bot_id + (is_new_api ? ": " : ":"), false, false);
         }
     }
 
@@ -24,12 +25,12 @@ namespace prompt {
     }
 
     string to_string(string initial_prompt, vector<std::shared_ptr<chat::Exchange>> prompts,
-                     const string& me_id, const string& bot_id, const unsigned int& max_length) {
+                     const string& me_id, const string& bot_id, const unsigned int& max_length, const bool& add_color) {
         delete_front_keep_back(prompts, max_length);
         for (const auto& exchange : prompts) {
-            initial_prompt.append((boost::format("\n%1%: %2%") % me_id % exchange->getInput()).str());
+            initial_prompt.append((add_color ? ME_COLOR : "") + (boost::format("\n%1%: %2%") % me_id % exchange->getInput()).str());
             if (exchange->hasResponse()) {
-                initial_prompt.append((boost::format("\n%1%: %2%") % bot_id % exchange->getResponse()).str());
+                initial_prompt.append((add_color ? BOT_COLOR : "") + (boost::format("\n%1%: %2%") % bot_id % exchange->getResponse()).str());
             }
         }
         return initial_prompt;

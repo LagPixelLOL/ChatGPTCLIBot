@@ -17,7 +17,7 @@ namespace prompt {
     void print_prompt(const string& initial_prompt, const vector<std::shared_ptr<chat::Exchange>>& prompts,
                       const string& me_id, const string& bot_id, const unsigned int& max_length, const bool& is_new_api);
     string to_string(string initial_prompt, vector<std::shared_ptr<chat::Exchange>> prompts,
-                     const string& me_id, const string& bot_id, const unsigned int& max_length);
+                     const string& me_id, const string& bot_id, const unsigned int& max_length, const bool& add_color = false);
     string construct_reference(string initial_prompt, const vector<float>& input_embeddings,
                                vector<std::shared_ptr<chat::Exchange>> chat_exchanges,
                                const unsigned int& max_reference_length, const unsigned int& max_short_memory_length,

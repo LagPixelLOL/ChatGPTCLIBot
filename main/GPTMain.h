@@ -14,6 +14,7 @@ namespace GPT {
     using namespace filesystem;
     using namespace nlohmann;
     using namespace chat;
+    using Color = Term::Color;
 
     void pre_settings();
     void start_loop();

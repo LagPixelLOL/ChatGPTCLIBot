@@ -19,6 +19,8 @@ In Linux and macOS, you can run `./GPT3Bot` to run the program.
 9. Automatically use the system proxy. Note: This feature is only supported on Windows, because there's a bug in my proxy library that causes it fail to compile on Linux and macOS.
 10. Multiline input support, you need to press Ctrl+N or Alt+Enter to enter a new line.
 11. Ctrl+V pasting support, you can paste text from your clipboard by pressing Ctrl+V.
+12. UTF-8 support, currently you can't directly type them in, but you can paste them from your clipboard.
+13. Full of colors(If your terminal supports it)!
 
 Written in C++ (Libraries used: Boost, cURL, nlohmann/json, libproxy, cpp-terminal, ftxui, clip)
 
