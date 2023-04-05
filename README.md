@@ -26,5 +26,5 @@ Written in C++ (Libraries used: Boost, cURL, nlohmann/json, libproxy, cpp-termin
 
 # Supported OS:
 * Windows 10/11 64-bit
-* Linux 64-bit (Tested on Ubuntu 20.04 & CentOS 8) (Will not work on Ubuntu 18.04, CentOS 7 and lower, because they don't support C++17)
+* Linux 64-bit (Tested on Ubuntu 20.04 & CentOS 8) (Won't work on Ubuntu 18.04, CentOS 7 and lower, because they don't support C++17)
 * macOS 64-bit (Didn't test, but it should work on macOS 12 and higher)
