@@ -13,7 +13,6 @@ namespace GPT {
     const string f_saved = "saved";
     const string f_suffix = ".txt";
     const string json_suffix = ".json";
-    string api_key;
     string model = "gpt-3.5-turbo";
     bool is_new_api = false;
     float temperature = 1;
@@ -54,20 +53,7 @@ namespace GPT {
             return;
         }
         is_new_api = api::is_new_api(model);
-        if (api_key.empty()) {
-            while (true) {
-                cout << "Please enter your OpenAI API key: ";
-                getline(cin, api_key);
-                if (api_key.empty()) {
-                    util::println_warn("API key cannot be empty, please try again.");
-                    continue;
-                }
-                break;
-            }
-            if (!p_save_config()) {
-                return;
-            }
-        }
+        p_check_set_api_key();
         while (true) {
             util::print_cs("Please choose whether you want to load the initial prompt or saved chat history.\n"
                            "(Input " + Term::color_fg(255, 200, 0) + "i" + Term::color_fg(Color::Name::Default) + " for initial, "
@@ -131,6 +117,7 @@ namespace GPT {
                 }
                 util::print_clr("₪", {255, 50, 50});
                 util::print_m_clr(" GPT-3 Bot Stopped.", {{255, 50, 50}, {255, 255, 50}});
+                cout << endl;
                 break;
             } else if (command_feedback == 2) {
                 if (!prompts.empty()) {
@@ -145,8 +132,16 @@ namespace GPT {
                 print_enter_next_cycle();
                 continue;
             }
+            string api_key = api::get_key();
             util::println_info("Getting embeddings and finding similar chat exchanges for the input...", false);
-            if (auto input_embeddings = emb::get_embeddings(input, api_key)) {
+            auto emb_response = emb::get_embeddings(input, api_key);
+            auto key_status_emb = emb_response.second;
+            if (key_status_emb == api::APIKeyStatus::INVALID_KEY || key_status_emb == api::APIKeyStatus::QUOTA_EXCEEDED) {
+                p_on_invalid_key();
+                print_enter_next_cycle();
+                continue;
+            }
+            if (auto input_embeddings = emb_response.first) {
                 prompts.emplace_back(make_shared<Exchange>(input, *input_embeddings, util::currentTimeMillis()));
                 print_prompt();
                 string response;
@@ -156,23 +151,20 @@ namespace GPT {
                     try {
                         json j = json::parse(streamed_response);
                         if (j.count("error") > 0 && j["error"].is_object()) {
-                            response = j.dump(4);
+                            response = j.dump();
                             return;
                         }
                     } catch (const json::parse_error& e) {}
                     response.append(streamed_response);
                     util::print_cs(streamed_response, false, false);
                     }, debug_reference);
-                util::print_cs("");
+                util::print_cs(""); //Reset color.
                 if (api_success) {
                     try {
-                        json j = json::parse(response);
-                        if (j.count("error") > 0 && j["error"].is_object()) {
-                            auto error_obj = j["error"];
-                            if (error_obj.count("message") > 0 && error_obj["message"].is_string()) {
-                                util::println_err("\nAPI returned error: " + error_obj["message"].get<string>());
-                            } else {
-                                util::println_err("\nAPI returned unknown error. Json: " + response);
+                        api::APIKeyStatus key_status_api;
+                        if (api::check_err_obj(json::parse(response), key_status_api)) {
+                            if (key_status_api == api::APIKeyStatus::INVALID_KEY || key_status_api == api::APIKeyStatus::QUOTA_EXCEEDED) {
+                                p_on_invalid_key();
                             }
                             print_enter_next_cycle();
                             prompts.pop_back();
@@ -327,7 +319,7 @@ namespace GPT {
     }
 
     /**
-     * This function loads the saved chat history from the file(.json), and also does error handling.
+     * Load the saved chat history from the file(.json), and also does error handling.
      * It uses nlohmann::json library.
      * If the json is not in the correct format, it will return false.
      * @return True if the file already exists and read, false if an error occurred.
@@ -420,7 +412,7 @@ namespace GPT {
     }
 
     /**
-     * This function saves the chat history to the file(name.json), and also does error handling.
+     * Save the chat history to the file(name.json), and also does error handling.
      * It uses nlohmann::json library.
      * @return True if the file is correctly saved, false if an error occurred.
      */
@@ -444,7 +436,7 @@ namespace GPT {
                     histories.push_back(history);
                 }
                 j["histories"] = histories;
-                file << j.dump(4);
+                file << j.dump(2);
                 file.close();
             } else {
                 util::println_err("Error opening file for writing: " + PATH(path_));
@@ -460,7 +452,7 @@ namespace GPT {
     }
 
     /**
-     * This function loads the config from the file(config.json), and also does error handling.
+     * Load the config from the file(config.json), and also does error handling.
      * It uses nlohmann::json library.
      * If config.json does not exist or is not in the correct format, it will create a new config.json file.
      * @return True if the config is correctly loaded, false if an error occurred.
@@ -480,11 +472,30 @@ namespace GPT {
                 file >> j;
                 file.close();
                 bool error = false;
-                if (j.count("api_key") > 0 && j["api_key"].is_string()) {
-                    api_key = j["api_key"].get<string>();
+                if (j.count("api_key") > 0) {
+                    auto api_key = j["api_key"];
+                    if (api_key.is_string()) {
+                        api::set_key(api_key.get<string>());
+                    } else if (api_key.is_array()) {
+                        vector<string> keys;
+                        for (const auto& key : api_key) {
+                            if (key.is_string()) {
+                                keys.push_back(key.get<string>());
+                            } else {
+                                util::println_err("Error reading config file: " + PATH(path_));
+                                util::println_err("Reason: api_key has non-string element: " + key.dump(2));
+                                error = true;
+                            }
+                        }
+                        api::set_key(keys);
+                    } else if (!api_key.is_null()) {
+                        util::println_err("Error reading config file: " + PATH(path_));
+                        util::println_err("Reason: api_key is not a string, array or null.");
+                        error = true;
+                    }
                 } else {
                     util::println_err("Error reading config file: " + PATH(path_));
-                    util::println_err("Reason: api_key is not a string.");
+                    util::println_err("Reason: api_key is not found.");
                     error = true;
                 }
                 if (j.count("model") > 0 && j["model"].is_string()) {
@@ -569,14 +580,15 @@ namespace GPT {
                     util::println_err("Reason: debug_reference is not a boolean.");
                     error = true;
                 }
-                if (j.count("me_id") > 0 && j["me_id"].is_string()) {
-                    util::println_warn("Outdated element in config file: me_id");
+#ifdef __linux__
+                if (j.count("ca_bundle_path") > 0 && j["ca_bundle_path"].is_string()) {
+                    util::set_ca_bundle_path(j["ca_bundle_path"].get<string>());
+                } else {
+                    util::println_err("Error reading config file: " + PATH(path_));
+                    util::println_err("Reason: ca_bundle_path is not a string.");
                     error = true;
                 }
-                if (j.count("bot_id") > 0 && j["bot_id"].is_string()) {
-                    util::println_warn("Outdated element in config file: bot_id");
-                    error = true;
-                }
+#endif
                 if (error) {
                     util::println_err("Error detected, creating new config file: " + PATH(path_));
                     return p_save_config();
@@ -592,7 +604,7 @@ namespace GPT {
     }
 
     /**
-     * This function save the config to the file(config.json), and also does error handling.
+     * Save the config to the file(config.json), and also does error handling.
      * It uses nlohmann::json library.
      * @return True if the config is correctly saved, false if an error occurred.
      */
@@ -603,7 +615,14 @@ namespace GPT {
             ofstream file(path_);
             if (file.is_open()) {
                 json j;
-                j["api_key"] = api_key;
+                vector<string> api_keys = api::get_keys();
+                if (api_keys.empty()) {
+                    j["api_key"] = json::value_t::null;
+                } else if (api_keys.size() == 1) {
+                    j["api_key"] = api_keys[0];
+                } else {
+                    j["api_key"] = api_keys;
+                }
                 j["model"] = model;
                 j["temperature"] = temperature;
                 j["max_tokens"] = max_tokens;
@@ -614,7 +633,10 @@ namespace GPT {
                 j["max_short_memory_length"] = max_short_memory_length;
                 j["max_reference_length"] = max_reference_length;
                 j["debug_reference"] = debug_reference;
-                file << j.dump(4);
+#ifdef __linux__
+                j["ca_bundle_path"] = util::get_ca_bundle_path();
+#endif
+                file << j.dump(2);
                 file.close();
             } else {
                 util::println_err("Error opening file for writing: " + PATH(path_));
@@ -627,5 +649,27 @@ namespace GPT {
         }
         util::println_info("Config saved to file: " + PATH(path_));
         return true;
+    }
+
+    /**
+     * Check if the api key is set, if not, ask the user to set it.
+     * @return True if the api key is present or set, false if an error occurred.
+     */
+    bool p_check_set_api_key() {
+        if (!api::has_key()) {
+            api::set_key(api::get_key_from_console());
+            if (!p_save_config()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    void p_on_invalid_key() {
+        if (api::get_key_count() > 1) {
+            api::remove_first_key();
+            util::println_warn("Unusable api key detected, removed it.");
+            p_save_config();
+        }
     }
 }

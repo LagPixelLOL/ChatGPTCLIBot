@@ -13,6 +13,8 @@ namespace util {
 
     void set_curl_proxy(CURL* curl, const string& proxy);
     void set_curl_ssl_cert(CURL* curl);
+    void set_ca_bundle_path(const string& path);
+    string get_ca_bundle_path();
 } // util
 
 #endif //GPT3BOT_CURLUTILS_H

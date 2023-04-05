@@ -18,7 +18,12 @@ namespace emb {
         return dot_product / (sqrt(norm_a) * sqrt(norm_b));
     }
 
-    size_t write_callback(char* char_ptr, size_t size, size_t mem, string* base_str);
+    size_t write_callback(char* char_ptr, size_t size, size_t mem, string* base_str) {
+        size_t length = size * mem;
+        string s(char_ptr, length);
+        base_str->append(s);
+        return length;
+    }
 
     /**
      * Get embeddings of a text.
@@ -26,12 +31,13 @@ namespace emb {
      * @param text Text to get embeddings.
      * @return A shared pointer that points to a list of embeddings, or nullptr if failed.
      */
-    shared_ptr<vector<float>> get_embeddings(const string& text, const string& api_key) {
+    pair<shared_ptr<vector<float>>, APIKeyStatus> get_embeddings(const string& text, const string& api_key) {
         CURL* curl;
         CURLcode res;
         string response;
-        curl = curl_easy_init();
         shared_ptr<vector<float>> embeddings = nullptr;
+        APIKeyStatus key_status = APIKeyStatus::VALID;
+        curl = curl_easy_init();
         if (curl) {
             curl_easy_setopt(curl, CURLOPT_URL, "https://api.openai.com/v1/embeddings");
             curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
@@ -53,30 +59,25 @@ namespace emb {
             } else {
                 try {
                     json j = json::parse(response);
-                    if (j.count("error") > 0 && j["error"].is_object()) {
-                        auto error_obj = j["error"];
-                        if (error_obj.count("message") > 0 && error_obj["message"].is_string()) {
-                            util::println_err("\nAPI returned error: " + error_obj["message"].get<string>());
-                        } else {
-                            util::println_err("\nAPI returned unknown error. Json: " + response);
-                        }
-                    } else if (j.count("data") > 0 && j["data"].is_array()) {
-                        auto data = j["data"];
-                        if (!data.empty() && data[0].is_object()) {
-                            auto data_first = data[0];
-                            if (data_first.count("embedding") > 0 && data_first["embedding"].is_array()) {
-                                auto j_embeddings = data_first["embedding"];
-                                shared_ptr<vector<float>> p_embeddings = make_shared<vector<float>>();
-                                for (const auto& embedding : j_embeddings) {
-                                    p_embeddings->push_back(embedding.get<float>());
-                                }
-                                if (!p_embeddings->empty()) {
-                                    embeddings = p_embeddings;
+                    if (!check_err_obj(j, key_status)) {
+                        if (j.count("data") > 0 && j["data"].is_array()) {
+                            auto data = j["data"];
+                            if (!data.empty() && data[0].is_object()) {
+                                auto data_first = data[0];
+                                if (data_first.count("embedding") > 0 && data_first["embedding"].is_array()) {
+                                    auto j_embeddings = data_first["embedding"];
+                                    shared_ptr<vector<float>> p_embeddings = make_shared<vector<float>>();
+                                    for (const auto& embedding : j_embeddings) {
+                                        p_embeddings->push_back(embedding.get<float>());
+                                    }
+                                    if (!p_embeddings->empty()) {
+                                        embeddings = p_embeddings;
+                                    }
                                 }
                             }
+                        } else {
+                            util::println_err("\nAPI returned unknown response. Json: " + response);
                         }
-                    } else {
-                        util::println_err("\nAPI returned unknown response. Json: " + response);
                     }
                 } catch (const json::parse_error& e) {
                     util::println_err("\nAPI returned string is not a valid json. String: " + response);
@@ -85,13 +86,6 @@ namespace emb {
             curl_slist_free_all(headers);
             curl_easy_cleanup(curl);
         }
-        return embeddings;
-    }
-
-    size_t write_callback(char* char_ptr, size_t size, size_t mem, string* base_str) {
-        size_t length = size * mem;
-        string s(char_ptr, length);
-        base_str->append(s);
-        return length;
+        return {embeddings, key_status};
     }
 } // emb

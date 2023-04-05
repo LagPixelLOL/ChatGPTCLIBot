@@ -5,6 +5,7 @@
 #include "CURLUtils.h"
 
 namespace util {
+    string ca_bundle_path = "/etc/ssl/certs/ca-bundle.crt";
 
     void set_curl_proxy(CURL* curl, const string& proxy) {
         if (!proxy.empty()) {
@@ -15,7 +16,15 @@ namespace util {
 
     void set_curl_ssl_cert(CURL* curl) {
 #ifdef __linux__
-        curl_easy_setopt(curl, CURLOPT_CAINFO, "/etc/ssl/certs/ca-bundle.crt");
+        curl_easy_setopt(curl, CURLOPT_CAINFO, cert_bundle_path.c_str());
 #endif
+    }
+
+    void set_ca_bundle_path(const string& path) {
+        ca_bundle_path = path;
+    }
+
+    string get_ca_bundle_path() {
+        return ca_bundle_path;
     }
 } // util

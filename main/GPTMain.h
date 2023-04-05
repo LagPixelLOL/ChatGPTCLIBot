@@ -30,6 +30,8 @@ namespace GPT {
     bool p_save_chat(string name);
     bool p_load_config();
     bool p_save_config();
+    bool p_check_set_api_key();
+    void p_on_invalid_key();
 }
 
 #endif //GPT3BOT_GPTMAIN_H

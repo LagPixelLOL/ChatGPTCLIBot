@@ -65,7 +65,7 @@ namespace api {
                                     }
                                 }
                             } else {
-                                response = j.dump(4);
+                                response = j.dump();
                             }
                             callback(response);
                         } catch (const json::parse_error& e) {
