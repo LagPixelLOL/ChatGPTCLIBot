@@ -16,7 +16,7 @@ namespace util {
 
     void set_curl_ssl_cert(CURL* curl) {
 #ifdef __linux__
-        curl_easy_setopt(curl, CURLOPT_CAINFO, cert_bundle_path.c_str());
+        curl_easy_setopt(curl, CURLOPT_CAINFO, ca_bundle_path.c_str());
 #endif
     }
 
