@@ -250,8 +250,7 @@ namespace GPT {
         util::println_info("Creating folders...");
         for (const auto& folder : folders) {
             try {
-                if (!exists(folder)) {
-                    create_directory(folder);
+                if (create_directory(folder)) {
                     util::println_info("Created folder: " + folder);
                 }
             } catch (const std::exception& e) {
