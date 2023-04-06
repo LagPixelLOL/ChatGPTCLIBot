@@ -20,6 +20,7 @@ namespace GPT {
     float top_p = 1;
     float frequency_penalty = 0;
     float presence_penalty = 0.6;
+    unordered_map<uint16_t, float> logit_bias;
     const string me_id = "Me";
     const string bot_id = "You";
     string initial_prompt = (boost::format(
@@ -146,8 +147,8 @@ namespace GPT {
                 print_prompt();
                 string response;
                 bool api_success = api::call_api(initial_prompt, prompts, api_key, model, temperature, max_tokens, top_p,
-                                                 frequency_penalty, presence_penalty, max_short_memory_length, max_reference_length,
-                                                 me_id, bot_id, [&response](const auto& streamed_response){
+                                                 frequency_penalty, presence_penalty, logit_bias, max_short_memory_length,
+                                                 max_reference_length, me_id, bot_id, [&response](const auto& streamed_response){
                     try {
                         json j = json::parse(streamed_response);
                         if (j.count("error") > 0 && j["error"].is_object()) {
@@ -482,7 +483,7 @@ namespace GPT {
                                 keys.push_back(key.get<string>());
                             } else {
                                 util::println_err("Error reading config file: " + PATH(path_));
-                                util::println_err("Reason: api_key has non-string element: " + key.dump(2));
+                                util::println_err("Reason: api_key has non-string element. Element: " + key.dump(2));
                                 error = true;
                             }
                         }
@@ -511,11 +512,11 @@ namespace GPT {
                     util::println_err("Reason: temperature is not a number.");
                     error = true;
                 }
-                if (j.count("max_tokens") > 0 && j["max_tokens"].is_number()) {
+                if (j.count("max_tokens") > 0 && j["max_tokens"].is_number_integer()) {
                     max_tokens = j["max_tokens"].get<int>();
                 } else {
                     util::println_err("Error reading config file: " + PATH(path_));
-                    util::println_err("Reason: max_tokens is not a number.");
+                    util::println_err("Reason: max_tokens is not an integer number.");
                     error = true;
                 }
                 if (j.count("top_p") > 0 && j["top_p"].is_number()) {
@@ -537,6 +538,47 @@ namespace GPT {
                 } else {
                     util::println_err("Error reading config file: " + PATH(path_));
                     util::println_err("Reason: presence_penalty is not a number.");
+                    error = true;
+                }
+                if (j.count("logit_bias") > 0 && j["logit_bias"].is_object()) {
+                    auto logit_bias_obj = j["logit_bias"].get<json>();
+                    logit_bias.clear();
+                    for (const auto& [key, value] : logit_bias_obj.items()) {
+                        if (!value.is_number()) {
+                            util::println_err("Error reading config file: " + PATH(path_));
+                            util::println_err("Reason: logit_bias has non-number bias. Value: " + value.dump(2));
+                            error = true;
+                            continue;
+                        }
+                        int token_id;
+                        try {
+                            token_id = stoi(key);
+                        } catch (const std::exception& e) {
+                            util::println_err("Error reading config file: " + PATH(path_));
+                            util::println_err("Reason: logit_bias's token ID cannot be converted to integer. Key: " + key);
+                            error = true;
+                            continue;
+                        }
+                        if (token_id < 0 || token_id > UINT16_MAX) {
+                            util::println_err("Error reading config file: " + PATH(path_));
+                            util::println_err("Reason: logit_bias's token ID is out of range, it must be between 0 and 65535. Token ID: "
+                            + to_string(token_id));
+                            error = true;
+                            continue;
+                        }
+                        float bias = value.get<float>();
+                        if (bias < -100 || bias > 100) {
+                            util::println_err("Error reading config file: " + PATH(path_));
+                            util::println_err("Reason: logit_bias's bias is out of range, it must be between -100 and 100. Bias: "
+                            + to_string(bias));
+                            error = true;
+                            continue;
+                        }
+                        logit_bias[token_id] = bias;
+                    }
+                } else {
+                    util::println_err("Error reading config file: " + PATH(path_));
+                    util::println_err("Reason: logit_bias is not an object.");
                     error = true;
                 }
                 if (j.count("max_display_length") > 0 && j["max_display_length"].is_number_unsigned()) {
@@ -628,6 +670,11 @@ namespace GPT {
                 j["top_p"] = top_p;
                 j["frequency_penalty"] = frequency_penalty;
                 j["presence_penalty"] = presence_penalty;
+                json pair_json_object = json::object();
+                for (const auto& pair : logit_bias) {
+                    pair_json_object[to_string(pair.first)] = pair.second;
+                }
+                j["logit_bias"] = pair_json_object;
                 j["max_display_length"] = max_display_length;
                 j["max_short_memory_length"] = max_short_memory_length;
                 j["max_reference_length"] = max_reference_length;

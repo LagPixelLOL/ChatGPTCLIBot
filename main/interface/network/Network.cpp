@@ -17,6 +17,7 @@ namespace api {
     bool call_api(const string& initial_prompt, const vector<std::shared_ptr<chat::Exchange>>& chat_exchanges,
                   const string& api_key, const string& model, const float& temperature, const int& max_tokens,
                   const float& top_p, const float& frequency_penalty, const float& presence_penalty,
+                  const unordered_map<uint16_t, float>& logit_bias,
                   const unsigned int& max_short_memory_length, const unsigned int& max_reference_length,
                   const string& me_id, const string& bot_id, std::function<void(const string& streamed_response)> callback,
                   const bool& debug_reference, const bool& pause_when_showing_reference) {
@@ -113,6 +114,13 @@ namespace api {
             } else {
                 payload["messages"] = ChatGPT::to_payload(
                         constructed_initial, chat_exchanges, me_id, bot_id, max_short_memory_length);
+            }
+            if (!logit_bias.empty()) {
+                json logit_bias_json = json::object();
+                for (const auto& [key, value] : logit_bias) {
+                    logit_bias_json[to_string(key)] = value;
+                }
+                payload["logit_bias"] = logit_bias_json;
             }
             string payload_str = payload.dump();
             curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload_str.c_str());
