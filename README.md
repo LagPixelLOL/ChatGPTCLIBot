@@ -5,7 +5,9 @@ You can switch models in the `config.json` file. \
 It's like https://chat.openai.com/ but in your CMD and better(in terms of memory). \
 You can add custom initial prompts and save/load your chat history! \
 Download and double-click the `GPT3Bot.exe` or `run.bat` to run the program! \
-In Linux and macOS, you can run `./GPT3Bot` to run the program.
+In Linux and macOS, you can run `./GPT3Bot` to run the program. \
+\
+Wiki: [Click Me](https://github.com/LagPixelLOL/ChatGPTCLIBot/wiki)
 
 # Features/Manual:
 1. **Long term memory support!** Keep hitting the 4096 tokens context limit? Worry no more with this CLI Bot. It has nearly INFINITE context memory(If you have infinite disk space lol), all thanks to Embeddings! If you want to see how this program handles embeddings internally, set `debug_reference` to `true` in `config.json`!
