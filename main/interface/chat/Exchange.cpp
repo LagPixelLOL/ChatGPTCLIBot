@@ -6,7 +6,7 @@
 
 namespace chat {
 
-    // class Exchange start:
+    //class Exchange start:
     Exchange::Exchange(string input, vector<float> input_embeddings, long long time_ms) :
     input_(std::move(input)), input_embeddings_(std::move(input_embeddings)), time_ms_(time_ms) {}
 
@@ -49,5 +49,5 @@ namespace chat {
     long long Exchange::getTimeMS() const {
         return time_ms_;
     }
-    // class Exchange end.
+    //class Exchange end.
 } // chat

@@ -14,6 +14,17 @@ namespace api {
     using namespace boost;
     using namespace nlohmann;
 
+    class TimeoutChecker {
+        const long long creation_time;
+        const unsigned int timeout_ms_;
+
+    public:
+        explicit TimeoutChecker(const unsigned int& timeout_ms);
+        virtual ~TimeoutChecker();
+
+        [[nodiscard]] long long calc_next() const;
+    };
+
     bool call_api(const string& initial_prompt, const vector<std::shared_ptr<chat::Exchange>>& chat_exchanges,
                   const string& api_key, const string& model, const float& temperature, const int& max_tokens,
                   const float& top_p, const float& frequency_penalty, const float& presence_penalty,
