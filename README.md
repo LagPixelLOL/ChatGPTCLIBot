@@ -24,7 +24,15 @@ Wiki: [Click Me](https://github.com/LagPixelLOL/ChatGPTCLIBot/wiki)
 12. UTF-8 support, currently you can't directly type them in, but you can paste them from your clipboard.
 13. Full of colors(If your terminal supports it)!
 
-Written in C++ (Libraries used: Boost, cURL, nlohmann/json, libproxy, cpp-terminal, ftxui, clip)
+Written in C++ (Libraries used:
+[Boost](https://www.boost.org/),
+[cURL](https://curl.se/),
+[nlohmann/json](https://github.com/nlohmann/json),
+[libproxy](https://libproxy.github.io/libproxy/),
+[cpp-terminal](https://github.com/jupyter-xeus/cpp-terminal),
+[ftxui](https://github.com/ArthurSonzogni/FTXUI),
+[clip](https://github.com/dacap/clip),
+[cpp-tiktoken](https://github.com/gh-markt/tiktoken))
 
 # Supported OS:
 * Windows 10/11 64-bit
