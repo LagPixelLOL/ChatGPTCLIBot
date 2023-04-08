@@ -44,7 +44,7 @@ jobs:
         mkdir ${{github.workspace}}\build\ninja-multi-vcpkg\Release\tokenizers
         move ${{github.workspace}}\build\ninja-multi-vcpkg\tokenizers\* ${{github.workspace}}\build\ninja-multi-vcpkg\Release\tokenizers\
     - name: Copy tokenizers to build folder (Linux or macOS)
-      if: runner.os == 'Linux' or runner.os == 'macOS'
+      if: runner.os == 'Linux' || runner.os == 'macOS'
       run: |
         mkdir ${{github.workspace}}/build/ninja-multi-vcpkg/Release/tokenizers
         mv ${{github.workspace}}/build/ninja-multi-vcpkg/tokenizers/* ${{github.workspace}}/build/ninja-multi-vcpkg/Release/tokenizers/
