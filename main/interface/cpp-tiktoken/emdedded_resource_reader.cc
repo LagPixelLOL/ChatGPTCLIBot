@@ -20,6 +20,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <sstream>
 
 std::vector<std::string> EmbeddedResourceReader::readEmbeddedResourceAsLines(const std::string& resourceName) {
     auto resource_path = std::filesystem::path("tokenizers") / resourceName;
