@@ -149,7 +149,9 @@ namespace GPT {
                     } else {
                         tokenizer_ = "gpt-4";
                     }
-                    cout << "Token count: " << util::get_token_count(input_tc, tokenizer_) << endl;
+                    auto prev_time = util::currentTimeMillis();
+                    cout << "Token count: " << util::get_token_count(input_tc, tokenizer_) << "\n"
+                    << "Time used: " << util::currentTimeMillis() - prev_time << "ms" << endl;
                 } catch (const std::exception& e) {
                     util::println_err("\nAn error occurred while getting input: " + string(e.what()));
                     print_enter_next_cycle();

@@ -5,6 +5,7 @@
 #include "TokenUtils.h"
 
 namespace util {
+    unordered_map<LanguageModel, shared_ptr<GptEncoding>> tokenizer_cache;
 
     //class max_tokens_exceeded start:
     max_tokens_exceeded::max_tokens_exceeded() : max_tokens_exceeded("Max tokens exceeded.") {}
@@ -16,11 +17,20 @@ namespace util {
     }
     //class max_tokens_exceeded end.
 
+    shared_ptr<GptEncoding> get_enc_cache(LanguageModel model) {
+        if (tokenizer_cache.contains(model)) {
+            return tokenizer_cache[model];
+        }
+        auto encoding = GptEncoding::get_encoding(model);
+        tokenizer_cache[model] = encoding;
+        return encoding;
+    }
+
     unsigned int get_token_count(const json& messages, const string& model_name) {
         if (!messages.is_array()) {
             throw invalid_argument("Messages must be an json array.");
         }
-        auto encoder = GptEncoding::get_encoding(get_tokenizer(model_name));
+        auto encoder = get_enc_cache(get_tokenizer(model_name));
         int8_t tokens_per_message = 5; //Every message follows: <|start|>{role/name}\n{content}<|end|>\n
         int8_t tokens_per_name = -1; //If there's a name, the role is omitted.
         if (boost::starts_with(model_name, "gpt-4")) {
@@ -45,7 +55,7 @@ namespace util {
     }
 
     unsigned int get_token_count(const string& text, const string& model_name) {
-        return GptEncoding::get_encoding(get_tokenizer(model_name))->encode(text).size();
+        return get_enc_cache(get_tokenizer(model_name))->encode(text).size();
     }
 
     LanguageModel get_tokenizer(const string& model_name) {
