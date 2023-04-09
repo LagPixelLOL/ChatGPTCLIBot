@@ -35,6 +35,17 @@ struct VectorHash {
 
         return seed;
     }
+    bool operator()(const std::vector<uint8_t>& a, const std::vector<uint8_t>& b) const {
+        if (a.size() != b.size()) {
+            return false;
+        }
+        for(unsigned i=0;i<a.size();i++) {
+            if (a[i] != b[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
 };
 
 namespace base64 {

@@ -17,53 +17,104 @@
  */
 #include "byte_pair_encoding.h"
 #include <string>
-#include <algorithm>
 #include <sstream>
+#include <optional>
+#include <limits>
 
 BytePairEncodingCore::BytePairEncodingCore(const std::unordered_map<std::vector<uint8_t>, int, VectorHash>& byte_pair_ranks,
                                            const std::unordered_map<std::string, int>& special_token_mappings,
                                            const std::shared_ptr<PCRERegex> &pattern_string)
         : byte_pair_ranks_(byte_pair_ranks), special_token_mappings_(special_token_mappings), pattern_string_(pattern_string) {}
 
+template <typename T>
+std::vector<T> BytePairEncodingCore::byte_pair_merge(const std::vector<uint8_t>& piece,
+                                                     const std::unordered_map<std::vector<uint8_t>, int, VectorHash>& ranks,
+                                                     std::function<T(int, int)> f) {
+    std::vector<std::pair<int, int>> partitions(piece.size() + 1);
+
+    // Initialize partitions with (i, max_int) values
+    for (size_t i = 0; i <= piece.size(); ++i) {
+        partitions[i] = {static_cast<int>(i), std::numeric_limits<int>::max()};
+    }
+
+    // Helper function to get rank
+    auto get_rank = [&piece, &partitions, &ranks](size_t idx, int skip) -> std::optional<int> {
+        if (idx + skip + 2 >= partitions.size()) {
+            return std::nullopt;
+        }
+        std::vector<uint8_t> key(piece.begin() + partitions[idx].first, piece.begin() + partitions[idx + skip + 2].first);
+        auto rank_iter = ranks.find(key);
+        return (rank_iter != ranks.end()) ? std::optional<int>(rank_iter->second) : std::nullopt;
+    };
+
+    for (size_t i = 0; i < partitions.size() - 2; ++i) {
+        auto rank = get_rank(i, 0);
+        if (rank.has_value()) {
+            partitions[i].second = rank.value();
+        }
+    }
+
+    while (partitions.size() > 1) {
+        int min_rank = std::numeric_limits<int>::max();
+        size_t min_rank_idx = 0;
+
+        for (size_t i = 0; i < partitions.size() - 1; ++i) {
+            if (partitions[i].second < min_rank) {
+                min_rank = partitions[i].second;
+                min_rank_idx = i;
+            }
+        }
+
+        if (min_rank != std::numeric_limits<int>::max()) {
+            partitions[min_rank_idx].second = get_rank(min_rank_idx, 1).value_or(std::numeric_limits<int>::max());
+
+            if (min_rank_idx > 0) {
+                partitions[min_rank_idx - 1].second = get_rank(min_rank_idx - 1, 1).value_or(std::numeric_limits<int>::max());
+            }
+
+            partitions.erase(partitions.begin() + min_rank_idx + 1);
+        } else {
+            break;
+        }
+    }
+
+    std::vector<T> output;
+    output.reserve(partitions.size() - 1);
+    for (size_t i = 0; i < partitions.size() - 1; ++i) {
+        output.push_back(f(partitions[i].first, partitions[i + 1].first));
+    }
+
+    return output;
+}
+
 std::pair<std::vector<int>, std::vector<int>> BytePairEncodingCore::encode_native(const std::string& line_to_encode,
                                                                                   const std::unordered_set<std::string>& allowed_special) {
     std::vector<int> tokens;
     std::vector<int> segment_ids;
-
     auto matches = pattern_string_->all_matches(line_to_encode);
-    for(auto token : matches) {
+    for (auto token : matches) {
         auto special_mapping = special_token_mappings_.find(token);
         if (special_mapping != special_token_mappings_.end() && allowed_special.count(token) > 0) {
             tokens.push_back(special_mapping->second);
             segment_ids.push_back(0);
         } else {
             std::vector<uint8_t> utf8_encoded(token.begin(), token.end());
-            int prev_token_start = 0;
-            for (size_t i = 0; i < utf8_encoded.size();) {
-                int token_length = 0;
-                int token_id = -1;
-                auto lookup = std::vector<uint8_t>(utf8_encoded.begin() + prev_token_start, utf8_encoded.end());
-                while(!lookup.empty()) {
-                    auto byte_pair_range = byte_pair_ranks_.find(lookup);
-                    if (byte_pair_range != byte_pair_ranks_.end()) {
-                        token_id = byte_pair_range->second;
-                        token_length = lookup.size();
-                        break;
-                    }
-                    lookup.pop_back();
-                }
-                if (token_id != -1) {
-                    tokens.push_back(token_id);
+            if (utf8_encoded.size() == 1) {
+                auto rank_iter = byte_pair_ranks_.find(utf8_encoded);
+                if (rank_iter != byte_pair_ranks_.end()) {
+                    tokens.push_back(rank_iter->second);
                     segment_ids.push_back(0);
-                    i += token_length;
-                    prev_token_start = i;
-                } else {
-                    throw std::logic_error("Critical error! No token found for " + std::string(utf8_encoded.begin() + prev_token_start, utf8_encoded.end()));
                 }
+            } else {
+                auto byte_pairs = byte_pair_merge<int>(utf8_encoded, byte_pair_ranks_, [&](int start, int end) {
+                    std::vector<uint8_t> key(utf8_encoded.begin() + start, utf8_encoded.begin() + end);
+                    return byte_pair_ranks_[key];
+                });
+                tokens.insert(tokens.end(), byte_pairs.begin(), byte_pairs.end());
+                segment_ids.insert(segment_ids.end(), byte_pairs.size(), 0);
             }
         }
     }
-
     return std::make_pair(tokens, segment_ids);
 }
 

@@ -26,23 +26,26 @@ bool WindowsVersionGreater(const DWORD& major, const DWORD& minor, const DWORD& 
 }
 #endif
 
-namespace Private
-{
-std::string getenv(const std::string& env)
-{
+namespace Private {
+    std::string getenv(const std::string& env) {
 #ifdef _WIN32
-  std::size_t requiredSize{0};
-  getenv_s(&requiredSize, nullptr, 0, env.c_str());
-  if(requiredSize == 0) return std::string();
-  std::string ret;
-  ret.reserve(requiredSize * sizeof(char));
-  getenv_s(&requiredSize, &ret[0], requiredSize, env.c_str());
+        std::size_t requiredSize{0};
+        getenv_s(&requiredSize, nullptr, 0, env.c_str());
+        if (requiredSize == 0) {
+            return {};
+        }
+        std::string ret;
+        ret.reserve(requiredSize * sizeof(char));
+        getenv_s(&requiredSize, &ret[0], requiredSize, env.c_str());
+        return ret;
 #else
-  if(std::getenv(env.c_str()) != nullptr) return static_cast<std::string>(std::getenv(env.c_str()));
-  else
-    return std::string();
+        if (std::getenv(env.c_str()) != nullptr) {
+            return static_cast<std::string>(std::getenv(env.c_str()));
+        } else {
+            return {};
+        }
 #endif
-}
+    }
 }  // namespace Private
 
 Term::Terminfo::ColorMode Term::Terminfo::m_colorMode{Term::Terminfo::ColorMode::Unset};

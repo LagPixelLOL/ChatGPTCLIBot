@@ -15,6 +15,7 @@ namespace util {
     void set_curl_ssl_cert(CURL* curl);
     void set_ca_bundle_path(const string& path);
     string get_ca_bundle_path();
+    void curl_cleanup(CURL* curl, curl_slist* headers);
 } // util
 
 #endif //GPT3BOT_CURLUTILS_H

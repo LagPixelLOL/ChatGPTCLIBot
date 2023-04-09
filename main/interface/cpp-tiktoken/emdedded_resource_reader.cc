@@ -18,12 +18,13 @@
 #include "emdedded_resource_reader.h"
 #include "encoding_utils.h"
 
-#include <filesystem>
 #include <fstream>
 #include <sstream>
+#include <stdexcept>
+#include <filesystem>
 
 std::vector<std::string> EmbeddedResourceReader::readEmbeddedResourceAsLines(const std::string& resourceName) {
-    auto resource_path = std::filesystem::path("tokenizers") / resourceName;
+    std::filesystem::path resource_path = std::filesystem::path("tokenizers") / resourceName;
     std::ifstream file(resource_path);
     if (!file.is_open()) {
         throw std::runtime_error("Embedded resource '" + resource_path.string() + "' not found.");

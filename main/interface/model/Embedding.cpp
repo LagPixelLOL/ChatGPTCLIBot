@@ -32,6 +32,12 @@ namespace emb {
      * @return A shared pointer that points to a list of embeddings, or nullptr if failed.
      */
     pair<shared_ptr<vector<float>>, APIKeyStatus> get_embeddings(const string& text, const string& api_key) {
+        string model = "text-embedding-ada-002";
+        auto model_max_tokens = util::get_max_tokens(model);
+        auto token_count = util::get_token_count(text, model);
+        if (token_count >= model_max_tokens) {
+            throw util::max_tokens_exceeded("Max tokens exceeded in text: " + to_string(token_count) + " >= " + to_string(model_max_tokens));
+        }
         CURL* curl;
         CURLcode res;
         string response;
@@ -50,7 +56,7 @@ namespace emb {
             string auth = "Authorization: Bearer ";
             headers = curl_slist_append(headers, auth.append(api_key).c_str());
             curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-            json payload = {{"model", "text-embedding-ada-002"}, {"input", text}};
+            json payload = {{"model", model}, {"input", text}};
             string payload_str = payload.dump();
             curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload_str.c_str());
             res = curl_easy_perform(curl);

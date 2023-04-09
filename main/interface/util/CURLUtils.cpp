@@ -14,7 +14,7 @@ namespace util {
         }
     }
 
-    void set_curl_ssl_cert(CURL* curl) {
+    void set_curl_ssl_cert([[maybe_unused]] CURL* curl) {
 #ifdef __linux__
         curl_easy_setopt(curl, CURLOPT_CAINFO, ca_bundle_path.c_str());
 #endif
@@ -26,5 +26,10 @@ namespace util {
 
     string get_ca_bundle_path() {
         return ca_bundle_path;
+    }
+
+    void curl_cleanup(CURL* curl, curl_slist* headers) {
+        curl_slist_free_all(headers);
+        curl_easy_cleanup(curl);
     }
 } // util

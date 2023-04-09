@@ -9,6 +9,7 @@
 #include "../util/SystemUtils.h"
 #include "../util/CURLUtils.h"
 #include "../util/TermUtils.h"
+#include "../util/TokenUtils.h"
 #include "../network/APIKey.h"
 #include "iostream"
 #include "string"

@@ -10,8 +10,14 @@ int main() {
 
     setup_console_encoding(); //Setup console encoding.
 
-    //Main
-    GPT::pre_settings(); //Start the bot.
+    try {
+        //Main
+        GPT::pre_settings(); //Start the bot.
+    } catch (const std::exception& e) {
+        util::println_err("An uncaught error occurred: " + std::string(e.what()));
+    } catch (...) {
+        util::println_err("An unknown error occurred.");
+    }
     return 0;
 }
 

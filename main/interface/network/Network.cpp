@@ -14,6 +14,10 @@ namespace api {
     long long TimeoutChecker::calc_next() const {
         return util::currentTimeMillis() - creation_time + timeout_ms_;
     }
+
+    void TimeoutChecker::reset_creation_time() {
+        creation_time = util::currentTimeMillis();
+    }
     //class TimeoutCountDown end.
 
     size_t write_callback(char* char_ptr, size_t size, size_t mem, std::function<size_t(char*, size_t, size_t)>* callback_function) {
@@ -113,19 +117,32 @@ namespace api {
             curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
             json payload = {{"model", model},
                             {"temperature", temperature},
-                            {"max_tokens", max_tokens},
                             {"top_p", top_p},
                             {"frequency_penalty", frequency_penalty},
                             {"presence_penalty", presence_penalty},
                             {"stream", true}};
+            unsigned int model_max_tokens = util::get_max_tokens(model);
+            unsigned int token_count;
             if (!is_new_api_) {
-                payload["prompt"] = GPT::to_payload(
-                        constructed_initial, chat_exchanges, me_id, bot_id, max_short_memory_length);
+                string prompt = GPT::to_payload(constructed_initial, chat_exchanges, me_id, bot_id, max_short_memory_length);
+                if ((token_count = util::get_token_count(prompt, model)) >= model_max_tokens) {
+                    util::curl_cleanup(curl, headers);
+                    throw util::max_tokens_exceeded(
+                            "Max tokens exceeded in prompt: " + to_string(token_count) + " >= " + to_string(model_max_tokens));
+                }
+                payload["prompt"] = prompt;
                 payload["stop"] = {me_id + suffix, bot_id + suffix};
             } else {
-                payload["messages"] = ChatGPT::to_payload(
-                        constructed_initial, chat_exchanges, me_id, bot_id, max_short_memory_length);
+                json messages = ChatGPT::to_payload(constructed_initial, chat_exchanges, me_id, bot_id, max_short_memory_length);
+                if ((token_count = util::get_token_count(messages, model)) >= model_max_tokens) {
+                    util::curl_cleanup(curl, headers);
+                    throw util::max_tokens_exceeded(
+                            "Max tokens exceeded in messages: " + to_string(token_count) + " >= " + to_string(model_max_tokens));
+                }
+                payload["messages"] = messages;
             }
+            unsigned int max_tokens_p = model_max_tokens - token_count;
+            payload["max_tokens"] = max_tokens_p < max_tokens ? max_tokens_p : max_tokens;
             if (!logit_bias.empty()) {
                 json logit_bias_json = json::object();
                 for (const auto& [key, value] : logit_bias) {
@@ -135,13 +152,13 @@ namespace api {
             }
             string payload_str = payload.dump();
             curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload_str.c_str());
+            timeout_checker.reset_creation_time();
             res = curl_easy_perform(curl);
             if (res != CURLE_OK) {
                 error = true;
                 util::println_err("\nAPI request failed: " + string(curl_easy_strerror(res)));
             }
-            curl_slist_free_all(headers);
-            curl_easy_cleanup(curl);
+            util::curl_cleanup(curl, headers);
         }
         return !error;
     }

@@ -20,7 +20,6 @@
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
-#include <regex>
 #include "byte_pair_encoding.h"
 #include "modelparams.h"
 #include "modelparams.h"

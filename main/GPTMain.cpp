@@ -132,10 +132,42 @@ namespace GPT {
                 print_uwu();
                 print_enter_next_cycle();
                 continue;
+            } else if (command_feedback == 5) {
+                string input_tc;
+                try {
+                    input_tc = util::get_multi_lines(input_history, "> ");
+                    cout << "Choose the tokenizer(1/2/3/4): ";
+                    string tokenizer;
+                    getline(cin, tokenizer);
+                    string tokenizer_;
+                    if (tokenizer == "2") {
+                        tokenizer_ = "text-davinci-001";
+                    } else if (tokenizer == "3") {
+                        tokenizer_ = "text-davinci-003";
+                    } else if (tokenizer == "4") {
+                        tokenizer_ = "text-davinci-edit-001";
+                    } else {
+                        tokenizer_ = "gpt-4";
+                    }
+                    cout << "Token count: " << util::get_token_count(input_tc, tokenizer_) << endl;
+                } catch (const std::exception& e) {
+                    util::println_err("\nAn error occurred while getting input: " + string(e.what()));
+                    print_enter_next_cycle();
+                    continue;
+                }
+                print_enter_next_cycle();
+                continue;
             }
             string api_key = api::get_key();
             util::println_info("Getting embeddings and finding similar chat exchanges for the input...", false);
-            auto emb_response = emb::get_embeddings(input, api_key);
+            pair<std::shared_ptr<vector<float>>, api::APIKeyStatus> emb_response;
+            try {
+                emb_response = emb::get_embeddings(input, api_key);
+            } catch (const std::exception& e) {
+                util::println_err("\nError when getting embeddings: " + string(e.what()));
+                print_enter_next_cycle();
+                continue;
+            }
             auto key_status_emb = emb_response.second;
             if (key_status_emb == api::APIKeyStatus::INVALID_KEY || key_status_emb == api::APIKeyStatus::QUOTA_EXCEEDED) {
                 p_on_invalid_key();
@@ -146,40 +178,47 @@ namespace GPT {
                 prompts.emplace_back(make_shared<Exchange>(input, *input_embeddings, util::currentTimeMillis()));
                 print_prompt();
                 string response;
-                bool api_success = api::call_api(initial_prompt, prompts, api_key, model, temperature, max_tokens, top_p,
-                                                 frequency_penalty, presence_penalty, logit_bias, max_short_memory_length,
-                                                 max_reference_length, me_id, bot_id, [&response](const auto& streamed_response){
-                    try {
-                        json j = json::parse(streamed_response);
-                        if (j.count("error") > 0 && j["error"].is_object()) {
-                            response = j.dump();
-                            return;
-                        }
-                    } catch (const json::parse_error& e) {}
-                    response.append(streamed_response);
-                    util::print_cs(streamed_response, false, false);
-                    }, debug_reference);
-                util::print_cs(""); //Reset color.
-                if (api_success) {
-                    try {
-                        api::APIKeyStatus key_status_api;
-                        if (api::check_err_obj(json::parse(response), key_status_api)) {
-                            if (key_status_api == api::APIKeyStatus::INVALID_KEY || key_status_api == api::APIKeyStatus::QUOTA_EXCEEDED) {
-                                p_on_invalid_key();
+                try {
+                    bool api_success = api::call_api(initial_prompt, prompts, api_key, model, temperature, max_tokens, top_p,
+                                                     frequency_penalty, presence_penalty, logit_bias, max_short_memory_length,
+                                                     max_reference_length, me_id, bot_id, [&response](const auto& streamed_response){
+                        try {
+                            json j = json::parse(streamed_response);
+                            if (j.count("error") > 0 && j["error"].is_object()) {
+                                response = j.dump();
+                                return;
                             }
-                            print_enter_next_cycle();
-                            prompts.pop_back();
-                            continue;
-                        }
-                    } catch (const json::parse_error& e) {}
-                    if (!is_new_api && starts_with(response, " ")) {
-                        response.erase(0, 1);
+                        } catch (const json::parse_error& e) {}
+                        response.append(streamed_response);
+                        util::print_cs(streamed_response, false, false);
+                        }, debug_reference);
+                    util::print_cs(""); //Reset color.
+                    if (!api_success) {
+                        print_enter_next_cycle();
+                        prompts.pop_back();
+                        continue;
                     }
-                    prompts.back()->setResponse(response);
-                } else {
+                } catch (const std::exception& e) {
+                    util::println_err("\nError when calling API: " + string(e.what()));
                     print_enter_next_cycle();
                     prompts.pop_back();
+                    continue;
                 }
+                try {
+                    api::APIKeyStatus key_status_api;
+                    if (api::check_err_obj(json::parse(response), key_status_api)) {
+                        if (key_status_api == api::APIKeyStatus::INVALID_KEY || key_status_api == api::APIKeyStatus::QUOTA_EXCEEDED) {
+                            p_on_invalid_key();
+                        }
+                        print_enter_next_cycle();
+                        prompts.pop_back();
+                        continue;
+                    }
+                } catch (const json::parse_error& e) {}
+                if (!is_new_api && starts_with(response, " ")) {
+                    response.erase(0, 1);
+                }
+                prompts.back()->setResponse(response);
             } else {
                 print_enter_next_cycle();
             }
@@ -229,7 +268,7 @@ namespace GPT {
     }
 
     /**
-     * @return 0 = didn't match, 1 = /stop, 2 = /undo, 3 = /reset, 4 = /uwu.
+     * @return 0 = didn't match, 1 = /stop, 2 = /undo, 3 = /reset, 4 = /uwu, 5 = /tc.
      */
     int handle_command(const string& input) {
         if (input == "/stop") {
@@ -240,6 +279,8 @@ namespace GPT {
             return 3;
         } else if (input == "/uwu") {
             return 4;
+        } else if (input == "/tc") {
+            return 5;
         }
         return 0;
     }

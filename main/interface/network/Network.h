@@ -15,7 +15,7 @@ namespace api {
     using namespace nlohmann;
 
     class TimeoutChecker {
-        const long long creation_time;
+        long long creation_time;
         const unsigned int timeout_ms_;
 
     public:
@@ -23,6 +23,7 @@ namespace api {
         virtual ~TimeoutChecker();
 
         [[nodiscard]] long long calc_next() const;
+        void reset_creation_time();
     };
 
     bool call_api(const string& initial_prompt, const vector<std::shared_ptr<chat::Exchange>>& chat_exchanges,
