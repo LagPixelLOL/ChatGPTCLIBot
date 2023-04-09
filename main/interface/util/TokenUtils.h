@@ -15,10 +15,10 @@ namespace util {
     using namespace nlohmann;
 
     class max_tokens_exceeded : public std::exception {
+        const string message;
     public:
         max_tokens_exceeded();
-        explicit max_tokens_exceeded(const char* message);
-        explicit max_tokens_exceeded(const string& message);
+        explicit max_tokens_exceeded(string message);
         ~max_tokens_exceeded() override;
 
         [[nodiscard]] const char* what() const noexcept override;

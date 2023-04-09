@@ -8,12 +8,11 @@ namespace util {
 
     //class max_tokens_exceeded start:
     max_tokens_exceeded::max_tokens_exceeded() : max_tokens_exceeded("Max tokens exceeded.") {}
-    max_tokens_exceeded::max_tokens_exceeded(const char* message) : exception(message) {}
-    max_tokens_exceeded::max_tokens_exceeded(const string& message) : max_tokens_exceeded(message.c_str()) {}
+    max_tokens_exceeded::max_tokens_exceeded(string message) : message(std::move(message)) {}
     max_tokens_exceeded::~max_tokens_exceeded() = default;
 
     const char* max_tokens_exceeded::what() const noexcept {
-        return exception::what();
+        return message.c_str();
     }
     //class max_tokens_exceeded end.
 
