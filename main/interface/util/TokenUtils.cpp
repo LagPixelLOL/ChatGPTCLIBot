@@ -5,11 +5,11 @@
 #include "TokenUtils.h"
 
 namespace util {
-    unordered_map<LanguageModel, shared_ptr<GptEncoding>> tokenizer_cache;
+    std::unordered_map<LanguageModel, std::shared_ptr<GptEncoding>> tokenizer_cache;
 
     //class max_tokens_exceeded start:
     max_tokens_exceeded::max_tokens_exceeded() : max_tokens_exceeded("Max tokens exceeded.") {}
-    max_tokens_exceeded::max_tokens_exceeded(string message) : message(std::move(message)) {}
+    max_tokens_exceeded::max_tokens_exceeded(std::string message) : message(std::move(message)) {}
     max_tokens_exceeded::~max_tokens_exceeded() = default;
 
     const char* max_tokens_exceeded::what() const noexcept {
@@ -17,7 +17,7 @@ namespace util {
     }
     //class max_tokens_exceeded end.
 
-    shared_ptr<GptEncoding> get_enc_cache(LanguageModel model) {
+    std::shared_ptr<GptEncoding> get_enc_cache(LanguageModel model) {
         if (tokenizer_cache.contains(model)) {
             return tokenizer_cache[model];
         }
@@ -26,9 +26,9 @@ namespace util {
         return encoding;
     }
 
-    unsigned int get_token_count(const json& messages, const string& model_name) {
+    unsigned int get_token_count(const nlohmann::json& messages, const std::string& model_name) {
         if (!messages.is_array()) {
-            throw invalid_argument("Messages must be an json array.");
+            throw std::invalid_argument("Messages must be an json array.");
         }
         auto encoder = get_enc_cache(get_tokenizer(model_name));
         int8_t tokens_per_message = 5; //Every message follows: <|start|>{role/name}\n{content}<|end|>\n
@@ -40,26 +40,26 @@ namespace util {
         unsigned int token_count = 3; //Chat completion models will always have 3 tokens at the end.
         for (const auto& message : messages) {
             if (!message.is_object()) {
-                throw invalid_argument("Message must be an json object.");
+                throw std::invalid_argument("Message must be an json object.");
             }
             if (!message.contains("content") || !message["content"].is_string()) {
-                throw invalid_argument("Message must contain a valid content field.");
+                throw std::invalid_argument("Message must contain a valid content field.");
             }
-            token_count += encoder->encode(message["content"].get<string>()).size();
+            token_count += encoder->encode(message["content"].get<std::string>()).size();
             if (message.contains("name") && message["name"].is_string()) {
-                token_count += encoder->encode(message["name"].get<string>()).size() + tokens_per_name;
+                token_count += encoder->encode(message["name"].get<std::string>()).size() + tokens_per_name;
             }
             token_count += tokens_per_message;
         }
         return token_count;
     }
 
-    unsigned int get_token_count(const string& text, const string& model_name) {
+    unsigned int get_token_count(const std::string& text, const std::string& model_name) {
         return get_enc_cache(get_tokenizer(model_name))->encode(text).size();
     }
 
-    LanguageModel get_tokenizer(const string& model_name) {
-        static const vector<pair<string, LanguageModel>> prefix_to_tokenizer = {
+    LanguageModel get_tokenizer(const std::string& model_name) {
+        static const std::vector<std::pair<std::string, LanguageModel>> prefix_to_tokenizer = {
                 //Chat completion models:
                 {"gpt-4", LanguageModel::CL100K_BASE},
                 {"gpt-3.5-turbo", LanguageModel::CL100K_BASE},
@@ -91,11 +91,11 @@ namespace util {
                 return tokenizer;
             }
         }
-        throw invalid_argument("Invalid model name: " + model_name);
+        throw std::invalid_argument("Invalid model name: " + model_name);
     }
 
-    unsigned int get_max_tokens(const string& model_name) {
-        static const vector<pair<string, unsigned int>> prefix_to_max_tokens = {
+    unsigned int get_max_tokens(const std::string& model_name) {
+        static const std::vector<std::pair<std::string, unsigned int>> prefix_to_max_tokens = {
                 //Chat completion models:
                 {"gpt-4-32k", 32767},
                 {"gpt-4", 8191},
@@ -128,6 +128,6 @@ namespace util {
                 return max_tokens;
             }
         }
-        throw invalid_argument("Invalid model name: " + model_name);
+        throw std::invalid_argument("Invalid model name: " + model_name);
     }
 } // util

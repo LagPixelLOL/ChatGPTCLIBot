@@ -10,10 +10,6 @@
 #include "../util/TermUtils.h"
 
 namespace api {
-    using namespace std;
-    using namespace boost;
-    using namespace nlohmann;
-
     class TimeoutChecker {
         long long creation_time;
         const unsigned int timeout_ms_;
@@ -26,14 +22,14 @@ namespace api {
         void reset_creation_time();
     };
 
-    bool call_api(const string& initial_prompt, const vector<std::shared_ptr<chat::Exchange>>& chat_exchanges,
-                  const string& api_key, const string& model, const float& temperature, const int& max_tokens,
+    bool call_api(const std::string& initial_prompt, const std::vector<std::shared_ptr<chat::Exchange>>& chat_exchanges,
+                  const std::string& api_key, const std::string& model, const float& temperature, const int& max_tokens,
                   const float& top_p, const float& frequency_penalty, const float& presence_penalty,
-                  const unordered_map<uint16_t, float>& logit_bias,
+                  const std::unordered_map<uint16_t, float>& logit_bias,
                   const unsigned int& max_short_memory_length, const unsigned int& max_reference_length,
-                  const string& me_id, const string& bot_id, std::function<void(const string& streamed_response)> callback,
+                  const std::string& me_id, const std::string& bot_id, std::function<void(const std::string& streamed_response)> callback,
                   const bool& debug_reference = false, const bool& pause_when_showing_reference = true);
-    bool is_new_api(const string& model_name);
+    bool is_new_api(const std::string& model_name);
 } // api
 
 #endif //GPT3BOT_NETWORK_H

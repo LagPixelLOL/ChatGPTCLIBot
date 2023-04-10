@@ -5,9 +5,9 @@
 #include "CURLUtils.h"
 
 namespace util {
-    string ca_bundle_path = "/etc/ssl/certs/ca-bundle.crt";
+    std::string ca_bundle_path = "/etc/ssl/certs/ca-bundle.crt";
 
-    void set_curl_proxy(CURL* curl, const string& proxy) {
+    void set_curl_proxy(CURL* curl, const std::string& proxy) {
         if (!proxy.empty()) {
             curl_easy_setopt(curl, CURLOPT_PROXY, proxy.c_str());
             curl_easy_setopt(curl, CURLOPT_PROXYTYPE, CURLPROXY_HTTP);
@@ -20,11 +20,11 @@ namespace util {
 #endif
     }
 
-    void set_ca_bundle_path(const string& path) {
+    void set_ca_bundle_path(const std::string& path) {
         ca_bundle_path = path;
     }
 
-    string get_ca_bundle_path() {
+    std::string get_ca_bundle_path() {
         return ca_bundle_path;
     }
 

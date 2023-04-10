@@ -9,12 +9,10 @@
 #include "string"
 
 namespace util {
-    using namespace std;
-
-    void set_curl_proxy(CURL* curl, const string& proxy);
+    void set_curl_proxy(CURL* curl, const std::string& proxy);
     void set_curl_ssl_cert(CURL* curl);
-    void set_ca_bundle_path(const string& path);
-    string get_ca_bundle_path();
+    void set_ca_bundle_path(const std::string& path);
+    std::string get_ca_bundle_path();
     void curl_cleanup(CURL* curl, curl_slist* headers);
 } // util
 

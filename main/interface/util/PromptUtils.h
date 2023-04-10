@@ -11,33 +11,24 @@
 #include "vector"
 
 namespace prompt {
-    using namespace std;
-    using namespace boost;
-
-    void print_prompt(const string& initial_prompt, const vector<std::shared_ptr<chat::Exchange>>& prompts,
-                      const string& me_id, const string& bot_id, const unsigned int& max_length, const bool& is_new_api);
-    string to_string(string initial_prompt, vector<std::shared_ptr<chat::Exchange>> prompts,
-                     const string& me_id, const string& bot_id, const unsigned int& max_length, const bool& add_color = false);
-    string construct_reference(string initial_prompt, const vector<float>& input_embeddings,
-                               vector<std::shared_ptr<chat::Exchange>> chat_exchanges,
+    void print_prompt(const std::string& initial_prompt, const std::vector<std::shared_ptr<chat::Exchange>>& prompts,
+                      const std::string& me_id, const std::string& bot_id, const unsigned int& max_length, const bool& is_new_api);
+    std::string to_string(std::string initial_prompt, std::vector<std::shared_ptr<chat::Exchange>> prompts,
+                     const std::string& me_id, const std::string& bot_id, const unsigned int& max_length, const bool& add_color = false);
+    std::string construct_reference(std::string initial_prompt, const std::vector<float>& input_embeddings,
+                               std::vector<std::shared_ptr<chat::Exchange>> chat_exchanges,
                                const unsigned int& max_reference_length, const unsigned int& max_short_memory_length,
-                               const string& me_id, const string& bot_id);
+                               const std::string& me_id, const std::string& bot_id);
 } // prompt
 
 namespace GPT {
-    using namespace std;
-
-    string to_payload(const string& initial_prompt, const vector<std::shared_ptr<chat::Exchange>>& prompts,
-                      const string& me_id, const string& bot_id, const unsigned int& max_length);
+    std::string to_payload(const std::string& initial_prompt, const std::vector<std::shared_ptr<chat::Exchange>>& prompts,
+                      const std::string& me_id, const std::string& bot_id, const unsigned int& max_length);
 } // GPT
 
 namespace ChatGPT {
-    using namespace std;
-    using namespace boost;
-    using namespace nlohmann;
-
-    json to_payload(string initial_prompt, vector<std::shared_ptr<chat::Exchange>> prompts,
-                    const string& me_id, const string& bot_id, const unsigned int& max_length);
+    nlohmann::json to_payload(std::string initial_prompt, std::vector<std::shared_ptr<chat::Exchange>> prompts,
+                    const std::string& me_id, const std::string& bot_id, const unsigned int& max_length);
 } // ChatGPT
 
 #endif //GPT3BOT_PROMPTUTILS_H

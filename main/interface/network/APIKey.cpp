@@ -5,17 +5,17 @@
 #include "APIKey.h"
 
 namespace api {
-    vector<string> api_keys_;
+    std::vector<std::string> api_keys_;
 
     /**
      * Get the API key from console.
      * @return The API key.
      */
-    string get_key_from_console() {
-        string api_key;
+    std::string get_key_from_console() {
+        std::string api_key;
         while (true) {
-            cout << "Please enter your OpenAI API key: ";
-            getline(cin, api_key);
+            std::cout << "Please enter your OpenAI API key: ";
+            getline(std::cin, api_key);
             APIKeyStatus status = check_key(api_key);
             if (status == APIKeyStatus::VALID) {
                 util::println_info("API key is valid.");
@@ -59,21 +59,21 @@ namespace api {
      * Get the first API key from api_keys.
      * @return The API key, could be an empty string.
      */
-    string get_key() {
+    std::string get_key() {
         if (api_keys_.empty()) {
             return "";
         }
         return api_keys_.front();
     }
 
-    vector<string> get_keys() {
+    std::vector<std::string> get_keys() {
         return api_keys_;
     }
 
     /**
      * Set the API key, will clear all previous keys.
      */
-    void set_key(const string& api_key) {
+    void set_key(const std::string& api_key) {
         api_keys_.clear();
         api_keys_.push_back(api_key);
     }
@@ -81,18 +81,18 @@ namespace api {
     /**
      * Set the API key, will clear all previous keys.
      */
-    void set_key(const vector<string>& api_keys) {
+    void set_key(const std::vector<std::string>& api_keys) {
         api_keys_ = api_keys;
     }
 
-    size_t write_callback(char* char_ptr, size_t size, size_t mem, string* base_str) {
+    size_t write_callback(char* char_ptr, size_t size, size_t mem, std::string* base_str) {
         size_t length = size * mem;
-        string s(char_ptr, length);
+        std::string s(char_ptr, length);
         base_str->append(s);
         return length;
     }
 
-    APIKeyStatus check_key(const string& api_key) {
+    APIKeyStatus check_key(const std::string& api_key) {
         util::println_info("Checking API key...");
         if (api_key.empty()) {
             return APIKeyStatus::EMPTY;
@@ -103,7 +103,7 @@ namespace api {
         }
         CURL* curl;
         CURLcode res;
-        string response;
+        std::string response;
         APIKeyStatus status;
         curl = curl_easy_init();
         if (curl) {
@@ -115,22 +115,22 @@ namespace api {
             util::set_curl_ssl_cert(curl);
             struct curl_slist* headers = nullptr;
             headers = curl_slist_append(headers, "Content-Type: application/json");
-            string auth = "Authorization: Bearer ";
+            std::string auth = "Authorization: Bearer ";
             headers = curl_slist_append(headers, auth.append(api_key).c_str());
             curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-            json payload = {{"model", "text-embedding-ada-002"}, {"input", ""}};
-            string payload_str = payload.dump();
+            nlohmann::json payload = {{"model", "text-embedding-ada-002"}, {"input", ""}};
+            std::string payload_str = payload.dump();
             curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload_str.c_str());
             res = curl_easy_perform(curl);
             if (res != CURLE_OK) {
-                util::println_err("API request failed: " + string(curl_easy_strerror(res)));
+                util::println_err("API request failed: " + std::string(curl_easy_strerror(res)));
             } else {
                 if (boost::ends_with(response, "\n")) {
                     response.pop_back();
                 }
                 try {
-                    check_err_obj(json::parse(response), status, false);
-                } catch (const json::parse_error& e) {
+                    check_err_obj(nlohmann::json::parse(response), status, false);
+                } catch (const nlohmann::json::parse_error& e) {
                     util::println_err("API returned string is not a valid json. String: " + response);
                 }
             }
@@ -147,21 +147,21 @@ namespace api {
      * @param print_err_msg Whether to print the error message.
      * @return True if the json object has an error object, false otherwise.
      */
-    bool check_err_obj(const json& json_to_check, APIKeyStatus& status_in, const bool& print_err_msg) {
+    bool check_err_obj(const nlohmann::json& json_to_check, APIKeyStatus& status_in, const bool& print_err_msg) {
         status_in = APIKeyStatus::VALID;
         if (json_to_check.count("error") > 0) {
             auto error_obj = json_to_check["error"];
             if (error_obj.is_object()) {
                 status_in = APIKeyStatus::API_REQUEST_FAILED;
                 if (error_obj.count("code") > 0 && error_obj["code"].is_string()) {
-                    string error_code = error_obj["code"].get<string>();
+                    std::string error_code = error_obj["code"].get<std::string>();
                     if (error_code == "invalid_api_key") {
                         status_in = APIKeyStatus::INVALID_KEY;
                     } else {
                         util::println_err("API returned error code. Code: " + error_code);
                     }
                 } else if (error_obj.count("type") > 0 && error_obj["type"].is_string()) {
-                    string error_type = error_obj["type"].get<string>();
+                    std::string error_type = error_obj["type"].get<std::string>();
                     if (error_type == "insufficient_quota") {
                         status_in = APIKeyStatus::QUOTA_EXCEEDED;
                     } else {
@@ -172,7 +172,7 @@ namespace api {
                 }
                 if (print_err_msg) {
                     if (error_obj.count("message") > 0 && error_obj["message"].is_string()) {
-                        util::println_err("\nAPI returned error: " + error_obj["message"].get<string>());
+                        util::println_err("\nAPI returned error: " + error_obj["message"].get<std::string>());
                     }
                 }
                 return true;

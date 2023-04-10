@@ -3,15 +3,18 @@
 //
 
 #include "TermUtils.h"
+#include <stdexcept>
+#include <limits>
+#include <memory>
 
 namespace util {
 
-    unique_ptr<Term::Terminal> initialize_or_throw(const bool& clear_screen = false,
+    std::unique_ptr<Term::Terminal> initialize_or_throw(const bool& clear_screen = false,
                                                    const bool& disable_signal_keys = false, const bool& hide_cursor = false) {
         if (!Term::stdin_connected() || !Term::stdout_connected()) {
             throw Term::Exception("The terminal is not attached to a TTY and therefore can't catch user input.");
         }
-        return make_unique<Term::Terminal>(clear_screen, disable_signal_keys, hide_cursor);
+        return std::make_unique<Term::Terminal>(clear_screen, disable_signal_keys, hide_cursor);
     }
 
     /**
@@ -33,7 +36,7 @@ namespace util {
     }
 
     void ignore_line() {
-        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        cin.ignore(std::numeric_limits<streamsize>::max(), '\n');
     }
 
     /**
