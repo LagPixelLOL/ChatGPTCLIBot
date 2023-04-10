@@ -11,6 +11,7 @@
 #include "../util/SystemUtils.h"
 
 namespace api {
+
     enum class APIKeyStatus {
         VALID = 0,
         EMPTY,

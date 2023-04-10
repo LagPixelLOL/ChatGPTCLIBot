@@ -68,7 +68,7 @@ namespace GPT {
                                "(Press " + ENTER + " to use default): ");
                 std::string i_p_filename;
                 getline(std::cin, i_p_filename);
-                if (boost::algorithm::ends_with(i_p_filename, f_suffix)) {
+                if (boost::ends_with(i_p_filename, f_suffix)) {
                     i_p_filename.erase(i_p_filename.size() - f_suffix.size());
                 }
                 if (!i_p_filename.empty() && !p_load_prompt(i_p_filename)) {
@@ -79,7 +79,7 @@ namespace GPT {
                 std::cout << "Please enter the saved chat history's filename you want to load: ";
                 std::string s_p_filename;
                 getline(std::cin, s_p_filename);
-                if (boost::algorithm::ends_with(s_p_filename, json_suffix)) {
+                if (boost::ends_with(s_p_filename, json_suffix)) {
                     s_p_filename.erase(s_p_filename.size() - json_suffix.size());
                 }
                 if (!p_load_saved(s_p_filename)) {
@@ -217,7 +217,7 @@ namespace GPT {
                         continue;
                     }
                 } catch (const nlohmann::json::parse_error& e) {}
-                if (!is_new_api && boost::algorithm::starts_with(response, " ")) {
+                if (!is_new_api && boost::starts_with(response, " ")) {
                     response.erase(0, 1);
                 }
                 prompts.back()->setResponse(response);

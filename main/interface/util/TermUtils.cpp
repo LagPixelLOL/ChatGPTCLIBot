@@ -25,7 +25,7 @@ namespace util {
      * @param prompt_string The text that's displayed before the user's input.
      * @return The user's input.
      */
-    string get_multi_lines(vector<string>& history, const string& prompt_string) {
+    std::string get_multi_lines(std::vector<std::string>& history, const std::string& prompt_string) {
         auto t = initialize_or_throw();
         return Term::prompt_multiline(prompt_string, history, [](const auto& s){
             if (s.size() > 1 && s.substr(s.size() - 2, 1) == "\\") {
@@ -36,27 +36,27 @@ namespace util {
     }
 
     void ignore_line() {
-        cin.ignore(std::numeric_limits<streamsize>::max(), '\n');
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     }
 
     /**
      * Initialize the terminal and print a string that has color codes embedded in it.
      */
-    void print_cs(const string& s, const bool& new_line, const bool& reset_color) {
+    void print_cs(const std::string& s, const bool& new_line, const bool& reset_color) {
         auto t = initialize_or_throw();
-        cout << s;
+        std::cout << s;
         if (new_line) {
-            cout << endl;
+            std::cout << std::endl;
         }
         if (reset_color) {
-            cout << Term::color_fg(Color::Name::Default);
+            std::cout << Term::color_fg(Color::Name::Default);
         }
     }
 
     /**
      * Print a string with a color.
      */
-    void print_clr(const string& s, const Color& color, const bool& new_line) {
+    void print_clr(const std::string& s, const Color& color, const bool& new_line) {
         auto t = initialize_or_throw();
         print_cs(Term::color_fg(color) + s, new_line);
     }
@@ -64,28 +64,28 @@ namespace util {
     /**
      * Print a string with a color and a new line.
      */
-    void println_clr(const string& s, const Color& color) {
+    void println_clr(const std::string& s, const Color& color) {
         print_clr(s, color, true);
     }
 
     /**
      * Print a string as an info(Gray).
      */
-    void println_info(const string& s, const bool& new_line) {
+    void println_info(const std::string& s, const bool& new_line) {
         print_clr(s, Color::Name::Gray, new_line);
     }
 
     /**
      * Print a string as a warning(Yellow).
      */
-    void println_warn(const string& s, const bool& new_line) {
+    void println_warn(const std::string& s, const bool& new_line) {
         print_clr(s, Color::Name::Yellow, new_line);
     }
 
     /**
      * Print a string as an error(Red).
      */
-    void println_err(const string& s, const bool& new_line) {
+    void println_err(const std::string& s, const bool& new_line) {
         print_clr(s, Color::Name::Red, new_line);
     }
 
@@ -93,8 +93,8 @@ namespace util {
      * Perform a linear interpolation between two colors.
      */
     Color linear_interp(const Color& start, const Color& end, float t) {
-        array<uint8_t, 3> start_rgb = start.to24bits();
-        array<uint8_t, 3> end_rgb = end.to24bits();
+        std::array<uint8_t, 3> start_rgb = start.to24bits();
+        std::array<uint8_t, 3> end_rgb = end.to24bits();
         uint8_t start_r = start_rgb[0]; uint8_t start_g = start_rgb[1]; uint8_t start_b = start_rgb[2];
         return {static_cast<uint8_t>(static_cast<float>(start_r) + t * static_cast<float>(end_rgb[0] - start_r)),
                 static_cast<uint8_t>(static_cast<float>(start_g) + t * static_cast<float>(end_rgb[1] - start_g)),
@@ -108,8 +108,8 @@ namespace util {
      * @param steps The number of color changes.
      * @return A vector of colors that gradually changes.
      */
-    vector<Color> multi_clr_gradual_change(const vector<Color>& colors, const size_t& steps) {
-        vector<Color> gradual_change;
+    std::vector<Color> multi_clr_gradual_change(const std::vector<Color>& colors, const size_t& steps) {
+        std::vector<Color> gradual_change;
         gradual_change.reserve(steps);
         size_t color_count = colors.size() - 1;
         size_t steps_per_color = steps / color_count;
@@ -130,10 +130,10 @@ namespace util {
      * @param colors The colors to interpolate between.
      * @param by_line Whether to print the color change by line or by character.
      */
-    void print_m_clr(const string& s, const vector<Color>& colors, const bool& by_line) {
+    void print_m_clr(const std::string& s, const std::vector<Color>& colors, const bool& by_line) {
         //Prevent division by zero.
         if (colors.empty() || s.empty()) {
-            cout << s;
+            std::cout << s;
             return;
         } else if (colors.size() == 1) {
             print_clr(s, colors[0]);
@@ -146,7 +146,7 @@ namespace util {
             return;
         }
         if (by_line) {
-            vector<string> lines = Term::split(s);
+            std::vector<std::string> lines = Term::split(s);
             //Prevent division by zero.
             if (lines.empty()) {
                 return;
@@ -160,15 +160,15 @@ namespace util {
                 print_clr(lines.back(), colors.back());
                 return;
             }
-            vector<Color> g_clr = multi_clr_gradual_change(colors, lines.size());
+            std::vector<Color> g_clr = multi_clr_gradual_change(colors, lines.size());
             for (int i = 0; i < lines.size() - 1; i++) {
                 println_clr(lines[i], g_clr[i]);
             }
             print_clr(lines.back(), g_clr.back());
         } else {
-            vector<Color> g_clr = multi_clr_gradual_change(colors, s.size());
+            std::vector<Color> g_clr = multi_clr_gradual_change(colors, s.size());
             for (int i = 0; i < s.size(); i++) {
-                print_clr(string(1, s[i]), g_clr[i]);
+                print_clr(std::string(1, s[i]), g_clr[i]);
             }
         }
     }

@@ -12,14 +12,11 @@
 #include "chrono"
 
 namespace util {
-    using namespace std;
-    using namespace boost;
-    using namespace chrono;
 
     long long currentTimeMillis();
-    string currentTimeFormatted();
-    string ms_to_formatted_time(long long timeMillis);
-    string system_proxy();
+    std::string currentTimeFormatted();
+    std::string ms_to_formatted_time(long long timeMillis);
+    std::string system_proxy();
     void free_proxy_factory();
 } // util
 

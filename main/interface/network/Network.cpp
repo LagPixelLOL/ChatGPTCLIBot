@@ -67,10 +67,10 @@ namespace api {
                 std::vector<std::string> split_str;
                 split_regex(split_str, s, boost::regex("[\n][\n][d][a][t][a][:][ ]"));
                 for (auto& str: split_str) {
-                    if (boost::algorithm::starts_with(str, "data: ")) {
+                    if (boost::starts_with(str, "data: ")) {
                         str.erase(0, 6);
                     }
-                    if (boost::algorithm::ends_with(str, "\n\n")) {
+                    if (boost::ends_with(str, "\n\n")) {
                         str.erase(str.size() - 2);
                     }
                     if (str != "[DONE]") {
@@ -116,11 +116,11 @@ namespace api {
             headers = curl_slist_append(headers, auth.append(api_key).c_str());
             curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
             nlohmann::json payload = {{"model", model},
-                            {"temperature", temperature},
-                            {"top_p", top_p},
-                            {"frequency_penalty", frequency_penalty},
-                            {"presence_penalty", presence_penalty},
-                            {"stream", true}};
+                                      {"temperature", temperature},
+                                      {"top_p", top_p},
+                                      {"frequency_penalty", frequency_penalty},
+                                      {"presence_penalty", presence_penalty},
+                                      {"stream", true}};
             unsigned int model_max_tokens = util::get_max_tokens(model);
             unsigned int token_count;
             if (!is_new_api_) {
@@ -164,6 +164,6 @@ namespace api {
     }
 
     bool is_new_api(const std::string& model_name) {
-        return boost::algorithm::starts_with(model_name, "gpt-3.5") || boost::algorithm::starts_with(model_name, "gpt-4");
+        return boost::starts_with(model_name, "gpt-3.5") || boost::starts_with(model_name, "gpt-4");
     }
 } // api

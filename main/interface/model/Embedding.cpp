@@ -36,7 +36,8 @@ namespace emb {
         auto model_max_tokens = util::get_max_tokens(model);
         auto token_count = util::get_token_count(text, model);
         if (token_count >= model_max_tokens) {
-            throw util::max_tokens_exceeded("Max tokens exceeded in text: " + std::to_string(token_count) + " >= " + std::to_string(model_max_tokens));
+            throw util::max_tokens_exceeded("Max tokens exceeded in text: "
+            + std::to_string(token_count) + " >= " + std::to_string(model_max_tokens));
         }
         CURL* curl;
         CURLcode res;

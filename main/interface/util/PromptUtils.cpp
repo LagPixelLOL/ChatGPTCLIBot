@@ -25,7 +25,7 @@ namespace prompt {
     }
 
     std::string to_string(std::string initial_prompt, std::vector<std::shared_ptr<chat::Exchange>> prompts,
-                     const std::string& me_id, const std::string& bot_id, const unsigned int& max_length, const bool& add_color) {
+                          const std::string& me_id, const std::string& bot_id, const unsigned int& max_length, const bool& add_color) {
         delete_front_keep_back(prompts, max_length);
         for (const auto& exchange : prompts) {
             initial_prompt.append((add_color ? ME_COLOR : "") + (boost::format("\n%1%: %2%") % me_id % exchange->getInput()).str());
@@ -37,9 +37,9 @@ namespace prompt {
     }
 
     std::string construct_reference(std::string initial_prompt, const std::vector<float>& input_embeddings,
-                               std::vector<std::shared_ptr<chat::Exchange>> chat_exchanges,
-                               const unsigned int& max_reference_length, const unsigned int& max_short_memory_length,
-                               const std::string& me_id, const std::string& bot_id) {
+                                    std::vector<std::shared_ptr<chat::Exchange>> chat_exchanges,
+                                    const unsigned int& max_reference_length, const unsigned int& max_short_memory_length,
+                                    const std::string& me_id, const std::string& bot_id) {
         initial_prompt.append("\nCurrent time: " + util::currentTimeFormatted() + "\n");
         if (max_reference_length == 0) {
             return initial_prompt;
@@ -78,7 +78,7 @@ namespace prompt {
                 ref.append("\n" + bot_id + ": " + exchange.getResponse());
             }
         }
-        if (boost::algorithm::starts_with(ref, "\n\n")) {
+        if (boost::starts_with(ref, "\n\n")) {
             ref.erase(0, 2);
         }
         return initial_prompt.append(ref + "\"\n");
@@ -87,8 +87,8 @@ namespace prompt {
 
 namespace GPT {
 
-std::string to_payload(const std::string& initial_prompt, const std::vector<std::shared_ptr<chat::Exchange>>& prompts,
-                      const std::string& me_id, const std::string& bot_id, const unsigned int& max_length) {
+    std::string to_payload(const std::string& initial_prompt, const std::vector<std::shared_ptr<chat::Exchange>>& prompts,
+                           const std::string& me_id, const std::string& bot_id, const unsigned int& max_length) {
         return prompt::to_string(initial_prompt, prompts, me_id, bot_id, max_length) + "\n" + bot_id + ":";
     }
 } // GPT
@@ -108,9 +108,9 @@ namespace ChatGPT {
      * ]
      */
     nlohmann::json to_payload(std::string initial_prompt, std::vector<std::shared_ptr<chat::Exchange>> prompts,
-                    const std::string& me_id, const std::string& bot_id, const unsigned int& max_length) {
+                              const std::string& me_id, const std::string& bot_id, const unsigned int& max_length) {
         prompt::delete_front_keep_back(prompts, max_length);
-        boost::algorithm::replace_all(initial_prompt, (boost::format(
+        boost::replace_all(initial_prompt, (boost::format(
                 "The following conversation is set to:\n"
                 "%1%: is the prefix of the user, texts start with it are the user input\n"
                 "%2%: is the prefix of your response, texts start with it are your response\n")

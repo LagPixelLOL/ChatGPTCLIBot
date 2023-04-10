@@ -17,6 +17,7 @@
 #include "cmath"
 
 namespace emb {
+
     double cosine_similarity(const std::vector<float>& vec_a, const std::vector<float>& vec_b);
     std::pair<std::shared_ptr<std::vector<float>>, api::APIKeyStatus> get_embeddings(const std::string& text, const std::string& api_key);
 } // emb

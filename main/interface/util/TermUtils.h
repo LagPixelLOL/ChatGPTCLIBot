@@ -9,18 +9,17 @@
 #include "../cpp-terminal/exception.hpp"
 
 namespace util {
-    using namespace std;
     using Color = Term::Color;
 
-    string get_multi_lines(vector<string>& history, const string& prompt_string = "> ");
+    std::string get_multi_lines(std::vector<std::string>& history, const std::string& prompt_string = "> ");
     void ignore_line();
-    void print_cs(const string& s, const bool& new_line = false, const bool& reset_color = true);
-    void print_clr(const string& s, const Color& color = Color::Name::Default, const bool& new_line = false);
-    void println_clr(const string& s, const Color& color = Color::Name::Default);
-    void println_info(const string& s, const bool& new_line = true);
-    void println_warn(const string& s, const bool& new_line = true);
-    void println_err(const string& s, const bool& new_line = true);
-    void print_m_clr(const string& s, const vector<Color>& colors = {{255, 0, 0}, {0, 255, 0}, {0, 0, 255}},
+    void print_cs(const std::string& s, const bool& new_line = false, const bool& reset_color = true);
+    void print_clr(const std::string& s, const Color& color = Color::Name::Default, const bool& new_line = false);
+    void println_clr(const std::string& s, const Color& color = Color::Name::Default);
+    void println_info(const std::string& s, const bool& new_line = true);
+    void println_warn(const std::string& s, const bool& new_line = true);
+    void println_err(const std::string& s, const bool& new_line = true);
+    void print_m_clr(const std::string& s, const std::vector<Color>& colors = {{255, 0, 0}, {0, 255, 0}, {0, 0, 255}},
                      const bool& by_line = false);
 } // util
 

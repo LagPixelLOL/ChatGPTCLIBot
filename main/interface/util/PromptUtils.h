@@ -14,21 +14,21 @@ namespace prompt {
     void print_prompt(const std::string& initial_prompt, const std::vector<std::shared_ptr<chat::Exchange>>& prompts,
                       const std::string& me_id, const std::string& bot_id, const unsigned int& max_length, const bool& is_new_api);
     std::string to_string(std::string initial_prompt, std::vector<std::shared_ptr<chat::Exchange>> prompts,
-                     const std::string& me_id, const std::string& bot_id, const unsigned int& max_length, const bool& add_color = false);
+                          const std::string& me_id, const std::string& bot_id, const unsigned int& max_length, const bool& add_color = false);
     std::string construct_reference(std::string initial_prompt, const std::vector<float>& input_embeddings,
-                               std::vector<std::shared_ptr<chat::Exchange>> chat_exchanges,
-                               const unsigned int& max_reference_length, const unsigned int& max_short_memory_length,
-                               const std::string& me_id, const std::string& bot_id);
+                                    std::vector<std::shared_ptr<chat::Exchange>> chat_exchanges,
+                                    const unsigned int& max_reference_length, const unsigned int& max_short_memory_length,
+                                    const std::string& me_id, const std::string& bot_id);
 } // prompt
 
 namespace GPT {
     std::string to_payload(const std::string& initial_prompt, const std::vector<std::shared_ptr<chat::Exchange>>& prompts,
-                      const std::string& me_id, const std::string& bot_id, const unsigned int& max_length);
+                           const std::string& me_id, const std::string& bot_id, const unsigned int& max_length);
 } // GPT
 
 namespace ChatGPT {
     nlohmann::json to_payload(std::string initial_prompt, std::vector<std::shared_ptr<chat::Exchange>> prompts,
-                    const std::string& me_id, const std::string& bot_id, const unsigned int& max_length);
+                              const std::string& me_id, const std::string& bot_id, const unsigned int& max_length);
 } // ChatGPT
 
 #endif //GPT3BOT_PROMPTUTILS_H

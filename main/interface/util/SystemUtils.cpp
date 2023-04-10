@@ -18,14 +18,14 @@ namespace util {
 #endif
 
     long long currentTimeMillis() {
-        return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+        return duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     }
 
-    string currentTimeFormatted() {
+    std::string currentTimeFormatted() {
         return ms_to_formatted_time(currentTimeMillis());
     }
 
-    string ms_to_formatted_time(long long timeMillis) {
+    std::string ms_to_formatted_time(long long timeMillis) {
         time_t time = timeMillis / 1000;
         struct tm time_info{};
 #ifdef _MSC_VER
@@ -42,8 +42,8 @@ namespace util {
      * Get the current system proxy using libproxy.
      * @return Proxy string if found, empty string otherwise.
      */
-    string system_proxy() {
-        string proxy;
+    std::string system_proxy() {
+        std::string proxy;
 #ifdef _WIN32
         if (pf) {
             char** p_proxy = px_proxy_factory_get_proxies(pf, "https://www.google.com");
@@ -51,7 +51,7 @@ namespace util {
                 proxy = *p_proxy;
             }
             px_proxy_factory_free_proxies(p_proxy);
-            if (starts_with(proxy, "direct://")) {
+            if (boost::starts_with(proxy, "direct://")) {
                 proxy = "";
             }
         }
