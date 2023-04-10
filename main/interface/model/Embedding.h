@@ -17,12 +17,8 @@
 #include "cmath"
 
 namespace emb {
-    using namespace std;
-    using namespace nlohmann;
-    using namespace api;
-
-    double cosine_similarity(const vector<float>& vec_a, const vector<float>& vec_b);
-    pair<shared_ptr<vector<float>>, APIKeyStatus> get_embeddings(const string& text, const string& api_key);
+    double cosine_similarity(const std::vector<float>& vec_a, const std::vector<float>& vec_b);
+    std::pair<std::shared_ptr<std::vector<float>>, api::APIKeyStatus> get_embeddings(const std::string& text, const std::string& api_key);
 } // emb
 
 #endif //GPT3BOT_EMBEDDING_H

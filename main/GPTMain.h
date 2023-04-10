@@ -9,11 +9,6 @@
 #include "fstream"
 
 namespace GPT {
-    using namespace std;
-    using namespace boost;
-    using namespace filesystem;
-    using namespace nlohmann;
-    using namespace chat;
     using Color = Term::Color;
 
     void pre_settings();
@@ -22,12 +17,12 @@ namespace GPT {
     void print_enter_next_cycle();
     void print_uwu();
     void clear_console();
-    int handle_command(const string& input);
-    bool create_folders(const vector<string>& folders);
+    int handle_command(const std::string& input);
+    bool create_folders(const std::vector<std::string>& folders);
     bool p_default_prompt();
-    bool p_load_prompt(string filename);
-    bool p_load_saved(string filename);
-    bool p_save_chat(string name);
+    bool p_load_prompt(std::string filename);
+    bool p_load_saved(std::string filename);
+    bool p_save_chat(std::string name);
     bool p_load_config();
     bool p_save_config();
     bool p_check_set_api_key();
