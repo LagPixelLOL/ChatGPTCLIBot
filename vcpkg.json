@@ -7,6 +7,7 @@
     "curl",
     "libproxy",
     "ftxui",
-    "pcre2"
+    "pcre2",
+    "utf8proc"
   ]
 }
