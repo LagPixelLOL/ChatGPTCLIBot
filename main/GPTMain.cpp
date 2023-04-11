@@ -9,10 +9,10 @@
 
 namespace GPT {
     std::vector<std::string> input_history;
-    const std::string f_initial = "initial";
-    const std::string f_saved = "saved";
-    const std::string f_suffix = ".txt";
-    const std::string json_suffix = ".json";
+    constexpr std::string f_initial = "initial";
+    constexpr std::string f_saved = "saved";
+    constexpr std::string f_suffix = ".txt";
+    constexpr std::string json_suffix = ".json";
     std::string model = "gpt-3.5-turbo";
     bool is_new_api = false;
     float temperature = 1;
@@ -21,8 +21,8 @@ namespace GPT {
     float frequency_penalty = 0;
     float presence_penalty = 0.6;
     std::unordered_map<uint16_t, float> logit_bias;
-    const std::string me_id = "Me";
-    const std::string bot_id = "You";
+    constexpr std::string me_id = "Me";
+    constexpr std::string bot_id = "You";
     std::string initial_prompt = (boost::format(
             "The following conversation is set to:\n"
             "%1%: is the prefix of the user, texts start with it are the user input\n"

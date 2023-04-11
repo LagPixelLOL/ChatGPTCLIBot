@@ -10,6 +10,7 @@
 #include "../util/TermUtils.h"
 
 namespace api {
+
     class TimeoutChecker {
         long long creation_time;
         const unsigned int timeout_ms_;

@@ -105,7 +105,7 @@ namespace Term {
             }
         }
         if (move_cursor) {
-            cursor_x = x_pos;
+            cursor_x = x_render_pos;
             cursor_y = y_pos;
         }
     }

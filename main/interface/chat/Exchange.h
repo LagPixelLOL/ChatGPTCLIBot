@@ -9,6 +9,7 @@
 #include "utility"
 
 namespace chat {
+
     class Exchange {
         std::string input_;
         std::vector<float> input_embeddings_;

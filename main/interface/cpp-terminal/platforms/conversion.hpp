@@ -84,18 +84,10 @@ namespace Term::Private {
         return r;
     }
 
-    // converts a vector of char into a string
+    //Converts a vector of char into a string.
     inline std::string vector_to_string(const std::vector<char>& vector) {
         std::string string;
         for(char i: vector) { string.push_back(i); }
         return string;
-    }
-
-    inline unsigned int c32_display_width(char32_t c32) {
-        if (c32 > 0x7F) {
-            return 2;
-        } else {
-            return 1;
-        }
     }
 } // namespace Term

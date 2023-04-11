@@ -23,8 +23,9 @@
 
 BytePairEncodingCore::BytePairEncodingCore(const std::unordered_map<std::vector<uint8_t>, int, VectorHash>& byte_pair_ranks,
                                            const std::unordered_map<std::string, int>& special_token_mappings,
-                                           const std::shared_ptr<PCRERegex> &pattern_string)
-        : byte_pair_ranks_(byte_pair_ranks), special_token_mappings_(special_token_mappings), pattern_string_(pattern_string) {}
+                                           const std::shared_ptr<PCRERegex> &pattern_string) :
+                                           byte_pair_ranks_(byte_pair_ranks), special_token_mappings_(special_token_mappings),
+                                           pattern_string_(pattern_string) {}
 
 template <typename T>
 std::vector<T> BytePairEncodingCore::byte_pair_merge(const std::vector<uint8_t>& piece,
@@ -106,7 +107,7 @@ std::pair<std::vector<int>, std::vector<int>> BytePairEncodingCore::encode_nativ
                     segment_ids.push_back(0);
                 }
             } else {
-                auto byte_pairs = byte_pair_merge<int>(utf8_encoded, byte_pair_ranks_, [&](int start, int end) {
+                auto byte_pairs = byte_pair_merge<int>(utf8_encoded, byte_pair_ranks_, [&](int start, int end){
                     std::vector<uint8_t> key(utf8_encoded.begin() + start, utf8_encoded.begin() + end);
                     return byte_pair_ranks_[key];
                 });
