@@ -191,7 +191,8 @@ void Term::print_left_curly_bracket(Term::Window& scr, const size_t& x, const si
 inline size_t Term::display_length(const std::u32string& u32str) {
     size_t len = 0;
     for (const auto& c : u32str) {
-        len += Private::c32_display_width(c);
+        short width = Private::c32_display_width(c);
+        len += width >= 0 ? width : 0;
     }
     return len;
 }
@@ -233,7 +234,8 @@ std::vector<std::vector<std::string>> Term::pre_process(const Window& w, const M
                 u32s_tmp.push_back(c32);
                 col = skip_col;
             }
-            col += Private::c32_display_width(c32);
+            short width = Private::c32_display_width(c32);
+            col += width >= 0 ? width : 0;
         }
         u32s_split.push_back(u32s_tmp);
         u32result.push_back(u32s_split);

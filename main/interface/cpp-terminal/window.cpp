@@ -101,7 +101,8 @@ namespace Term {
                     return; //String is out of the window.
                 }
                 x_pos++;
-                x_render_pos += Private::c32_display_width(c32);
+                short width = Private::c32_display_width(c32);
+                x_render_pos += width >= 0 ? width : 0;
             }
         }
         if (move_cursor) {
