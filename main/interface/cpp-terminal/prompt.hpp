@@ -68,7 +68,7 @@ namespace Term {
     inline size_t u8_to_u32_cursor_col(const std::string& str, const size_t& cursor_col);
     inline size_t u32_to_display_col(const std::u32string& u32str, const size_t& cursor_col);
     std::vector<std::vector<std::string>> pre_process(const Window& w, const Model& m, size_t& cursor_x, size_t& cursor_y);
-    void render(Term::Window&, const Model&, const std::size_t&);
+    std::pair<size_t, size_t> render(Window& scr, const Model& m, const size_t& cols);
     long long calc_cursor_move(const std::string& str, const size_t& cursor_col, const long long& shift_amount);
     std::string prompt_multiline(const std::string&, std::vector<std::string>&, const std::function<bool(std::string)>&);
 }  // namespace Term

@@ -280,7 +280,7 @@ inline std::vector<std::string> simplify(const std::vector<std::vector<std::stri
     return simplified;
 }
 
-void Term::render(Window& scr, const Model& m, const size_t& cols) {
+std::pair<size_t, size_t> Term::render(Window& scr, const Model& m, const size_t& cols) {
     scr.clear();
     size_t cursor_x = m.cursor_col;
     size_t cursor_y = m.cursor_row;
@@ -315,6 +315,7 @@ void Term::render(Window& scr, const Model& m, const size_t& cols) {
         }
     }
     scr.set_cursor_pos(cursor_x, cursor_y);
+    return {s_size, cursor_y};
 }
 
 void replace_all(std::string& str, const std::string& from, const std::string& to) {
@@ -387,7 +388,7 @@ std::string Term::prompt_multiline(const std::string& prompt_string, std::vector
     history.push_back(concat(m.lines)); //Push back empty input.
     Window scr(cols, 1);
     Key key{NO_KEY};
-    render(scr, m, cols);
+    std::pair<std::size_t, std::size_t> skip_info = render(scr, m, cols);
     std::cout << scr.render(1, row, term_attached) << std::flush;
     bool not_complete = true;
     while (not_complete) {
@@ -544,7 +545,7 @@ std::string Term::prompt_multiline(const std::string& prompt_string, std::vector
                     break;
             }
         }
-        render(scr, m, cols);
+        skip_info = render(scr, m, cols);
         std::cout << scr.render(1, row, term_attached) << std::flush;
         if (row + (int)scr.get_h() - 1 > rows) {
             row = rows - ((int)scr.get_h() - 1);
@@ -552,7 +553,7 @@ std::string Term::prompt_multiline(const std::string& prompt_string, std::vector
         }
     }
     std::string line_skips;
-    for (std::size_t i = 0; i <= m.lines.size() - m.cursor_row; i++) {
+    for (std::size_t i = 0; i <= skip_info.first - skip_info.second; i++) {
         line_skips += "\n";
     }
     std::cout << line_skips << std::flush;
