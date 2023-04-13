@@ -258,8 +258,8 @@ namespace Term {
                 return false;
             }
 #else
-            std::vector<char> buf(4, 0); //Maximum 4 bytes for a single UTF-8 encoded character.
-            ssize_t n_read_u = ::read(0, &buf[0], 1);
+            std::vector<char> buf(1, 0); //Maximum 4 bytes for a single UTF-8 encoded character.
+            ::ssize_t n_read_u = ::read(0, &buf[0], 1);
             if (n_read_u == -1 && errno != EAGAIN) {
                 throw Exception("read() failed.");
             }
@@ -274,31 +274,32 @@ namespace Term {
                 bytes_to_read = 2;
             } else if (first_byte >> 3 == 0b11110) {
                 bytes_to_read = 3;
-
-                //ToDo: Only for debugging purposes, will be removed in final commit.
-                std::cout << "BTR: " << bytes_to_read;
-
             } else {
                 return false;
             }
-
-            //ToDo: Only for debugging purposes, will be removed in final commit.
-            std::cout << "BTR: " << bytes_to_read;
-
             //Read the remaining bytes.
             for (int i = 0; i < bytes_to_read; i++) {
-                n_read_u = ::read(0, &buf[i + 1], 1);
+                char c = 0;
+                n_read_u = ::read(0, &c, 1);
                 if (n_read_u == -1 && errno != EAGAIN) {
                     throw Exception("read() failed.");
                 }
+                buf.push_back(c);
             }
+
+            //ToDo: Only for debugging purposes, will be removed in final commit.
+            std::cout << "\n\n\n";
+            for (const auto& c : buf) {
+                std::cout << static_cast<int64_t>(c) << " " << std::flush;
+            }
+
             std::string s8(buf.begin(), buf.end());
             std::u32string s32 = Private::utf8_to_utf32(s8);
             if (s32.empty()) {
                 return false;
             }
             *c32 = s32[0];
-            return n_read_u == 1;
+            return n_read_u > 0;
 #endif
         }
 
