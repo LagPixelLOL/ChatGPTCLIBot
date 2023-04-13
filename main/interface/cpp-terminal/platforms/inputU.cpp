@@ -265,10 +265,10 @@ namespace Term {
             }
 
             //ToDo: Only for debugging purposes, will be removed in final commit.
-            std::cout << "\n\n\n" << static_cast<uint32_t>(buf[0]) << " " << static_cast<unsigned char>(buf[0]) << std::flush;
+            std::cout << "\n\n\n" << static_cast<int64_t>(buf[0]) << " " << static_cast<char>(buf[0]) << " ";
 
             //Check the number of bytes needed to complete the UTF-8 character.
-            auto first_byte = static_cast<unsigned char>(buf[0]);
+            auto first_byte = static_cast<char>(buf[0]);
             int bytes_to_read = 0;
             if (first_byte >> 7 == 0) {
                 bytes_to_read = 0;
@@ -279,8 +279,14 @@ namespace Term {
             } else if (first_byte >> 3 == 0b11110) {
                 bytes_to_read = 3;
             } else {
+                //ToDo: Only for debugging purposes, will be removed in final commit.
+                std::cout << "BTR: " << bytes_to_read;
                 return false;
             }
+
+            //ToDo: Only for debugging purposes, will be removed in final commit.
+            std::cout << "BTR: " << bytes_to_read;
+
             //Read the remaining bytes.
             for (int i = 0; i < bytes_to_read; i++) {
                 n_read_u = ::read(0, &buf[i + 1], 1);
