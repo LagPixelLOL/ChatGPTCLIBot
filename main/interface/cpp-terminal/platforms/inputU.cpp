@@ -47,7 +47,7 @@ namespace Term {
             key = static_cast<KeyU>(Platform::read_key_u());
 
             //ToDo: Only for debugging purposes, will be removed in final commit.
-            std::cout << "\n\n\n" << "CHAR32: " << key << std::flush;
+            std::cout << "\n\n\n" << "CHAR32: " << key << " ISCTRL: " << iscntrl(key) << std::flush;
 
             if ((key >= 'a' && key <= 'z') || (key >= 'A' && key <= 'Z') || (Platform::is_character_u(key) && !iscntrl(key))) {
                 std::string before = m.lines[m.cursor_row - 1].substr(0, m.cursor_col - 1);
