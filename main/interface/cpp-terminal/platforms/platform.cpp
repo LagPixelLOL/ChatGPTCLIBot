@@ -471,7 +471,7 @@ short Term::Private::c32_display_width(const char32_t& c32) {
             {0xfffd, 2},
             {0xffff, 1}
     };
-    short char_width = 2;
+    short char_width = 1;
     auto it = codepoint_width.lower_bound(c32);
     if (it != codepoint_width.end()) {
         char_width = it->second;
