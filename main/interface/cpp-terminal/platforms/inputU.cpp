@@ -288,9 +288,11 @@ namespace Term {
             }
 
             //ToDo: Only for debugging purposes, will be removed in final commit.
-            std::cout << "\n\n\n";
-            for (const auto& c : buf) {
-                std::cout << static_cast<int64_t>(c) << " " << std::flush;
+            if (buf[0] != 0) {
+                std::cout << "\n\n\nBYTE SEQ: ";
+                for (const auto& c : buf) {
+                    std::cout << static_cast<int64_t>(c) << " ";
+                }
             }
 
             std::string s8(buf.begin(), buf.end());
@@ -298,6 +300,12 @@ namespace Term {
             if (s32.empty()) {
                 return false;
             }
+
+            //ToDo: Only for debugging purposes, will be removed in final commit.
+            if (s32[0] != 0) {
+                std::cout << " | CHAR32: " << static_cast<int64_t>(s32[0]) << std::flush;
+            }
+
             *c32 = s32[0];
             return n_read_u > 0;
 #endif
