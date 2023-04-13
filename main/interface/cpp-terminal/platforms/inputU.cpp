@@ -300,13 +300,14 @@ namespace Term {
             if (s32.empty()) {
                 return false;
             }
+            *c32 = s32[0];
 
             //ToDo: Only for debugging purposes, will be removed in final commit.
             if (s32[0] != 0) {
-                std::cout << " | CHAR32: " << static_cast<int64_t>(s32[0]) << std::flush;
+                std::cout << " | CHAR32: " << static_cast<int64_t>(*c32) << " ";
             }
+            std::cout << "NREAD: " << n_read_u << std::flush;
 
-            *c32 = s32[0];
             return n_read_u > 0;
 #endif
         }
