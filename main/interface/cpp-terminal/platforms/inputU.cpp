@@ -274,9 +274,17 @@ namespace Term {
                 bytes_to_read = 2;
             } else if (first_byte >> 3 == 0b11110) {
                 bytes_to_read = 3;
+
+                //ToDo: Only for debugging purposes, will be removed in final commit.
+                std::cout << "BTR: " << bytes_to_read;
+
             } else {
                 return false;
             }
+
+            //ToDo: Only for debugging purposes, will be removed in final commit.
+            std::cout << "BTR: " << bytes_to_read;
+
             //Read the remaining bytes.
             for (int i = 0; i < bytes_to_read; i++) {
                 n_read_u = ::read(0, &buf[i + 1], 1);
