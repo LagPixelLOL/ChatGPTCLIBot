@@ -11,7 +11,6 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <vector>
-#include "conversion.hpp"
 #endif
 
 #include "../exception.hpp"
@@ -264,6 +263,10 @@ namespace Term {
             if (n_read_u == -1 && errno != EAGAIN) {
                 throw Exception("read() failed.");
             }
+
+            //ToDo: Only for debugging purposes, will be removed in final commit.
+            std::cout << "\n\n\n" << static_cast<uint32_t>(buf[0]) << " " << static_cast<unsigned char>(buf[0]) << std::flush;
+
             //Check the number of bytes needed to complete the UTF-8 character.
             auto first_byte = static_cast<unsigned char>(buf[0]);
             int bytes_to_read = 0;
@@ -287,11 +290,11 @@ namespace Term {
             }
             std::string s8(buf.begin(), buf.end());
             std::u32string s32 = Private::utf8_to_utf32(s8);
-            if (s32.size() != 1) {
+            if (s32.empty()) {
                 return false;
             }
             *c32 = s32[0];
-            return n_read_u >= 0;
+            return n_read_u == 1;
 #endif
         }
 
