@@ -45,6 +45,10 @@ namespace Term {
         bool not_complete = true;
         while (not_complete) {
             key = static_cast<KeyU>(Platform::read_key_u());
+
+            //ToDo: Only for debugging purposes, will be removed in final commit.
+            std::cout << "\n\n\n" << "CHAR32: " << key << std::flush;
+
             if ((key >= 'a' && key <= 'z') || (key >= 'A' && key <= 'Z') || (Platform::is_character_u(key) && !iscntrl(key))) {
                 std::string before = m.lines[m.cursor_row - 1].substr(0, m.cursor_col - 1);
                 std::string after = m.lines[m.cursor_row - 1].substr(m.cursor_col - 1);
@@ -286,28 +290,12 @@ namespace Term {
                 }
                 buf.push_back(c);
             }
-
-            //ToDo: Only for debugging purposes, will be removed in final commit.
-            if (buf[0] != 0) {
-                std::cout << "\n\n\nBYTE SEQ: ";
-                for (const auto& c : buf) {
-                    std::cout << static_cast<int64_t>(c) << " ";
-                }
-            }
-
             std::string s8(buf.begin(), buf.end());
             std::u32string s32 = Private::utf8_to_utf32(s8);
             if (s32.empty()) {
                 return false;
             }
             *c32 = s32[0];
-
-            //ToDo: Only for debugging purposes, will be removed in final commit.
-            if (s32[0] != 0) {
-                std::cout << " | CHAR32: " << static_cast<int64_t>(*c32) << " ";
-            }
-            std::cout << "NREAD: " << n_read_u << std::flush;
-
             return n_read_u > 0;
 #endif
         }
