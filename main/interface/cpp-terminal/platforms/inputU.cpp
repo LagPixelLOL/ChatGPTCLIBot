@@ -262,7 +262,7 @@ namespace Term {
             std::vector<char> buf(4, 0); //Maximum 4 bytes for a single UTF-8 encoded character.
             ssize_t n_read_u = ::read(0, &buf[0], 1);
             if (n_read_u == -1 && errno != EAGAIN) {
-                throw Exception("read() failed");
+                throw Exception("read() failed.");
             }
             //Check the number of bytes needed to complete the UTF-8 character.
             auto first_byte = static_cast<unsigned char>(buf[0]);
@@ -276,7 +276,7 @@ namespace Term {
             } else if (first_byte >> 3 == 0b11110) {
                 bytes_to_read = 3;
             } else {
-                throw Exception("Invalid UTF-8 character.");
+                return false;
             }
             //Read the remaining bytes.
             for (int i = 0; i < bytes_to_read; i++) {
@@ -288,7 +288,7 @@ namespace Term {
             std::string s8(buf.begin(), buf.end());
             std::u32string s32 = Private::utf8_to_utf32(s8);
             if (s32.size() != 1) {
-                throw Exception("Invalid UTF-8 character.");
+                return false;
             }
             *c32 = s32[0];
             return n_read_u >= 0;
