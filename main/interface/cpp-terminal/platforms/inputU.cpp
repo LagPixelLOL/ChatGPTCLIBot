@@ -45,11 +45,8 @@ namespace Term {
         bool not_complete = true;
         while (not_complete) {
             key = static_cast<KeyU>(Platform::read_key_u());
-
-            //ToDo: Only for debugging purposes, will be removed in final commit.
-            std::cout << "\n\n\n" << "CHAR32: " << key << " ISCTRL: " << iscntrl(key) << std::flush;
-
-            if ((key >= 'a' && key <= 'z') || (key >= 'A' && key <= 'Z') || (Platform::is_character_u(key) && !iscntrl(key))) {
+            if ((key >= 'a' && key <= 'z') || (key >= 'A' && key <= 'Z')
+            || (Platform::is_character_u(key) && !Platform::is_control_char(key))) {
                 std::string before = m.lines[m.cursor_row - 1].substr(0, m.cursor_col - 1);
                 std::string after = m.lines[m.cursor_row - 1].substr(m.cursor_col - 1);
                 std::string new_char;
@@ -311,6 +308,14 @@ namespace Term {
             //Need to suppress the TAB etc...
             if (key > 0 && key <= 31 && key != BACKSPACE && key != TAB
             && key != ESC && /* the two mapped to ENTER */ key != LF && key != CR) {
+                return true;
+            }
+            return false;
+        }
+
+        bool is_control_char(const char32_t& c32) {
+            //Control characters are in the ranges U+0000 to U+001F and U+007F to U+009F.
+            if ((c32 >= 0x00 && c32 <= 0x1F) || (c32 >= 0x7F && c32 <= 0x9F)) {
                 return true;
             }
             return false;

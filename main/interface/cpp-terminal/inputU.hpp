@@ -83,6 +83,7 @@ namespace Term {
         bool read_raw_u(char32_t* c32);
         bool is_character_u(const KeyU& key);
         bool is_CTRL_u(const KeyU& key);
+        bool is_control_char(const char32_t& c32);
         int32_t read_key_u();
         int32_t read_key0_u();
     }
