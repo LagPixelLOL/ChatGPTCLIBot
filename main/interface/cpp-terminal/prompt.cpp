@@ -289,6 +289,9 @@ std::pair<size_t, size_t> Term::render(Window& scr, const Model& m, const size_t
         scr.set_h(s_size);
     }
     print_left_curly_bracket(scr, cols, 1, simplified.size(), simplified);
+    std::u32string back_s32 = Private::utf8_to_utf32(simplified.back());
+    scr.print_str(std::max(static_cast<long long>(cols) - 6 - static_cast<long long>(display_length(back_s32) - back_s32.size()), 1LL),
+                  s_size, std::to_string(m.cursor_row) + "," + std::to_string(m.cursor_col));
     size_t line_count = 1;
     scr.fill_fg(1, line_count, m.prompt_string.size(), s_size, Term::Color::Name::BrightGreen);
     scr.fill_style(1, line_count, m.prompt_string.size(), s_size, Term::Style::BOLD);

@@ -2,8 +2,10 @@
 
 #include "exception.hpp"
 #include "platforms/conversion.hpp"
+#include "platforms/platform.hpp"
 
 namespace Term {
+
     char32_t Term::Window::get_char(const std::size_t& x, const std::size_t& y) { return chars[(y - 1) * w + (x - 1)]; }
 
     bool Term::Window::get_fg_reset(const std::size_t& x, const std::size_t& y) { return m_fg_reset[(y - 1) * w + (x - 1)]; }
@@ -188,102 +190,119 @@ namespace Term {
         }
     }
 
-    std::string Term::Window::render(const std::size_t& x0, const std::size_t& y0, bool term)
-    {
+    std::string Term::Window::render(const std::size_t& x0, const std::size_t& y0, bool term) {
         std::string out;
-        if(term) { out.append(cursor_off()); }
-        Color current_fg       = {255, 255, 255};
-        Color current_bg       = {255, 255, 255};
-        bool  current_fg_reset = true;
-        bool  current_bg_reset = true;
-        Style current_style    = Style::RESET;
-        for(std::size_t j = 1; j <= h; j++)
-        {
-            if(term) { out.append(cursor_move(y0 + j - 1, x0)); }
-            for(std::size_t i = 1; i <= w; i++)
-            {
-                bool update_fg       = false;
-                bool update_bg       = false;
+        if (term) {
+            out.append(cursor_off());
+        }
+        Color current_fg = {255, 255, 255};
+        Color current_bg = {255, 255, 255};
+        bool current_fg_reset = true;
+        bool current_bg_reset = true;
+        Style current_style = Style::RESET;
+        for (size_t y = 1; y <= h; y++) {
+            if (term) {
+                out.append(cursor_move(y0 + y - 1, x0));
+            }
+            std::string line;
+            uint16_t additional_width = 0;
+            for (size_t x = 1; x <= w; x++) {
+                bool update_fg = false;
+                bool update_bg = false;
                 bool update_fg_reset = false;
                 bool update_bg_reset = false;
-                bool update_style    = false;
-                if(current_fg_reset != get_fg_reset(i, j))
-                {
-                    current_fg_reset = get_fg_reset(i, j);
-                    if(current_fg_reset)
-                    {
+                bool update_style = false;
+                if (current_fg_reset != get_fg_reset(x, y)) {
+                    current_fg_reset = get_fg_reset(x, y);
+                    if (current_fg_reset) {
                         update_fg_reset = true;
-                        current_fg      = {255, 255, 255};
+                        current_fg = {255, 255, 255};
                     }
                 }
-
-                if(current_bg_reset != get_bg_reset(i, j))
-                {
-                    current_bg_reset = get_bg_reset(i, j);
-                    if(current_bg_reset)
-                    {
+                if (current_bg_reset != get_bg_reset(x, y)) {
+                    current_bg_reset = get_bg_reset(x, y);
+                    if (current_bg_reset) {
                         update_bg_reset = true;
-                        current_bg      = {255, 255, 255};
+                        current_bg = {255, 255, 255};
                     }
                 }
-
-                if(!current_fg_reset)
-                {
-                    if(!(current_fg == get_fg(i, j)))
-                    {
-                        current_fg = get_fg(i, j);
-                        update_fg  = true;
+                if (!current_fg_reset) {
+                    if (!(current_fg == get_fg(x, y))) {
+                        current_fg = get_fg(x, y);
+                        update_fg = true;
                     }
                 }
-
-                if(!current_fg_reset)
-                {
-                    if(!(current_bg == get_bg(i, j)))
-                    {
-                        current_bg = get_bg(i, j);
-                        update_bg  = true;
+                if (!current_fg_reset) {
+                    if (!(current_bg == get_bg(x, y))) {
+                        current_bg = get_bg(x, y);
+                        update_bg = true;
                     }
                 }
-                if(current_style != get_style(i, j))
-                {
-                    current_style = get_style(i, j);
-                    update_style  = true;
-                    if(current_style == Style::RESET)
-                    {
-                        // style::reset: reset fg and bg colors too, we have to
-                        // set them again if they are non-default, but if fg or
-                        // bg colors are reset, we do not update them, as
-                        // style::reset already did that.
+                if (current_style != get_style(x, y)) {
+                    current_style = get_style(x, y);
+                    update_style = true;
+                    if (current_style == Style::RESET) {
+                        /* style::reset: reset fg and bg colors too, we have to
+                         * set them again if they are non-default, but if fg or
+                         * bg colors are reset, we do not update them, as
+                         * style::reset already did that.
+                         */
                         update_fg = !current_fg_reset;
                         update_bg = !current_bg_reset;
                     }
                 }
-                // Set style first, as style::reset will reset colors too
-                if(update_style) out.append(style(get_style(i, j)));
-                if(update_fg_reset) out.append(color_fg(Term::Color::Name::Default));
-                else if(update_fg)
-                {
-                    Term::Color color_tmp = get_fg(i, j);
-                    out.append(color_fg(color_tmp));
+                //Set style first, as style::reset will reset colors too.
+                if (update_style) {
+                    line.append(style(get_style(x, y)));
                 }
-                if(update_bg_reset) out.append(color_bg(Term::Color::Name::Default));
-                else if(update_bg)
-                {
-                    Term::Color color_tmp = get_bg(i, j);
-                    out.append(color_bg(color_tmp));
+                if (update_fg_reset) {
+                    line.append(color_fg(Term::Color::Name::Default));
+                } else if (update_fg) {
+                    Term::Color color_tmp = get_fg(x, y);
+                    line.append(color_fg(color_tmp));
                 }
-                Private::codepoint_to_utf8(out, get_char(i, j));
+                if (update_bg_reset) {
+                    line.append(color_bg(Term::Color::Name::Default));
+                } else if (update_bg) {
+                    Term::Color color_tmp = get_bg(x, y);
+                    line.append(color_bg(color_tmp));
+                }
+                const char32_t& c32 = get_char(x, y);
+                Private::codepoint_to_utf8(line, c32);
+                short width = Private::c32_display_width(c32);
+                if (width >= 2) {
+                    additional_width += width - 1;
+                }
             }
-            if(j < h) out.append("\n");
+            auto line_size = static_cast<int64_t>(line.size());
+            for (int64_t i = line_size - 1; i >= 0; i--) {
+                if (line[i] == ' ') {
+                    if (additional_width > 0) {
+                        line.pop_back();
+                        --additional_width;
+                    } else {
+                        break;
+                    }
+                }
+            }
+            out.append(line);
+            if (y < h) {
+                out.append("\n");
+            }
         }
-        if(!current_fg_reset) out.append(color_fg(Term::Color::Name::Default));
-        if(!current_bg_reset) out.append(color_bg(Term::Color::Name::Default));
-        if(current_style != Style::RESET) out.append(style(Style::RESET));
-        if(term)
-        {
+        if (!current_fg_reset) {
+            out.append(color_fg(Term::Color::Name::Default));
+        }
+        if (!current_bg_reset) {
+            out.append(color_bg(Term::Color::Name::Default));
+        }
+        if (current_style != Style::RESET) {
+            out.append(style(Style::RESET));
+        }
+        if (term) {
             out.append(cursor_move(y0 + cursor_y - 1, x0 + cursor_x - 1));
             out.append(cursor_on());
         }
         return out;
     }
-}  // namespace Term
+} // namespace Term
