@@ -6,7 +6,10 @@
 #define GPT3BOT_GPTMAIN_H
 
 #include "interface/network/Network.h"
+#include "Command.h"
 #include "fstream"
+
+#define ENTER Term::color_fg(70, 200, 255) + "Enter" + Term::color_fg(Term::Color::Name::Default)
 
 namespace GPT {
     using Color = Term::Color;
@@ -15,9 +18,7 @@ namespace GPT {
     void start_loop();
     void print_prompt();
     void print_enter_next_cycle();
-    void print_uwu();
     void clear_console();
-    int handle_command(const std::string& input);
     bool create_folders(const std::vector<std::string>& folders);
     bool p_default_prompt();
     bool p_load_prompt(std::string filename);
