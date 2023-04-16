@@ -9,14 +9,6 @@
 
 namespace util {
 
-    std::unique_ptr<Term::Terminal> initialize_or_throw(const bool& clear_screen = false,
-                                                   const bool& disable_signal_keys = false, const bool& hide_cursor = false) {
-        if (!Term::stdin_connected() || !Term::stdout_connected()) {
-            throw Term::Exception("The terminal is not attached to a TTY and therefore can't catch user input.");
-        }
-        return std::make_unique<Term::Terminal>(clear_screen, disable_signal_keys, hide_cursor);
-    }
-
     /**
      * Get multiple lines of input from the user.
      * Press Ctrl + N to enter a new line.
@@ -25,7 +17,7 @@ namespace util {
      * @param prompt_string The text that's displayed before the user's input.
      * @return The user's input.
      */
-    std::string get_multi_lines(std::vector<std::string>& history, const std::string& prompt_string) {
+    std::string get_multiline(std::vector<std::string>& history, const std::string& prompt_string) {
         auto t = initialize_or_throw();
         return Term::prompt_multiline(prompt_string, history, [](const auto& s){
             if (s.size() > 1 && s.substr(s.size() - 2, 1) == "\\") {
@@ -45,11 +37,11 @@ namespace util {
     void print_cs(const std::string& s, const bool& new_line, const bool& reset_color) {
         auto t = initialize_or_throw();
         std::cout << s;
+        if (reset_color) {
+            std::cout << Term::color_fg(Color::Name::Default) << Term::color_bg(Color::Name::Default) << Term::style(Term::Style::RESET);
+        }
         if (new_line) {
             std::cout << std::endl;
-        }
-        if (reset_color) {
-            std::cout << Term::color_fg(Color::Name::Default);
         }
     }
 
@@ -57,7 +49,6 @@ namespace util {
      * Print a string with a color.
      */
     void print_clr(const std::string& s, const Color& color, const bool& new_line) {
-        auto t = initialize_or_throw();
         print_cs(Term::color_fg(color) + s, new_line);
     }
 
@@ -171,5 +162,12 @@ namespace util {
                 print_clr(std::string(1, s[i]), g_clr[i]);
             }
         }
+    }
+
+    std::unique_ptr<Term::Terminal> initialize_or_throw(const bool& clear_screen, const bool& disable_signal_keys, const bool& hide_cursor) {
+        if (!Term::stdin_connected() || !Term::stdout_connected()) {
+            throw Term::Exception("The terminal is not attached to a TTY and therefore can't catch user input.");
+        }
+        return std::make_unique<Term::Terminal>(clear_screen, disable_signal_keys, hide_cursor);
     }
 } // util

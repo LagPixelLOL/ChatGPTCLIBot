@@ -5,12 +5,11 @@ void setup_console_encoding();
 void shutdown_hook();
 
 int main() {
-    atexit(shutdown_hook); //Setup shutdown hook.
-    curl_global_init(CURL_GLOBAL_ALL); //CURL global init.
-
-    setup_console_encoding(); //Setup console encoding.
-
     try {
+        atexit(shutdown_hook); //Setup shutdown hook.
+        curl_global_init(CURL_GLOBAL_ALL); //CURL global init.
+        setup_console_encoding(); //Setup console encoding.
+
         //Main
         GPT::pre_settings(); //Start the bot.
     } catch (const std::exception& e) {
@@ -35,6 +34,7 @@ void setup_console_encoding() {
     wcscpy_s(info.FaceName, L"SimSun-ExtB");
     SetCurrentConsoleFontEx(GetStdHandle(STD_OUTPUT_HANDLE), 0, &info);
 #endif
+    util::initialize_or_throw();
 }
 
 void shutdown_hook() {

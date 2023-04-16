@@ -157,14 +157,14 @@ namespace api {
                     std::string error_code = error_obj["code"].get<std::string>();
                     if (error_code == "invalid_api_key") {
                         status_in = APIKeyStatus::INVALID_KEY;
-                    } else {
+                    } else if (!print_err_msg) {
                         util::println_err("API returned error code. Code: " + error_code);
                     }
                 } else if (error_obj.count("type") > 0 && error_obj["type"].is_string()) {
                     std::string error_type = error_obj["type"].get<std::string>();
                     if (error_type == "insufficient_quota") {
                         status_in = APIKeyStatus::QUOTA_EXCEEDED;
-                    } else {
+                    } else if (!print_err_msg) {
                         util::println_err("API returned error type. Type: " + error_type);
                     }
                 } else {

@@ -81,7 +81,7 @@ std::string Term::color_bg(const std::uint8_t& color) { return color_bg(Color(co
 std::string Term::color_bg(const std::uint8_t& r, const std::uint8_t& g, const std::uint8_t& b) { return color_bg(Color(r, g, b)); }
 
 //https://unix.stackexchange.com/questions/212933/background-color-whitespace-when-end-of-the-terminal-reached
-//FIX maybe we need an other function without [K if we want to modify background of part of the screen (Moving cursor and changing color )
+//FIX maybe we need another function without [K if we want to modify background of part of the screen (Moving cursor and changing color )
 std::string Term::color_bg(const Color& color)
 {
   if(color.getType() == Term::Color::Type::Unset || color.getType() == Term::Color::Type::NoColor) return "";

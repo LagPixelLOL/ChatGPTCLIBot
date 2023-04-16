@@ -17,15 +17,6 @@ namespace util {
     }
     //class max_tokens_exceeded end.
 
-    std::shared_ptr<GptEncoding> get_enc_cache(LanguageModel model) {
-        if (tokenizer_cache.contains(model)) {
-            return tokenizer_cache[model];
-        }
-        auto encoding = GptEncoding::get_encoding(model);
-        tokenizer_cache[model] = encoding;
-        return encoding;
-    }
-
     unsigned int get_token_count(const nlohmann::json& messages, const std::string& model_name) {
         if (!messages.is_array()) {
             throw std::invalid_argument("Messages must be an json array.");
@@ -129,5 +120,14 @@ namespace util {
             }
         }
         throw std::invalid_argument("Invalid model name: " + model_name);
+    }
+
+    std::shared_ptr<GptEncoding> get_enc_cache(LanguageModel model) {
+        if (tokenizer_cache.contains(model)) {
+            return tokenizer_cache[model];
+        }
+        auto encoding = GptEncoding::get_encoding(model);
+        tokenizer_cache[model] = encoding;
+        return encoding;
     }
 } // util

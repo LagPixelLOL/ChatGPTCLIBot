@@ -66,7 +66,7 @@ namespace emb {
             } else {
                 try {
                     nlohmann::json j = nlohmann::json::parse(response);
-                    if (!check_err_obj(j, key_status)) {
+                    if (!api::check_err_obj(j, key_status)) {
                         if (j.count("data") > 0 && j["data"].is_array()) {
                             auto data = j["data"];
                             if (!data.empty() && data[0].is_object()) {

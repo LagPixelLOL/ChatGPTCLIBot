@@ -19,7 +19,7 @@ namespace GPT {
     float top_p = 1;
     float frequency_penalty = 0;
     float presence_penalty = 0.6;
-    std::unordered_map<uint16_t, float> logit_bias;
+    std::unordered_map<std::string, float> logit_bias;
     const std::string me_id = "Me";
     const std::string bot_id = "You";
     std::string initial_prompt = (boost::format(
@@ -61,7 +61,7 @@ namespace GPT {
                            + ENTER + " to use initial): ");
             std::string lInitial_or_lSaved;
             getline(std::cin, lInitial_or_lSaved);
-            transform(lInitial_or_lSaved.begin(), lInitial_or_lSaved.end(), lInitial_or_lSaved.begin(), ::tolower);
+            transform(lInitial_or_lSaved.begin(), lInitial_or_lSaved.end(), lInitial_or_lSaved.begin(), tolower);
             if (lInitial_or_lSaved.empty() || lInitial_or_lSaved == "i") {
                 util::print_cs("Please enter the initial prompt's filename you want to load.\n"
                                "(Press " + ENTER + " to use default): ");
@@ -100,7 +100,7 @@ namespace GPT {
             print_prompt();
             std::string input;
             try {
-                input = util::get_multi_lines(input_history, me_id + ": ");
+                input = util::get_multiline(input_history, me_id + ": ");
             } catch (const std::exception& e) {
                 util::println_err("\nAn error occurred while getting input: " + std::string(e.what()));
                 print_enter_next_cycle();
@@ -503,22 +503,6 @@ namespace GPT {
                             error = true;
                             continue;
                         }
-                        int token_id;
-                        try {
-                            token_id = std::stoi(key);
-                        } catch (const std::exception& e) {
-                            util::println_err("Error reading config file: " + PATH(path_));
-                            util::println_err("Reason: logit_bias's token ID cannot be converted to integer. Key: " + key);
-                            error = true;
-                            continue;
-                        }
-                        if (token_id < 0 || token_id > UINT16_MAX) {
-                            util::println_err("Error reading config file: " + PATH(path_));
-                            util::println_err("Reason: logit_bias's token ID is out of range, it must be between 0 and 65535. Token ID: "
-                            + std::to_string(token_id));
-                            error = true;
-                            continue;
-                        }
                         float bias = value.get<float>();
                         if (bias < -100 || bias > 100) {
                             util::println_err("Error reading config file: " + PATH(path_));
@@ -527,7 +511,7 @@ namespace GPT {
                             error = true;
                             continue;
                         }
-                        logit_bias[token_id] = bias;
+                        logit_bias[key] = bias;
                     }
                 } else {
                     util::println_err("Error reading config file: " + PATH(path_));
@@ -625,7 +609,7 @@ namespace GPT {
                 j["presence_penalty"] = presence_penalty;
                 nlohmann::json pair_json_object = nlohmann::json::object();
                 for (const auto& pair : logit_bias) {
-                    pair_json_object[std::to_string(pair.first)] = pair.second;
+                    pair_json_object[pair.first] = pair.second;
                 }
                 j["logit_bias"] = pair_json_object;
                 j["max_display_length"] = max_display_length;

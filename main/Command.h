@@ -6,8 +6,10 @@
 #define GPT3BOT_COMMAND_H
 
 #include "GPTMain.h"
+#include "interface/cpp-terminal/platforms/conversion.hpp"
 
 namespace cmd {
+    using Color = Term::Color;
 
     enum class Commands : uint16_t {
         NONE = 0,
@@ -15,7 +17,7 @@ namespace cmd {
         UNDO,
         RESET,
         UWU,
-        TOKENIZER
+        TOKENIZE
     };
 
     enum class ReturnOpCode : uint16_t {

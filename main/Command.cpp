@@ -4,8 +4,34 @@
 
 #include "Command.h"
 
+#define GOLDEN_TEXT(n) Term::color_fg(255, 200, 0) + n + Term::color_fg(Color::Name::Default)
+
 namespace cmd {
+    inline void print_colored_tokenized_text(const std::vector<int>& tokens, const std::shared_ptr<GptEncoding>& tokenizer_p);
+    inline void print_colored_token_numbers(const std::vector<int>& tokens);
     inline void print_uwu();
+
+    class ColorIterator {
+        uint32_t i = 0;
+
+    public:
+        std::string next_color_str() {
+            switch (i++ % 5) {
+                case 0:
+                    return Term::color_bg(204, 191, 238);
+                case 1:
+                    return Term::color_bg(190, 237, 198);
+                case 2:
+                    return Term::color_bg(246, 217, 171);
+                case 3:
+                    return Term::color_bg(244, 174, 177);
+                case 4:
+                    return Term::color_bg(164, 220, 243);
+                default:
+                    return "";
+            }
+        }
+    };
 
     Commands match_command(const std::string& input) {
         if (input.empty() || !input.starts_with("/")) {
@@ -20,7 +46,7 @@ namespace cmd {
         } else if (input == "/uwu") {
             return Commands::UWU;
         } else if (input == "/tc") {
-            return Commands::TOKENIZER;
+            return Commands::TOKENIZE;
         }
         return Commands::NONE;
     }
@@ -53,27 +79,49 @@ namespace cmd {
                 print_uwu();
                 GPT::print_enter_next_cycle();
                 return ReturnOpCode::CONTINUE;
-            case Commands::TOKENIZER:
+            case Commands::TOKENIZE:
                 try {
                     static std::vector<std::string> input_history;
                     std::string input_tc;
-                    input_tc = util::get_multi_lines(input_history, "> ");
-                    std::cout << "Choose the tokenizer(1/2/3/4): ";
+                    input_tc = util::get_multiline(input_history);
+                    util::print_cs(
+                            "[" + GOLDEN_TEXT("1") + " = " + GOLDEN_TEXT("CL100K_BASE")
+                            + ", " + GOLDEN_TEXT("2") + " = " + GOLDEN_TEXT("P50K_BASE")
+                            + ", " + GOLDEN_TEXT("3") + " = " + GOLDEN_TEXT("P50K_EDIT")
+                            + ", " + GOLDEN_TEXT("4") + " = " + GOLDEN_TEXT("R50K_BASE")
+                            + "]\nChoose the tokenizer(" + GOLDEN_TEXT("1") + "/" + GOLDEN_TEXT("2")
+                            + "/" + GOLDEN_TEXT("3") + "/" + GOLDEN_TEXT("4") + "), press " + ENTER
+                            + " directly to use " + GOLDEN_TEXT("1") + ": ");
                     std::string tokenizer;
                     getline(std::cin, tokenizer);
-                    std::string tokenizer_;
+                    LanguageModel tokenizer_;
                     if (tokenizer == "2") {
-                        tokenizer_ = "text-davinci-001";
+                        tokenizer_ = LanguageModel::P50K_BASE;
                     } else if (tokenizer == "3") {
-                        tokenizer_ = "text-davinci-003";
+                        tokenizer_ = LanguageModel::P50K_EDIT;
                     } else if (tokenizer == "4") {
-                        tokenizer_ = "text-davinci-edit-001";
+                        tokenizer_ = LanguageModel::R50K_BASE;
                     } else {
-                        tokenizer_ = "gpt-4";
+                        tokenizer_ = LanguageModel::CL100K_BASE;
                     }
-                    auto prev_time = util::currentTimeMillis();
-                    std::cout << "Token count: " << util::get_token_count(input_tc, tokenizer_) << "\n"
-                    << "Time used: " << util::currentTimeMillis() - prev_time << "ms" << std::endl;
+                    long long prev_time = util::currentTimeMillis();
+                    std::shared_ptr<GptEncoding> tokenizer_p = util::get_enc_cache(tokenizer_);
+                    std::vector<int> tokens = tokenizer_p->encode(input_tc);
+                    size_t token_count = tokens.size();
+                    long long time_spent = util::currentTimeMillis() - prev_time;
+                    print_colored_tokenized_text(tokens, tokenizer_p);
+                    std::cout << "Token count: " << token_count << "\nTime used: " << time_spent << "ms" << std::endl;
+                    util::print_cs("Please choose whether you want to show the token numbers or run the next cycle.\n"
+                                   "(Input " + GOLDEN_TEXT("y") + " to show the token numbers, " + GOLDEN_TEXT("n")
+                                   + " to run the next cycle, press " + ENTER + " directly to run the next cycle): ");
+                    std::string show_token;
+                    getline(std::cin, show_token);
+                    transform(show_token.begin(), show_token.end(), show_token.begin(), tolower);
+                    if (show_token == "y") {
+                        print_colored_token_numbers(tokens);
+                    } else {
+                        return ReturnOpCode::CONTINUE;
+                    }
                 } catch (const std::exception& e) {
                     util::println_err("\nAn error occurred while getting input: " + std::string(e.what()));
                 }
@@ -82,6 +130,42 @@ namespace cmd {
             default:
                 return ReturnOpCode::NONE;
         }
+    }
+
+    inline void print_colored_tokenized_text(const std::vector<int>& tokens, const std::shared_ptr<GptEncoding>& tokenizer_p) {
+        std::cout << "Text:\n----------\n";
+        util::print_cs(Term::color_fg(0, 0, 0), false, false);
+        ColorIterator color_iterator;
+        for (const auto& token : tokens) {
+            std::string decoded = tokenizer_p->decode({token});
+            try {
+                Term::Private::utf8_to_utf32(decoded);
+            } catch (const Term::Exception& e) {
+                decoded = "�";
+            }
+            std::string background_color_str = color_iterator.next_color_str();
+            util::print_cs(background_color_str, false, false);
+            if (boost::contains(decoded, "\n")) {
+                boost::replace_all(decoded, "\n", " " + Term::color_bg(Color::Name::Default) + "\n" + background_color_str);
+                util::print_cs(decoded, false, false);
+            } else {
+                std::cout << decoded;
+            }
+        }
+        util::print_cs("", true); //Reset color.
+        std::cout << "----------" << std::endl;
+    }
+
+    inline void print_colored_token_numbers(const std::vector<int>& tokens) {
+        std::cout << "Token numbers:\n----------\n";
+        util::print_cs(Term::color_fg(0, 0, 0), false, false);
+        ColorIterator color_iterator;
+        for (const auto& token : tokens) {
+            std::string background_color_str = color_iterator.next_color_str();
+            util::print_cs(background_color_str + std::to_string(token) + Term::color_bg(Color::Name::Default) + " ", false, false);
+        }
+        util::print_cs("", true); //Reset color.
+        std::cout << "----------" << std::endl;
     }
 
     inline void print_uwu() {

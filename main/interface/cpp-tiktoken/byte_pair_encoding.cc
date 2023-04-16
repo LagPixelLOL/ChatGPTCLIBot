@@ -112,13 +112,13 @@ std::pair<std::vector<int>, std::vector<int>> BytePairEncodingCore::encode_nativ
 
 std::string BytePairEncodingCore::decode_native(const std::vector<int> &input_tokens_to_decode) {
     std::stringstream decoded_string;
-    for (const int token_id: input_tokens_to_decode) {
+    for (const int token_id : input_tokens_to_decode) {
         auto special_token = std::find_if(special_token_mappings_.begin(), special_token_mappings_.end(),
                                           [token_id](const auto &pair){ return pair.second == token_id; });
         if (special_token != special_token_mappings_.end()) {
             decoded_string << special_token->first;
         } else {
-            for (const auto &byte_pair: byte_pair_ranks_) {
+            for (const auto& byte_pair : byte_pair_ranks_) {
                 if (byte_pair.second == token_id) {
                     decoded_string << std::string(byte_pair.first.begin(), byte_pair.first.end());
                     break;
