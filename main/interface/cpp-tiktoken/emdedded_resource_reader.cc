@@ -23,7 +23,8 @@
 #include <stdexcept>
 #include <filesystem>
 
-std::vector<std::string> EmbeddedResourceReader::readEmbeddedResourceAsLines(const std::string& resourceName) {
+std::vector<std::string> EmbeddedResourceReader::readEmbeddedResourceAsLines(const std::string &resourceName)
+{
     std::filesystem::path resource_path = std::filesystem::path("tokenizers") / resourceName;
     std::ifstream file(resource_path);
     if (!file.is_open()) {
@@ -39,11 +40,13 @@ std::vector<std::string> EmbeddedResourceReader::readEmbeddedResourceAsLines(con
     return lines;
 }
 
-std::unordered_map<std::vector<uint8_t>, int, VectorHash> EmbeddedResourceReader::loadTokenBytePairEncoding(const std::string& dataSourceName) {
+std::unordered_map<std::vector<uint8_t>, int, VectorHash>
+EmbeddedResourceReader::loadTokenBytePairEncoding(const std::string &dataSourceName)
+{
     auto lines = readEmbeddedResourceAsLines(dataSourceName);
     std::unordered_map<std::vector<uint8_t>, int, VectorHash> token_byte_pair_encoding;
 
-    for (const auto& line : lines) {
+    for (const auto &line: lines) {
         if (!line.empty()) {
             std::istringstream iss(line);
             std::string base64_string;

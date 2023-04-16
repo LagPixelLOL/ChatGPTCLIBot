@@ -24,24 +24,24 @@
 #include <unordered_set>
 #include <functional>
 #include <memory>
-#include "pcre2_regex.h"
+
+class PCRERegex;
 
 class BytePairEncodingCore {
-public:
-    BytePairEncodingCore(const std::unordered_map<std::vector<uint8_t>, int, VectorHash>& byte_pair_ranks,
-                         const std::unordered_map<std::string, int>& special_token_mappings,
-                         const std::shared_ptr<PCRERegex>& pattern_string);
-
-    template <typename T>
-    std::vector<T> byte_pair_merge(const std::vector<uint8_t>& piece,
-                                   const std::unordered_map<std::vector<uint8_t>, int, VectorHash>& ranks,
-                                   std::function<T(int, int)> f);
-    std::pair<std::vector<int>, std::vector<int>> encode_native(const std::string& line_to_encode,
-                                                                const std::unordered_set<std::string>& allowed_special);
-    std::string decode_native(const std::vector<int>& input_tokens_to_decode);
-
-private:
     std::unordered_map<std::vector<uint8_t>, int, VectorHash> byte_pair_ranks_;
     std::unordered_map<std::string, int> special_token_mappings_;
     std::shared_ptr<PCRERegex> pattern_string_;
+
+    static std::vector<int> byte_pair_merge(const std::vector<uint8_t> &piece,
+                                            const std::unordered_map<std::vector<uint8_t>, int, VectorHash> &ranks,
+                                            const std::function<int(int, int)>& f);
+
+public:
+    BytePairEncodingCore(const std::unordered_map<std::vector<uint8_t>, int, VectorHash> &byte_pair_ranks,
+                         const std::unordered_map<std::string, int> &special_token_mappings,
+                         const std::shared_ptr<PCRERegex> &pattern_string);
+
+    std::pair<std::vector<int>, std::vector<int>> encode_native(const std::string &line_to_encode,
+                                                                const std::unordered_set<std::string> &allowed_special);
+    std::string decode_native(const std::vector<int> &input_tokens_to_decode);
 };

@@ -21,7 +21,7 @@ Wiki: [Click Me](https://github.com/LagPixelLOL/ChatGPTCLIBot/wiki)
 9. Automatically use the system proxy. Note: This feature is only supported on Windows, because there's a bug in my proxy library that causes it fail to compile on Linux and macOS.
 10. Multiline input support, you need to press Ctrl+N or Alt+Enter to enter a new line.
 11. Ctrl+V pasting support, you can paste text from your clipboard by pressing Ctrl+V.
-12. UTF-8 support, currently you can't directly type them in, but you can paste them from your clipboard.
+12. Full UTF-8 support, you can type in any language you want!
 13. Full of colors(If your terminal supports it)!
 
 Written in C++ (Libraries used:
@@ -32,7 +32,9 @@ Written in C++ (Libraries used:
 [cpp-terminal](https://github.com/jupyter-xeus/cpp-terminal),
 [ftxui](https://github.com/ArthurSonzogni/FTXUI),
 [clip](https://github.com/dacap/clip),
-[cpp-tiktoken](https://github.com/gh-markt/tiktoken))
+[cpp-tiktoken](https://github.com/gh-markt/tiktoken),
+[pcre2](https://www.pcre.org/),
+[utf8proc](https://juliastrings.github.io/utf8proc/))
 
 # Supported OS:
 * Windows 10/11 64-bit

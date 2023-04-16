@@ -16,21 +16,17 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #pragma once
+
 #include <cstdint>
 #include <vector>
 #include <string>
 #include <stdexcept>
+
 #define PCRE2_CODE_UNIT_WIDTH 0
+
 #include <pcre2.h>
 
-/**
- * Hasher for vectors.
- */
 struct VectorHash {
-
-    /**
-     * Hashes a vector.
-     */
     template<typename T>
     std::size_t operator()(const std::vector<T>& v) const {
         std::hash<T> hasher;
@@ -43,6 +39,6 @@ struct VectorHash {
 };
 
 namespace base64 {
-    std::vector<uint8_t> decode(const std::string& input);
+std::vector<uint8_t> decode(const std::string &input);
 }
 

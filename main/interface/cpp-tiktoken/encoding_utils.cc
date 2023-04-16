@@ -17,10 +17,9 @@
  */
 #include "encoding_utils.h"
 
-static std::string base64_chars =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        "abcdefghijklmnopqrstuvwxyz"
-        "0123456789+/";
+static std::string base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                  "abcdefghijklmnopqrstuvwxyz"
+                                  "0123456789+/";
 
 namespace base64 {
 static auto constexpr fillchar = '=';
@@ -45,16 +44,18 @@ std::vector<uint8_t> decode(const std::string &data)
         ret.push_back(c);
         if (++i < len) {
             c = data[i];
-            if (fillchar == c)
+            if (fillchar == c) {
                 break;
+            }
             c = (char) cvt.find(c);
             c1 = ((c1 << 4) & 0xf0) | ((c >> 2) & 0xf);
             ret.push_back(c1);
         }
         if (++i < len) {
             c1 = data[i];
-            if (fillchar == c1)
+            if (fillchar == c1) {
                 break;
+            }
             c1 = (char) cvt.find(c1);
             c = ((c << 6) & 0xc0) | c1;
             ret.push_back(c);
@@ -62,7 +63,6 @@ std::vector<uint8_t> decode(const std::string &data)
     }
     return (ret);
 }
-
 
 } // base64
 
