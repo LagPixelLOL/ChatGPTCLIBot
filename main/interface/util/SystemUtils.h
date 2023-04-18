@@ -6,6 +6,7 @@
 #define GPT3BOT_SYSTEMUTILS_H
 
 #include "boost/algorithm/string.hpp"
+#include "boost/lexical_cast.hpp"
 #include "iostream"
 #include "string"
 #include "vector"
@@ -15,7 +16,8 @@ namespace util {
 
     long long currentTimeMillis();
     std::string currentTimeFormatted();
-    std::string ms_to_formatted_time(long long timeMillis);
+    std::string ms_to_formatted_time(long long time_ms);
+    short timezone_offset_minutes(long long time_ms);
     std::string system_proxy();
     void free_proxy_factory();
 } // util

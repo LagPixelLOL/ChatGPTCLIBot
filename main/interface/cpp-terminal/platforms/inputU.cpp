@@ -10,7 +10,6 @@
 #include <cerrno>
 #include <sys/ioctl.h>
 #include <unistd.h>
-#include <vector>
 #endif
 
 #include "../exception.hpp"
@@ -93,10 +92,19 @@ namespace Term {
                         break;
                     }
                     case KeyU::ARROW_LEFT:
-                        m.cursor_col += calc_cursor_move(m.lines[m.cursor_row - 1], m.cursor_col, -1);
+                        if (m.cursor_col <= 1 && m.cursor_row > 1) {
+                            m.cursor_col = m.lines[--m.cursor_row - 1].size() + 1;
+                        } else {
+                            m.cursor_col += calc_cursor_move(m.lines[m.cursor_row - 1], m.cursor_col, -1);
+                        }
                         break;
                     case KeyU::ARROW_RIGHT:
-                        m.cursor_col += calc_cursor_move(m.lines[m.cursor_row - 1], m.cursor_col, 1);
+                        if (m.cursor_col >= m.lines[m.cursor_row - 1].size() + 1 && m.cursor_row < m.lines.size()) {
+                            m.cursor_col = 1;
+                            ++m.cursor_row;
+                        } else {
+                            m.cursor_col += calc_cursor_move(m.lines[m.cursor_row - 1], m.cursor_col, 1);
+                        }
                         break;
                     case KeyU::HOME:
                         m.cursor_col = 1;

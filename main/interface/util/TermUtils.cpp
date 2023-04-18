@@ -3,9 +3,6 @@
 //
 
 #include "TermUtils.h"
-#include <stdexcept>
-#include <limits>
-#include <memory>
 
 namespace util {
 

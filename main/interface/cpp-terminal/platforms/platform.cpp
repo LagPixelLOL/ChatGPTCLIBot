@@ -43,7 +43,7 @@ short Term::Private::c32_display_width(const char32_t& c32) {
             {0x6, 1},
             {0x7, 0},
             {0x8, -1},
-            {0x9, 2},
+            {0x9, 4},
             {0xa, -1},
             {0xc, 1},
             {0xd, -1},

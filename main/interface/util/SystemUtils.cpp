@@ -25,17 +25,51 @@ namespace util {
         return ms_to_formatted_time(currentTimeMillis());
     }
 
-    std::string ms_to_formatted_time(long long timeMillis) {
-        time_t time = timeMillis / 1000;
-        struct tm time_info{};
+    tm get_time_info(long long time_ms) {
+        time_t time = time_ms / 1000;
+        tm time_info{};
 #ifdef _MSC_VER
         localtime_s(&time_info, &time);
 #else
         localtime_r(&time, &time_info);
 #endif
+        return time_info;
+    }
+
+    std::string ms_to_formatted_time(long long time_ms) {
+        tm time_info = get_time_info(time_ms);
         char buffer[80];
         strftime(buffer, 80, "%Y-%m-%d %H:%M:%S", &time_info);
+        try {
+            short offset_minutes = timezone_offset_minutes(time_ms);
+            auto offset_hours = static_cast<short>(offset_minutes / 60);
+            auto remaining_minutes = static_cast<short>(offset_minutes % 60);
+            std::stringstream ss;
+            ss << "UTC";
+            if (offset_hours >= 0) {
+                ss << '+';
+            }
+            ss << offset_hours;
+            if (remaining_minutes > 0) {
+                ss << ':' << remaining_minutes;
+            }
+            ss << ' ' << buffer;
+            return ss.str();
+        } catch (const boost::bad_lexical_cast& e) {}
         return buffer;
+    }
+
+    short timezone_offset_minutes(long long time_ms) {
+        tm time_info = get_time_info(time_ms);
+        char buffer[10];
+        strftime(buffer, 10, "%z", &time_info);
+        auto offset_hours = boost::lexical_cast<short>(std::string(buffer, 3));
+        auto offset_minutes = boost::lexical_cast<short>(std::string(buffer + 3, 2));
+        if (buffer[0] == '-') {
+            offset_minutes = static_cast<short>(-offset_minutes);
+        }
+        auto total_offset_minutes = static_cast<short>(offset_hours * 60 + offset_minutes);
+        return total_offset_minutes;
     }
 
     /**
