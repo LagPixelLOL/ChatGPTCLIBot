@@ -32,6 +32,7 @@ namespace GPT {
     unsigned int max_display_length = 100;
     unsigned int max_short_memory_length = 4;
     unsigned int max_reference_length = 4;
+    bool space_between_exchanges = false;
     bool debug_reference = false;
 
     /**
@@ -181,7 +182,7 @@ namespace GPT {
 
     void print_prompt() {
         clear_console();
-        prompt::print_prompt(initial_prompt, prompts, me_id, bot_id, max_display_length, is_new_api);
+        prompt::print_prompt(initial_prompt, prompts, me_id, bot_id, max_display_length, is_new_api, space_between_exchanges);
     }
 
     void print_enter_next_cycle() {
@@ -551,6 +552,13 @@ namespace GPT {
                     util::println_err("Reason: max_reference_length is not an unsigned integer.");
                     error = true;
                 }
+                if (j.count("space_between_exchanges") > 0 && j["space_between_exchanges"].is_boolean()) {
+                    space_between_exchanges = j["space_between_exchanges"].get<bool>();
+                } else {
+                    util::println_err("Error reading config file: " + PATH(path_));
+                    util::println_err("Reason: space_between_exchanges is not a boolean.");
+                    error = true;
+                }
                 if (j.count("debug_reference") > 0 && j["debug_reference"].is_boolean()) {
                     debug_reference = j["debug_reference"].get<bool>();
                 } else {
@@ -615,6 +623,7 @@ namespace GPT {
                 j["max_display_length"] = max_display_length;
                 j["max_short_memory_length"] = max_short_memory_length;
                 j["max_reference_length"] = max_reference_length;
+                j["space_between_exchanges"] = space_between_exchanges;
                 j["debug_reference"] = debug_reference;
 #ifdef __linux__
                 j["ca_bundle_path"] = util::get_ca_bundle_path();

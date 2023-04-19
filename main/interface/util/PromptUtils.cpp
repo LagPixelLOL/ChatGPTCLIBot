@@ -4,14 +4,15 @@
 
 #include "PromptUtils.h"
 
-#define ME_COLOR Term::color_fg(175, 200, 255)
+#define USER_COLOR Term::color_fg(175, 200, 255)
 #define BOT_COLOR Term::color_fg(175, 255, 225)
 
 namespace prompt {
 
     void print_prompt(const std::string& initial_prompt, const std::vector<std::shared_ptr<chat::Exchange>>& prompts,
-                      const std::string& me_id, const std::string& bot_id, const unsigned int& max_length, const bool& is_new_api) {
-        util::print_cs(to_string(initial_prompt, prompts, me_id, bot_id, max_length, true), true);
+                      const std::string& me_id, const std::string& bot_id, const unsigned int& max_length,
+                      const bool& is_new_api, const bool& space_between_exchanges) {
+        util::print_cs(to_string(initial_prompt, prompts, me_id, bot_id, max_length, true, space_between_exchanges), true);
         if (!prompts.empty() && !prompts.back()->hasResponse()) {
             util::print_cs(BOT_COLOR + bot_id + (is_new_api ? ": " : ":"), false, false);
         }
@@ -25,12 +26,16 @@ namespace prompt {
     }
 
     std::string to_string(std::string initial_prompt, std::vector<std::shared_ptr<chat::Exchange>> prompts,
-                          const std::string& me_id, const std::string& bot_id, const unsigned int& max_length, const bool& add_color) {
+                          const std::string& me_id, const std::string& bot_id, const unsigned int& max_length,
+                          const bool& add_color, const bool& space_between_exchanges) {
         delete_front_keep_back(prompts, max_length);
         for (const auto& exchange : prompts) {
-            initial_prompt.append((add_color ? ME_COLOR : "") + (boost::format("\n%1%: %2%") % me_id % exchange->getInput()).str());
+            initial_prompt.append((add_color ? USER_COLOR : "") + (boost::format("\n%1%: %2%") % me_id % exchange->getInput()).str());
             if (exchange->hasResponse()) {
                 initial_prompt.append((add_color ? BOT_COLOR : "") + (boost::format("\n%1%: %2%") % bot_id % exchange->getResponse()).str());
+                if (space_between_exchanges) {
+                    initial_prompt.append("\n");
+                }
             }
         }
         return initial_prompt;
@@ -59,13 +64,11 @@ namespace prompt {
         if (computed_exchanges.empty()) {
             return initial_prompt;
         }
-        sort(computed_exchanges.begin(), computed_exchanges.end(),
-             [](const auto& a, const auto& b){
+        sort(computed_exchanges.begin(), computed_exchanges.end(), [](const auto& a, const auto& b){
             return a.second < b.second;
         });
         delete_front_keep_back(computed_exchanges, max_reference_length);
-        sort(computed_exchanges.begin(), computed_exchanges.end(),
-             [](const auto& a, const auto& b){
+        sort(computed_exchanges.begin(), computed_exchanges.end(), [](const auto& a, const auto& b){
             return a.first.getTimeMS() < b.first.getTimeMS();
         });
         initial_prompt.append("\nChat exchanges for reference:\n\"");
