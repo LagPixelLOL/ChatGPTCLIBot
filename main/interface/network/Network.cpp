@@ -31,7 +31,7 @@ namespace api {
     bool call_api(const std::string& initial_prompt, const std::vector<std::shared_ptr<chat::Exchange>>& chat_exchanges,
                   const std::string& api_key, const std::string& model, const float& temperature, const int& max_tokens,
                   const float& top_p, const float& frequency_penalty, const float& presence_penalty,
-                  const std::unordered_map<std::string, float>& logit_bias,
+                  const std::unordered_map<std::string, float>& logit_bias, const bool& search_response,
                   const unsigned int& max_short_memory_length, const unsigned int& max_reference_length,
                   const std::string& me_id, const std::string& bot_id, std::function<void(const std::string& streamed_response)> callback,
                   const bool& debug_reference, const bool& pause_when_showing_reference) {
@@ -45,7 +45,7 @@ namespace api {
             curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
             std::string constructed_initial = prompt::construct_reference(
                     initial_prompt, chat_exchanges.back()->getInputEmbeddings(),
-                    chat_exchanges, max_reference_length, max_short_memory_length, me_id, bot_id);
+                    chat_exchanges, search_response, max_reference_length, max_short_memory_length, me_id, bot_id);
             std::string suffix = ": ";
             if (debug_reference) {
                 std::string dr_prefix = Term::color_fg(255, 200, 0) + "<Debug Reference> " + Term::color_fg(Term::Color::Name::Default);
@@ -63,9 +63,8 @@ namespace api {
             std::function<size_t(char*, size_t, size_t)> callback_lambda = [&](char* char_ptr, size_t size, size_t mem){
                 curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, timeout_checker.calc_next());
                 size_t length = size * mem;
-                std::string s(char_ptr, length);
                 std::vector<std::string> split_str;
-                split_regex(split_str, s, boost::regex("[\n][\n][d][a][t][a][:][ ]"));
+                split_regex(split_str, std::string(char_ptr, length), boost::regex("[\n][\n][d][a][t][a][:][ ]"));
                 for (auto& str: split_str) {
                     if (boost::starts_with(str, "data: ")) {
                         str.erase(0, 6);

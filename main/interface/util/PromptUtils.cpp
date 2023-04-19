@@ -19,7 +19,7 @@ namespace prompt {
     }
 
     template<typename T>
-    void delete_front_keep_back(std::vector<T>& vec, const unsigned int& keep_back_count) {
+    inline void delete_front_keep_back(std::vector<T>& vec, const unsigned int& keep_back_count) {
         if (vec.size() > keep_back_count) {
             vec.erase(vec.begin(), vec.end() - keep_back_count);
         }
@@ -42,7 +42,7 @@ namespace prompt {
     }
 
     std::string construct_reference(std::string initial_prompt, const std::vector<float>& input_embeddings,
-                                    std::vector<std::shared_ptr<chat::Exchange>> chat_exchanges,
+                                    std::vector<std::shared_ptr<chat::Exchange>> chat_exchanges, const bool& search_response,
                                     const unsigned int& max_reference_length, const unsigned int& max_short_memory_length,
                                     const std::string& me_id, const std::string& bot_id) {
         initial_prompt.append("\nCurrent time: " + util::currentTimeFormatted() + "\n");
@@ -56,7 +56,13 @@ namespace prompt {
         }
         std::vector<std::pair<chat::Exchange, double>> computed_exchanges;
         for (const auto& exchange : chat_exchanges) {
-            double similarity = exchange->compare_similarity(input_embeddings);
+            double similarity = emb::cosine_similarity(exchange->getInputEmbeddings(), input_embeddings);
+            if (search_response && exchange->hasResponse() && exchange->hasResponseEmbeddings()) {
+                double response_similarity = emb::cosine_similarity(exchange->getResponseEmbeddings(), input_embeddings);
+                if (response_similarity > similarity) {
+                    similarity = response_similarity;
+                }
+            }
             if (similarity >= 0.8) {
                 computed_exchanges.emplace_back(*exchange, similarity);
             }

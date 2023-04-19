@@ -19,7 +19,7 @@ namespace prompt {
                           const std::string& me_id, const std::string& bot_id, const unsigned int& max_length,
                           const bool& add_color = false, const bool& space_between_exchanges = false);
     std::string construct_reference(std::string initial_prompt, const std::vector<float>& input_embeddings,
-                                    std::vector<std::shared_ptr<chat::Exchange>> chat_exchanges,
+                                    std::vector<std::shared_ptr<chat::Exchange>> chat_exchanges, const bool& search_response,
                                     const unsigned int& max_reference_length, const unsigned int& max_short_memory_length,
                                     const std::string& me_id, const std::string& bot_id);
 } // prompt

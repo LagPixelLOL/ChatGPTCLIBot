@@ -87,8 +87,7 @@ namespace api {
 
     size_t write_callback(char* char_ptr, size_t size, size_t mem, std::string* base_str) {
         size_t length = size * mem;
-        std::string s(char_ptr, length);
-        base_str->append(s);
+        base_str->append(char_ptr, length);
         return length;
     }
 

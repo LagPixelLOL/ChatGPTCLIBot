@@ -32,6 +32,7 @@ namespace GPT {
     unsigned int max_display_length = 100;
     unsigned int max_short_memory_length = 4;
     unsigned int max_reference_length = 4;
+    bool search_response = true;
     bool space_between_exchanges = false;
     bool debug_reference = false;
 
@@ -115,68 +116,79 @@ namespace GPT {
             }
             std::string api_key = api::get_key();
             util::println_info("Getting embeddings and finding similar chat exchanges for the input...", false);
-            std::pair<std::shared_ptr<std::vector<float>>, api::APIKeyStatus> emb_response;
+            api::APIKeyStatus key_status = api::APIKeyStatus::VALID;
+            std::vector<std::vector<float>> emb_response;
+            std::vector<std::string> texts{input};
+            bool need_to_get_response_embeddings = false;
+            if (search_response && !prompts.empty()) {
+                const chat::Exchange& last_exchange = *prompts.back();
+                if (!last_exchange.hasResponseEmbeddings() && last_exchange.hasResponse()) {
+                    need_to_get_response_embeddings = true;
+                    texts.emplace_back(last_exchange.getResponse());
+                }
+            }
             try {
-                emb_response = emb::get_embeddings(input, api_key);
+                emb_response = emb::get_embeddings(texts, api_key, key_status);
             } catch (const std::exception& e) {
-                util::println_err("\nError when getting embeddings: " + std::string(e.what()));
+                std::string err_msg(e.what());
+                if (!err_msg.empty()) {
+                    util::println_err("\nError when getting embeddings: " + err_msg);
+                }
+                if (key_status == api::APIKeyStatus::INVALID_KEY || key_status == api::APIKeyStatus::QUOTA_EXCEEDED) {
+                    p_on_invalid_key();
+                }
                 print_enter_next_cycle();
                 continue;
             }
-            auto key_status_emb = emb_response.second;
-            if (key_status_emb == api::APIKeyStatus::INVALID_KEY || key_status_emb == api::APIKeyStatus::QUOTA_EXCEEDED) {
-                p_on_invalid_key();
-                print_enter_next_cycle();
-                continue;
+            if (need_to_get_response_embeddings) {
+                prompts.back()->setResponseEmbeddings(emb_response[1]);
             }
-            if (auto input_embeddings = emb_response.first) {
-                prompts.emplace_back(make_shared<chat::Exchange>(input, *input_embeddings, util::currentTimeMillis()));
-                print_prompt();
-                std::string response;
-                try {
-                    bool api_success = api::call_api(initial_prompt, prompts, api_key, model, temperature, max_tokens, top_p,
-                                                     frequency_penalty, presence_penalty, logit_bias, max_short_memory_length,
-                                                     max_reference_length, me_id, bot_id, [&response](const auto& streamed_response){
-                        try {
-                            nlohmann::json j = nlohmann::json::parse(streamed_response);
-                            if (j.count("error") > 0 && j["error"].is_object()) {
-                                response = j.dump();
-                                return;
-                            }
-                        } catch (const nlohmann::json::parse_error& e) {}
-                        response.append(streamed_response);
-                        util::print_cs(streamed_response, false, false);
-                        }, debug_reference);
-                    util::print_cs(""); //Reset color.
-                    if (!api_success) {
-                        print_enter_next_cycle();
-                        prompts.pop_back();
-                        continue;
-                    }
-                } catch (const std::exception& e) {
-                    util::println_err("\nError when calling API: " + std::string(e.what()));
+            /* No need to do prompts.pop_back() before this line. */
+            prompts.emplace_back(make_shared<chat::Exchange>(input, emb_response[0], util::currentTimeMillis()));
+            /* Need to do prompts.pop_back() after this line before continue;. */
+            print_prompt();
+            std::string response;
+            try {
+                bool api_success = api::call_api(initial_prompt, prompts, api_key, model, temperature, max_tokens, top_p,
+                                                 frequency_penalty, presence_penalty, logit_bias, search_response, max_short_memory_length,
+                                                 max_reference_length, me_id, bot_id, [&response](const auto& streamed_response){
+                    try {
+                        nlohmann::json j = nlohmann::json::parse(streamed_response);
+                        if (j.count("error") > 0 && j["error"].is_object()) {
+                            response = j.dump();
+                            return;
+                        }
+                    } catch (const nlohmann::json::parse_error& e) {}
+                    response.append(streamed_response);
+                    util::print_cs(streamed_response, false, false);
+                    }, debug_reference);
+                util::print_cs(""); //Reset color.
+                if (!api_success) {
                     print_enter_next_cycle();
                     prompts.pop_back();
                     continue;
                 }
-                try {
-                    api::APIKeyStatus key_status_api;
-                    if (api::check_err_obj(nlohmann::json::parse(response), key_status_api)) {
-                        if (key_status_api == api::APIKeyStatus::INVALID_KEY || key_status_api == api::APIKeyStatus::QUOTA_EXCEEDED) {
-                            p_on_invalid_key();
-                        }
-                        print_enter_next_cycle();
-                        prompts.pop_back();
-                        continue;
-                    }
-                } catch (const nlohmann::json::parse_error& e) {}
-                if (!is_new_api && boost::starts_with(response, " ")) {
-                    response.erase(0, 1);
-                }
-                prompts.back()->setResponse(response);
-            } else {
+            } catch (const std::exception& e) {
+                util::println_err("\nError when calling API: " + std::string(e.what()));
                 print_enter_next_cycle();
+                prompts.pop_back();
+                continue;
             }
+            try {
+                api::APIKeyStatus key_status_api;
+                if (api::check_err_obj(nlohmann::json::parse(response), key_status_api)) {
+                    if (key_status_api == api::APIKeyStatus::INVALID_KEY || key_status_api == api::APIKeyStatus::QUOTA_EXCEEDED) {
+                        p_on_invalid_key();
+                    }
+                    print_enter_next_cycle();
+                    prompts.pop_back();
+                    continue;
+                }
+            } catch (const nlohmann::json::parse_error& e) {}
+            if (!is_new_api && boost::starts_with(response, " ")) {
+                response.erase(0, 1);
+            }
+            prompts.back()->setResponse(response);
         }
     }
 
@@ -306,6 +318,7 @@ namespace GPT {
                                 std::string input;
                                 std::vector<float> input_embeddings;
                                 std::string response;
+                                std::vector<float> response_embeddings;
                                 long long time_ms;
                                 if (history.count("input") > 0 && history["input"].is_string()) {
                                     input = history["input"].get<std::string>();
@@ -323,6 +336,9 @@ namespace GPT {
                                 }
                                 if (history.count("response") > 0 && history["response"].is_string()) {
                                     response = history["response"].get<std::string>();
+                                    if (history.count("response_embeddings") > 0 && history["response_embeddings"].is_array()) {
+                                        response_embeddings = history["response_embeddings"].get<std::vector<float>>();
+                                    }
                                 }
                                 if (history.count("time_stamp") > 0 && history["time_stamp"].is_number_integer()) {
                                     time_ms = history["time_stamp"].get<long long>();
@@ -333,8 +349,11 @@ namespace GPT {
                                 }
                                 if (response.empty()) {
                                     prompts.push_back(std::make_shared<chat::Exchange>(input, input_embeddings, time_ms));
-                                } else {
+                                } else if (response_embeddings.empty()) {
                                     prompts.push_back(std::make_shared<chat::Exchange>(input, input_embeddings, response, time_ms));
+                                } else {
+                                    prompts.push_back(std::make_shared<chat::Exchange>(input, input_embeddings, response,
+                                                                                       response_embeddings, time_ms));
                                 }
                             } else {
                                 util::println_err("Error reading saved chat file: " + PATH(path_));
@@ -342,7 +361,7 @@ namespace GPT {
                                 return false;
                             }
                         }
-                    } else if (histories.is_null()) {} else {
+                    } else if (!histories.is_null()) {
                         util::println_err("Error reading saved chat file: " + PATH(path_));
                         util::println_err("Reason: histories is not an array.");
                         return false;
@@ -385,6 +404,9 @@ namespace GPT {
                     history["input_embeddings"] = prompt->getInputEmbeddings();
                     if (prompt->hasResponse()) {
                         history["response"] = prompt->getResponse();
+                        if (prompt->hasResponseEmbeddings()) {
+                            history["response_embeddings"] = prompt->getResponseEmbeddings();
+                        }
                     }
                     history["time_stamp"] = prompt->getTimeMS();
                     histories.push_back(history);
@@ -552,6 +574,13 @@ namespace GPT {
                     util::println_err("Reason: max_reference_length is not an unsigned integer.");
                     error = true;
                 }
+                if (j.count("search_response") > 0 && j["search_response"].is_boolean()) {
+                    search_response = j["search_response"].get<bool>();
+                } else {
+                    util::println_err("Error reading config file: " + PATH(path_));
+                    util::println_err("Reason: search_response is not a boolean.");
+                    error = true;
+                }
                 if (j.count("space_between_exchanges") > 0 && j["space_between_exchanges"].is_boolean()) {
                     space_between_exchanges = j["space_between_exchanges"].get<bool>();
                 } else {
@@ -623,6 +652,7 @@ namespace GPT {
                 j["max_display_length"] = max_display_length;
                 j["max_short_memory_length"] = max_short_memory_length;
                 j["max_reference_length"] = max_reference_length;
+                j["search_response"] = search_response;
                 j["space_between_exchanges"] = space_between_exchanges;
                 j["debug_reference"] = debug_reference;
 #ifdef __linux__
