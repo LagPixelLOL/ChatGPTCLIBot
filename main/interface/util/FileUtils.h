@@ -8,6 +8,7 @@
 #include "boost/algorithm/string.hpp"
 #include "filesystem"
 #include "fstream"
+#include "vector"
 
 namespace file {
 
