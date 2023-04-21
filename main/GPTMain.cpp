@@ -777,7 +777,7 @@ namespace GPT {
                 if (j.count("ca_bundle_path") > 0 && j["ca_bundle_path"].is_string()) {
                     util::set_ca_bundle_path(j["ca_bundle_path"].get<std::string>());
                 } else {
-                    util::println_err("Error reading config file: " + PATH(path_));
+                    util::println_err("Error reading config file: " + PATH_S(path_));
                     util::println_err("Reason: ca_bundle_path is not a string.");
                     error = true;
                 }
