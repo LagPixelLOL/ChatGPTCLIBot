@@ -41,11 +41,19 @@ namespace prompt {
         return initial_prompt;
     }
 
+    inline void append_time(std::string& s) {
+        s.append("\nCurrent time: " + util::currentTimeFormatted() + "\n");
+    }
+
+    /**
+     * Construct long-term memory reference for general chatting.
+     * @return The constructed initial prompt.
+     */
     std::string construct_reference(std::string initial_prompt, const std::vector<float>& input_embeddings,
                                     std::vector<std::shared_ptr<chat::Exchange>> chat_exchanges, const bool& search_response,
                                     const unsigned int& max_reference_length, const unsigned int& max_short_memory_length,
                                     const std::string& me_id, const std::string& bot_id) {
-        initial_prompt.append("\nCurrent time: " + util::currentTimeFormatted() + "\n");
+        append_time(initial_prompt);
         if (max_reference_length == 0) {
             return initial_prompt;
         }
@@ -70,14 +78,14 @@ namespace prompt {
         if (computed_exchanges.empty()) {
             return initial_prompt;
         }
-        sort(computed_exchanges.begin(), computed_exchanges.end(), [](const auto& a, const auto& b){
+        std::sort(computed_exchanges.begin(), computed_exchanges.end(), [](const auto& a, const auto& b){
             return a.second < b.second;
         });
         delete_front_keep_back(computed_exchanges, max_reference_length);
-        sort(computed_exchanges.begin(), computed_exchanges.end(), [](const auto& a, const auto& b){
+        std::sort(computed_exchanges.begin(), computed_exchanges.end(), [](const auto& a, const auto& b){
             return a.first.getTimeMS() < b.first.getTimeMS();
         });
-        initial_prompt.append("\nChat exchanges for reference:\n\"");
+        initial_prompt.append("\nChat exchanges for reference:\n\"\"\"\n");
         std::string ref;
         for (const auto& reference : computed_exchanges) {
             chat::Exchange exchange = reference.first;
@@ -90,14 +98,66 @@ namespace prompt {
         if (boost::starts_with(ref, "\n\n")) {
             ref.erase(0, 2);
         }
-        return initial_prompt.append(ref + "\"\n");
+        return initial_prompt.append(ref + "\n\"\"\"\n");
+    }
+
+    /**
+     * Construct reference for document Q&A.
+     * @return The constructed initial prompt.
+     */
+    std::string construct_reference(std::string initial_prompt, const std::vector<float>& input_embeddings,
+                                    const std::vector<doc::Document>& documents, const unsigned int& max_reference_length) {
+        append_time(initial_prompt);
+        if (max_reference_length == 0) {
+            return initial_prompt;
+        }
+        /* tuple<document, similarity, index> */
+        std::vector<std::tuple<doc::Document, double, size_t>> computed_documents;
+        for (size_t i = 0; i < documents.size(); i++) {
+            const auto& document = documents[i];
+            double similarity = emb::cosine_similarity(document.getEmbeddings(), input_embeddings);
+            if (similarity >= 0.8) {
+                computed_documents.emplace_back(document, similarity, i);
+            }
+        }
+        if (computed_documents.empty()) {
+            return initial_prompt;
+        }
+        std::sort(computed_documents.begin(), computed_documents.end(), [](const auto& a, const auto& b){
+            return std::get<1>(a) < std::get<1>(b);
+        });
+        delete_front_keep_back(computed_documents, max_reference_length);
+        std::sort(computed_documents.begin(), computed_documents.end(), [](const auto& a, const auto& b){
+            return std::get<2>(a) < std::get<2>(b);
+        });
+        initial_prompt.append("\nDocuments for reference:\n\"\"\"\n");
+        std::string ref;
+        size_t index = 0;
+        for (const auto& reference : computed_documents) {
+            ref.append("\n\nDocument snippet " + std::to_string(++index) + ": \"" + std::get<0>(reference).getText() + "\"");
+        }
+        if (boost::starts_with(ref, "\n\n")) {
+            ref.erase(0, 2);
+        }
+        return initial_prompt.append(ref + "\n\"\"\"\n");
     }
 } // prompt
 
 namespace GPT {
 
-    std::string to_payload(const std::string& initial_prompt, const std::vector<std::shared_ptr<chat::Exchange>>& prompts,
+    inline std::string get_pre_prompt(const std::string& me_id, const std::string& bot_id) {
+        return (boost::format(
+                "The following conversation is set to:\n"
+                "%1%: is the prefix of the user, texts start with it are the user input\n"
+                "%2%: is the prefix of your response, texts start with it are your response\n") % me_id % bot_id).str();
+    }
+
+    std::string to_payload(std::string initial_prompt, const std::vector<std::shared_ptr<chat::Exchange>>& prompts,
                            const std::string& me_id, const std::string& bot_id, const unsigned int& max_length) {
+        const std::string& pre_prompt = get_pre_prompt(me_id, bot_id);
+        if (!boost::starts_with(initial_prompt, pre_prompt)) {
+            initial_prompt.insert(0, pre_prompt);
+        }
         return prompt::to_string(initial_prompt, prompts, me_id, bot_id, max_length) + "\n" + bot_id + ":";
     }
 } // GPT
@@ -109,23 +169,21 @@ namespace ChatGPT {
      * Json format:
      * [
      *     {"role": "system", "content": "<initial prompt>"},
-     *     {"role": "user", "content": "<user input 1>"},
-     *     {"role": "assistant", "content": "<bot response 1>"},
-     *     {"role": "user", "content": "<user input 2>"},
-     *     {"role": "assistant", "content": "<bot response 2>"},
-     *     {"role": "user", "content": "<user input last>"}
+     *     {"role": "user", "content": "<user input history 1>"},
+     *     {"role": "assistant", "content": "<bot response history 1>"},
+     *     {"role": "user", "content": "<user input history 2>"},
+     *     {"role": "assistant", "content": "<bot response history 2>"},
+     *     {"role": "user", "content": "<user current input>"}
      * ]
      */
     nlohmann::json to_payload(std::string initial_prompt, std::vector<std::shared_ptr<chat::Exchange>> prompts,
                               const std::string& me_id, const std::string& bot_id, const unsigned int& max_length) {
         prompt::delete_front_keep_back(prompts, max_length);
-        boost::replace_all(initial_prompt, (boost::format(
-                "The following conversation is set to:\n"
-                "%1%: is the prefix of the user, texts start with it are the user input\n"
-                "%2%: is the prefix of your response, texts start with it are your response\n")
-                % me_id % bot_id).str(), "");
+        boost::replace_all(initial_prompt, GPT::get_pre_prompt(me_id, bot_id), "");
         nlohmann::json payload = nlohmann::json::array();
-        payload.push_back({{"role", "user"}, {"content", initial_prompt}}); // system/user
+        //For GPT-3.5, using "user" role is better for initial prompt, if OpenAI ever updates the API, I will change it to "system".
+        //Also for GPT-4, there's not much difference between "user" and "system".
+        payload.push_back({{"role", "user"}, {"content", initial_prompt}}); //system/user
         for (const auto& exchange : prompts) {
             payload.push_back({{"role", "user"}, {"content", exchange->getInput()}});
             if (exchange->hasResponse()) {

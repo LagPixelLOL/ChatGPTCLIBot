@@ -116,5 +116,6 @@ namespace emb {
         } else {
             throw std::runtime_error("Failed to initialize cURL.");
         }
+        throw std::runtime_error("Unknown error occurred.");
     }
 } // emb

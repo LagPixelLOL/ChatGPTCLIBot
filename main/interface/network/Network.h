@@ -28,7 +28,8 @@ namespace api {
                   const std::unordered_map<std::string, float>& logit_bias, const bool& search_response,
                   const unsigned int& max_short_memory_length, const unsigned int& max_reference_length,
                   const std::string& me_id, const std::string& bot_id, std::function<void(const std::string& streamed_response)> callback,
-                  const bool& debug_reference = false, const bool& pause_when_showing_reference = true);
+                  const bool& debug_reference = false, const bool& pause_when_showing_reference = false,
+                  const std::optional<std::vector<doc::Document>>& documents_opt = std::nullopt);
     bool is_new_api(const std::string& model_name);
 } // api
 

@@ -34,7 +34,8 @@ namespace api {
                   const std::unordered_map<std::string, float>& logit_bias, const bool& search_response,
                   const unsigned int& max_short_memory_length, const unsigned int& max_reference_length,
                   const std::string& me_id, const std::string& bot_id, std::function<void(const std::string& streamed_response)> callback,
-                  const bool& debug_reference, const bool& pause_when_showing_reference) {
+                  const bool& debug_reference, const bool& pause_when_showing_reference,
+                  const std::optional<std::vector<doc::Document>>& documents_opt) {
         CURL* curl;
         CURLcode res;
         curl = curl_easy_init();
@@ -43,9 +44,15 @@ namespace api {
             bool is_new_api_ = is_new_api(model);
             std::string url = is_new_api_ ? "https://api.openai.com/v1/chat/completions" : "https://api.openai.com/v1/completions";
             curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-            std::string constructed_initial = prompt::construct_reference(
-                    initial_prompt, chat_exchanges.back()->getInputEmbeddings(),
-                    chat_exchanges, search_response, max_reference_length, max_short_memory_length, me_id, bot_id);
+            std::string constructed_initial;
+            if (!documents_opt) {
+                constructed_initial = prompt::construct_reference(initial_prompt, chat_exchanges.back()->getInputEmbeddings(),
+                                                                  chat_exchanges, search_response, max_reference_length,
+                                                                  max_short_memory_length, me_id, bot_id);
+            } else {
+                constructed_initial = prompt::construct_reference(initial_prompt, chat_exchanges.back()->getInputEmbeddings(),
+                                                                  *documents_opt, max_reference_length);
+            }
             std::string suffix = ": ";
             if (debug_reference) {
                 std::string dr_prefix = Term::color_fg(255, 200, 0) + "<Debug Reference> " + Term::color_fg(Term::Color::Name::Default);

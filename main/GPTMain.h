@@ -6,10 +6,13 @@
 #define GPT3BOT_GPTMAIN_H
 
 #include "interface/network/Network.h"
+#include "interface/util/DocUtils.h"
+#include "interface/util/FileUtils.h"
 #include "Command.h"
-#include "fstream"
 
+#define PATH_S(path) Term::color_fg(125, 225, 255) + "\"" + path.string() + "\""
 #define ENTER Term::color_fg(70, 200, 255) + "Enter" + Term::color_fg(Term::Color::Name::Default)
+#define GOLDEN_TEXT(n) Term::color_fg(255, 200, 0) + n + Term::color_fg(Term::Color::Name::Default)
 
 namespace GPT {
     using Color = Term::Color;
@@ -24,10 +27,13 @@ namespace GPT {
     bool p_load_prompt(std::string filename);
     bool p_load_saved(std::string filename);
     bool p_save_chat(std::string name);
+    bool p_load_docQA(std::string filename);
+    bool p_create_docQA();
     bool p_load_config();
     bool p_save_config();
     bool p_check_set_api_key();
     void p_on_invalid_key();
+    const std::string& get_f_suffix();
 }
 
 #endif //GPT3BOT_GPTMAIN_H

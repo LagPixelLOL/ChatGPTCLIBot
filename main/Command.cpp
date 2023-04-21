@@ -4,9 +4,8 @@
 
 #include "Command.h"
 
-#define GOLDEN_TEXT(n) Term::color_fg(255, 200, 0) + n + Term::color_fg(Color::Name::Default)
-
 namespace cmd {
+
     inline void print_colored_tokenized_text(const std::vector<int>& tokens, const std::shared_ptr<GptEncoding>& tokenizer_p);
     inline void print_colored_token_numbers(const std::vector<int>& tokens);
     inline void print_uwu();
@@ -47,26 +46,47 @@ namespace cmd {
             return Commands::UWU;
         } else if (input == "/tc") {
             return Commands::TOKENIZE;
+        } else if (input == "/dump") {
+            return Commands::DUMP;
         }
         return Commands::NONE;
     }
 
-    ReturnOpCode handle_command(const std::string& input, std::vector<std::shared_ptr<chat::Exchange>>& prompts) {
+    ReturnOpCode handle_command(const std::string& input, const std::string& initial_prompt,
+                                std::vector<std::shared_ptr<chat::Exchange>>& prompts, const std::string& me_id, const std::string& bot_id,
+                                const unsigned int& max_display_length, const bool& space_between_exchanges, const bool& documentQA_mode) {
         const auto& cmd = match_command(input);
         switch (cmd) {
-            case Commands::STOP: {
-                util::print_cs("Do you want to save the chat history?\n"
-                               "(Input the file name to save, press " + ENTER + " to skip): ");
-                std::string save_name;
-                getline(std::cin, save_name);
-                if (!save_name.empty()) {
-                    GPT::p_save_chat(save_name);
+            case Commands::STOP:
+                if (!documentQA_mode) {
+                    while (true) {
+                        util::print_cs("Do you want to save the chat history?\n"
+                                       "(Input the file name to save, press " + ENTER + " to skip): ");
+                        std::string save_name;
+                        getline(std::cin, save_name);
+                        if (!save_name.empty()) {
+                            if (!GPT::p_save_chat(save_name)) {
+                                util::println_warn("An error occurred while saving the chat history, please try again.");
+                                continue;
+                            }
+                        }
+                        break;
+                    }
+                } else {
+                    util::println_warn("The chat history cannot be saved in document Q&A mode.");
+                    std::cout << "Do you still want to stop the bot?\n";
+                    util::print_cs("(Input " + GOLDEN_TEXT("n") + " to cancel, press " + ENTER + " to stop): ");
+                    std::string choice;
+                    getline(std::cin, choice);
+                    std::transform(choice.begin(), choice.end(), choice.begin(), tolower);
+                    if (choice == "n") {
+                        return ReturnOpCode::CONTINUE;
+                    }
                 }
                 util::print_clr("₪ ", {255, 50, 50});
                 util::print_m_clr("GPT-3 Bot Stopped.", {{255, 50, 50}, {255, 255, 50}});
                 std::cout << std::endl;
                 return ReturnOpCode::STOP;
-            }
             case Commands::UNDO:
                 if (!prompts.empty()) {
                     prompts.pop_back();
@@ -127,6 +147,69 @@ namespace cmd {
                 }
                 GPT::print_enter_next_cycle();
                 return ReturnOpCode::CONTINUE;
+            case Commands::DUMP: {
+                unsigned int max_exchange_count; //No need to initialize.
+                while (true) {
+                    util::print_cs("Please input the maximum number of exchanges to dump.\n(Press "
+                    + ENTER + " directly to use the max_display_length value): ");
+                    std::string max_exchange_count_input;
+                    getline(std::cin, max_exchange_count_input);
+                    if (max_exchange_count_input.empty()) {
+                        max_exchange_count = max_display_length;
+                    } else {
+                        try {
+                            int count = std::stoi(max_exchange_count_input);
+                            if (count <= 0) {
+                                util::println_warn("The maximum number of exchanges must be greater than 0, please try again.");
+                                continue;
+                            } else {
+                                max_exchange_count = count;
+                            }
+                        } catch (const std::exception& e) {
+                            util::println_warn("The input is not a valid number, please try again.");
+                            continue;
+                        }
+                    }
+                    break;
+                }
+                static const std::string f_suffix = GPT::get_f_suffix();
+                std::string filename;
+                while (true) {
+                    std::cout << "Please enter the filename to dump the chat history to: ";
+                    getline(std::cin, filename);
+                    if (!filename.empty()) {
+                        if (boost::ends_with(filename, f_suffix)) {
+                            filename.erase(filename.size() - f_suffix.size());
+                        }
+                        break;
+                    }
+                    util::println_warn("The filename cannot be empty, please try again.");
+                }
+                static const std::filesystem::path f_dump = "dump";
+                try {
+                    if (file::create_folder(f_dump)) {
+                        util::println_info("Created folder: " + PATH_S(f_dump));
+                    }
+                } catch (const file::file_error& e) {
+                    util::println_err("Failed to create folder: " + PATH_S(e.get_path()));
+                    util::println_err("Reason: " + std::string(e.what()));
+                    GPT::print_enter_next_cycle();
+                    return ReturnOpCode::CONTINUE;
+                }
+                const auto& path = std::filesystem::path(f_dump) / filename.append(f_suffix);
+                try {
+                    file::write_text_file(prompt::to_string(initial_prompt, prompts, me_id, bot_id, max_exchange_count, false,
+                                                            space_between_exchanges), path);
+                } catch (const file::file_error& e) {
+                    util::println_err("Failed to write file: " + PATH_S(e.get_path()));
+                    util::println_err("Reason: " + std::string(e.what()));
+                    GPT::print_enter_next_cycle();
+                    return ReturnOpCode::CONTINUE;
+                }
+                util::print_cs("Successfully dumped the chat history to " + PATH_S(path) + ".", true);
+                GPT::print_enter_next_cycle();
+                return ReturnOpCode::CONTINUE;
+            }
             default:
                 return ReturnOpCode::NONE;
         }

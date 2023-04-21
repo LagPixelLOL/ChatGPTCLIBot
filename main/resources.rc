@@ -6,8 +6,8 @@
 MAINICON ICON "../icon.ico"
 
 VS_VERSION_INFO VERSIONINFO
-    FILEVERSION 1,1,0,0
-    PRODUCTVERSION 1,1,0,0
+    FILEVERSION 1,2,0,0
+    PRODUCTVERSION 1,2,0,0
     FILEFLAGSMASK 0x3FL
     FILEFLAGS 0x0L
     FILEOS 0x4L
@@ -20,12 +20,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "LagPixelLOL"
             VALUE "FileDescription", "ChatGPT Bot in CLI with long term memory support using Embeddings."
-            VALUE "FileVersion", "1.1.0.0"
+            VALUE "FileVersion", "1.2.0.0"
             VALUE "InternalName", "CCB"
             VALUE "LegalCopyright", "Copyright (C) 2023 LagPixelLOL"
             VALUE "OriginalFilename", "GPT3Bot.exe"
             VALUE "ProductName", "ChatGPT CLI Bot"
-            VALUE "ProductVersion", "1.1.0.0"
+            VALUE "ProductVersion", "1.2.0.0"
         END
     END
     BLOCK "VarFileInfo"

@@ -5,7 +5,8 @@
 #ifndef GPT3BOT_PROMPTUTILS_H
 #define GPT3BOT_PROMPTUTILS_H
 
-#include "../chat/Exchange.h"
+#include "../data/Exchange.h"
+#include "../data/Document.h"
 #include "boost/format.hpp"
 #include "string"
 #include "vector"
@@ -22,11 +23,13 @@ namespace prompt {
                                     std::vector<std::shared_ptr<chat::Exchange>> chat_exchanges, const bool& search_response,
                                     const unsigned int& max_reference_length, const unsigned int& max_short_memory_length,
                                     const std::string& me_id, const std::string& bot_id);
+    std::string construct_reference(std::string initial_prompt, const std::vector<float>& input_embeddings,
+                                    const std::vector<doc::Document>& documents, const unsigned int& max_reference_length);
 } // prompt
 
 namespace GPT {
 
-    std::string to_payload(const std::string& initial_prompt, const std::vector<std::shared_ptr<chat::Exchange>>& prompts,
+    std::string to_payload(std::string initial_prompt, const std::vector<std::shared_ptr<chat::Exchange>>& prompts,
                            const std::string& me_id, const std::string& bot_id, const unsigned int& max_length);
 } // GPT
 

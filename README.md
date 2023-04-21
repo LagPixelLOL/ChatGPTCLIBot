@@ -7,22 +7,24 @@ You can add custom initial prompts and save/load your chat history! \
 Download and double-click the `GPT3Bot.exe` or `run.bat` to run the program! \
 In Linux and macOS, you can run `./GPT3Bot` to run the program. \
 \
-Wiki: [Click Me](https://github.com/LagPixelLOL/ChatGPTCLIBot/wiki)
+Please check the Wiki for more info: [Click Me](https://github.com/LagPixelLOL/ChatGPTCLIBot/wiki)
 
 # Features/Manual:
 1. **Long term memory support!** Keep hitting the 4096 tokens context limit? Worry no more with this CLI Bot. It has nearly INFINITE context memory(If you have infinite disk space lol), all thanks to Embeddings! If you want to see how this program handles embeddings internally, set `debug_reference` to `true` in `config.json`!
-2. You can use `/stop` to end and save the chat.
-3. You can use `/undo` to undo your last prompt.
-4. You can use `/reset` to reset your entire chat.
-5. You can place .txt files in the "initial" folder to set different initial prompts, and you can use the filename to load it when you open the program. Simply directly press enter after you open the program, then enter the initial prompt file's name and press enter to load it.
-6. After you execute `/stop`, the program will ask you to input the filename to save. You can press enter directly to skip this and not save the chat. If you input any other text and then press enter, the chat will be saved into a json in the "saved" folder. When you open the program next time, you can simply input "s"(which means saved), press enter, then type the saved chat's json file's name to load your saved chat.
-7. Easy config file in `config.json`, can be easily modified.
-8. Unlike other bots, this one actually streams. This means it will display the output as soon as a token is sent from the API(Just like what ChatGPT's website is doing), no need to wait until the entire response is generated!
-9. Automatically use the system proxy. Note: This feature is only supported on Windows, because there's a bug in my proxy library that causes it fail to compile on Linux and macOS.
-10. Multiline input support, you need to press Ctrl+N or Alt+Enter to enter a new line.
-11. Ctrl+V pasting support, you can paste text from your clipboard by pressing Ctrl+V.
-12. Full UTF-8 support, you can type in any language you want!
-13. Full of colors(If your terminal supports it)!
+2. **Q&A with custom documents support!** You can load custom documents, and perform Q&A with them, please check the Wiki for more info.
+3. You can use `/stop` to end and save the chat.
+4. You can use `/undo` to undo your last prompt.
+5. You can use `/reset` to reset your entire chat.
+6. You can use `/dump` to dump your chat history to a .txt file inside the `dump` folder.
+7. You can place .txt files in the "initial" folder to set different initial prompts, and you can use the filename to load it when you open the program. Simply directly press enter after you open the program, then enter the initial prompt file's name and press enter to load it.
+8. After you execute `/stop`, the program will ask you to input the filename to save. You can press enter directly to skip this and not save the chat. If you input any other text and then press enter, the chat will be saved into a json in the "saved" folder. When you open the program next time, you can simply input "s"(which means saved), press enter, then type the saved chat's json file's name to load your saved chat.
+9. Easy config file in `config.json`, can be easily modified.
+10. Unlike other bots, this one actually streams. This means it will display the output as soon as a token is sent from the API(Just like what ChatGPT's website is doing), no need to wait until the entire response is generated!
+11. Automatically use the system proxy. Note: This feature is only supported on Windows, because there's a bug in my proxy library that causes it fail to compile on Linux and macOS.
+12. Multiline input support, you need to press Ctrl+N or Alt+Enter to enter a new line.
+13. Ctrl+V pasting support, you can paste text from your clipboard by pressing Ctrl+V.
+14. Full UTF-8 support, you can type in any language you want!
+15. Full of colors(If your terminal supports it)!
 
 Written in C++ (Libraries used:
 [Boost](https://www.boost.org/),
