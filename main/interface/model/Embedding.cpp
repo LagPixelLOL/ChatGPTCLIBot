@@ -7,15 +7,19 @@
 namespace emb {
 
     double cosine_similarity(const std::vector<float>& vec_a, const std::vector<float>& vec_b) {
+        if (vec_a.empty() || vec_a.size() != vec_b.size()) { //No need to check vec_b.empty(), the size check will cover it.
+            throw std::invalid_argument("Vectors for cosine similarity must be non-empty and of the same size.");
+        }
         double dot_product = 0;
         double norm_a = 0;
         double norm_b = 0;
-        for (int i = 0; i < vec_a.size(); i++) {
+        for (size_t i = 0; i < vec_a.size(); i++) {
             dot_product += vec_a[i] * vec_b[i];
             norm_a += pow(vec_a[i], 2);
             norm_b += pow(vec_b[i], 2);
         }
-        return dot_product / (sqrt(norm_a) * sqrt(norm_b));
+        //Prevent division by 0.
+        return norm_a == 0 || norm_b == 0 ? 0 : dot_product / (sqrt(norm_a) * sqrt(norm_b));
     }
 
     size_t write_callback(char* char_ptr, size_t size, size_t mem, std::string* base_str) {
