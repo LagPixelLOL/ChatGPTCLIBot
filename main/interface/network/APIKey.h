@@ -7,8 +7,7 @@
 
 #include "nlohmann/json.hpp"
 #include "../util/TermUtils.h"
-#include "../util/CURLUtils.h"
-#include "../util/SystemUtils.h"
+#include "../network/Request.h"
 
 namespace api {
 

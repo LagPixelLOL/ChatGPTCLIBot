@@ -85,12 +85,6 @@ namespace api {
         api_keys_ = api_keys;
     }
 
-    size_t write_callback(char* char_ptr, size_t size, size_t mem, std::string* base_str) {
-        size_t length = size * mem;
-        base_str->append(char_ptr, length);
-        return length;
-    }
-
     APIKeyStatus check_key(const std::string& api_key) {
         util::println_info("Checking API key...");
         if (api_key.empty()) {
@@ -100,41 +94,27 @@ namespace api {
         } else if (api_key.length() != 51) {
             return APIKeyStatus::INVALID_LENGTH;
         }
-        CURL* curl;
-        CURLcode res;
+        std::vector<std::string> headers = {"Content-Type: application/json"};
+        std::string auth = "Authorization: Bearer ";
+        headers.push_back(auth.append(api_key));
+        nlohmann::json payload = {{"model", "text-embedding-ada-002"}, {"input", ""}};
+        APIKeyStatus status = APIKeyStatus::API_REQUEST_FAILED;
         std::string response;
-        APIKeyStatus status;
-        curl = curl_easy_init();
-        if (curl) {
-            curl_easy_setopt(curl, CURLOPT_URL, "https://api.openai.com/v1/embeddings");
-            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
-            curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-            curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10);
-            util::set_curl_proxy(curl, util::system_proxy());
-            util::set_curl_ssl_cert(curl);
-            struct curl_slist* headers = nullptr;
-            headers = curl_slist_append(headers, "Content-Type: application/json");
-            std::string auth = "Authorization: Bearer ";
-            headers = curl_slist_append(headers, auth.append(api_key).c_str());
-            curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-            nlohmann::json payload = {{"model", "text-embedding-ada-002"}, {"input", ""}};
-            std::string payload_str = payload.dump();
-            curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload_str.c_str());
-            res = curl_easy_perform(curl);
-            if (res != CURLE_OK) {
-                util::println_err("API request failed: " + std::string(curl_easy_strerror(res)));
-            } else {
-                if (boost::ends_with(response, "\n")) {
-                    response.pop_back();
-                }
-                try {
-                    check_err_obj(nlohmann::json::parse(response), status, false);
-                } catch (const nlohmann::json::parse_error& e) {
-                    util::println_err("API returned string is not a valid json. String: " + response);
-                }
-            }
-            curl_slist_free_all(headers);
-            curl_easy_cleanup(curl);
+        try {
+            curl::http_post("https://api.openai.com/v1/embeddings", [&](const std::string& s, CURL*){
+                response.append(s);
+            }, payload.dump(), headers);
+        } catch (const std::exception& e) {
+            util::println_err("API request failed: " + std::string(e.what()));
+            return status;
+        }
+        if (boost::ends_with(response, "\n")) {
+            response.pop_back();
+        }
+        try {
+            check_err_obj(nlohmann::json::parse(response), status, false);
+        } catch (const nlohmann::json::parse_error& e) {
+            util::println_err("API returned string is not a valid json. String: " + response);
         }
         return status;
     }

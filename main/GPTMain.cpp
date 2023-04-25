@@ -170,10 +170,10 @@ namespace GPT {
                 if (documentQA_mode) {
                     documents_opt = documents;
                 }
-                bool api_success = api::call_api(initial_prompt, prompts, api_key, model, temperature, max_tokens, top_p,
-                                                 frequency_penalty, presence_penalty, logit_bias, search_response && !documentQA_mode,
-                                                 max_short_memory_length, max_reference_length, me_id, bot_id,
-                                                 [&response](const auto& streamed_response){
+                api::call_api(initial_prompt, prompts, api_key, model, temperature, max_tokens, top_p,
+                              frequency_penalty, presence_penalty, logit_bias, search_response && !documentQA_mode,
+                              max_short_memory_length, max_reference_length, me_id, bot_id,
+                              [&response](const auto& streamed_response){
                     try {
                         nlohmann::json j = nlohmann::json::parse(streamed_response);
                         if (j.count("error") > 0 && j["error"].is_object()) {
@@ -183,13 +183,8 @@ namespace GPT {
                     } catch (const nlohmann::json::parse_error& e) {}
                     response.append(streamed_response);
                     util::print_cs(streamed_response, false, false);
-                    }, debug_reference, true, documents_opt);
+                }, debug_reference, true, documents_opt);
                 util::print_cs(""); //Reset color.
-                if (!api_success) {
-                    print_enter_next_cycle();
-                    prompts.pop_back();
-                    continue;
-                }
             } catch (const std::exception& e) {
                 util::println_err("\nError when calling API: " + std::string(e.what()));
                 print_enter_next_cycle();

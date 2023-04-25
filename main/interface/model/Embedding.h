@@ -5,15 +5,9 @@
 #ifndef GPT3BOT_EMBEDDING_H
 #define GPT3BOT_EMBEDDING_H
 
-#include "nlohmann/json.hpp"
-#include "../util/SystemUtils.h"
-#include "../util/CURLUtils.h"
-#include "../util/TermUtils.h"
 #include "../util/TokenUtils.h"
 #include "../network/APIKey.h"
 #include "iostream"
-#include "string"
-#include "vector"
 #include "cmath"
 
 namespace emb {
