@@ -35,7 +35,7 @@ namespace chat {
         [[nodiscard]] const std::vector<float>& getResponseEmbeddings() const;
         [[nodiscard]] bool hasResponseEmbeddings() const;
         void setResponseEmbeddings(const std::vector<float>& response_embeddings);
-        [[nodiscard]] long long getTimeMS() const;
+        [[nodiscard]] const long long& getTimeMS() const;
     };
 } // chat
 

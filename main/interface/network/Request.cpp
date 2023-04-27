@@ -20,7 +20,8 @@ namespace curl {
     }
 
     void http_request(const http_method& method, const std::string& url, const std::function<void(const std::string&, CURL*)>& callback,
-                      const std::vector<std::string>& headers, const std::optional<std::string>& post_data, const int& timeout_ms) {
+                      const std::vector<std::string>& headers, const std::optional<std::string>& post_data, const int& timeout_ms,
+                      curl_mime* mime = nullptr) {
         CURLcode res;
         CURL* curl = curl_easy_init();
         if (!curl) {
@@ -30,8 +31,12 @@ namespace curl {
         curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, timeout_ms);
         util::set_curl_proxy(curl, util::system_proxy());
         util::set_curl_ssl_cert(curl);
-        if (method == http_method::POST && post_data) {
-            curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data->c_str());
+        if (method == http_method::POST) {
+            if (mime) {
+                curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime);
+            } else if (post_data) {
+                curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data->c_str());
+            }
         } else if (method == http_method::DEL) {
             curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
         }
@@ -74,5 +79,39 @@ namespace curl {
     void http_delete(const std::string& url, const std::function<void(const std::string&, CURL*)>& callback,
                      const std::vector<std::string>& headers, const int& timeout_ms) {
         http_request(http_method::DEL, url, callback, headers, std::nullopt, timeout_ms);
+    }
+
+    void upload_binary(const std::string& url, const std::function<void(const std::string&, CURL*)>& callback,
+                       const std::string& post_data_field, const std::string& post_data,
+                       const std::string& binary_field, const std::vector<char>& binary_to_upload,
+                       const std::string& binary_filename, const std::string& binary_content_type,
+                       const std::vector<std::string>& headers, const int& timeout_ms) {
+        CURL* curl = curl_easy_init();
+        if (!curl) {
+            throw curl::request_failed("Failed to initialize cURL.");
+        }
+        curl_mime* mime = curl_mime_init(curl);
+        curl_mimepart* part;
+        //Add post_data to mime.
+        part = curl_mime_addpart(mime);
+        curl_mime_name(part, post_data_field.c_str());
+        curl_mime_data(part, post_data.c_str(), CURL_ZERO_TERMINATED);
+        //Add binary_to_upload to mime.
+        part = curl_mime_addpart(mime);
+        curl_mime_name(part, binary_field.c_str());
+        curl_mime_filename(part, binary_filename.c_str());
+        curl_mime_type(part, binary_content_type.c_str());
+        curl_mime_data(part, binary_to_upload.data(), binary_to_upload.size());
+        std::exception_ptr exception_ptr = nullptr;
+        try {
+            http_request(http_method::POST, url, callback, headers, std::nullopt, timeout_ms, mime);
+        } catch (const std::exception& e) {
+            exception_ptr = std::current_exception();
+        }
+        curl_mime_free(mime);
+        curl_easy_cleanup(curl);
+        if (exception_ptr) {
+            std::rethrow_exception(exception_ptr);
+        }
     }
 } // curl

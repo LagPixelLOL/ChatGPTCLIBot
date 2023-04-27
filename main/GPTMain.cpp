@@ -59,8 +59,8 @@ namespace GPT {
             util::print_cs("Please choose whether you want to load the initial prompt, load the saved chat history,\n"
                            "load the saved document Q&A, or create a new document Q&A.\n"
                            "(Input " + GOLDEN_TEXT("i") + " for initial, " + GOLDEN_TEXT("s") + " for saved,\n "
-                           + GOLDEN_TEXT("d") + " for load doc Q&A, " + GOLDEN_TEXT("c") + " for create new doc Q&A,\n or press "
-                           + ENTER + " directly to use initial): ");
+                           + GOLDEN_TEXT("d") + " for load doc Q&A, " + GOLDEN_TEXT("c") + " for create new doc Q&A,\n "
+                           + GOLDEN_TEXT("f") + " for fine tune helper, or press " + ENTER + " directly to use initial): ");
             std::string chose_mode;
             getline(std::cin, chose_mode);
             std::transform(chose_mode.begin(), chose_mode.end(), chose_mode.begin(), tolower);
@@ -103,6 +103,9 @@ namespace GPT {
                     return;
                 }
                 break;
+            } else if (chose_mode == "f") {
+                fth::fine_tune_helper_main();
+                return;
             } else {
                 util::println_warn("Invalid input, please try again.");
             }
@@ -870,5 +873,17 @@ namespace GPT {
 
     const std::string& get_f_suffix() {
         return f_suffix;
+    }
+
+    const std::string& get_json_suffix() {
+        return json_suffix;
+    }
+
+    const std::string& get_me_id() {
+        return me_id;
+    }
+
+    const std::string& get_bot_id() {
+        return bot_id;
     }
 }

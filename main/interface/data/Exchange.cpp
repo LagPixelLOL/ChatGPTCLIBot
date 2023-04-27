@@ -72,7 +72,7 @@ namespace chat {
         response_embeddings_ = response_embeddings;
     }
 
-    long long Exchange::getTimeMS() const {
+    const long long& Exchange::getTimeMS() const {
         return time_ms_;
     }
     //class Exchange end.

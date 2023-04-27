@@ -27,6 +27,8 @@ namespace file {
 
     std::string read_text_file(const std::filesystem::path& path);
     void write_text_file(const std::string& content, const std::filesystem::path& path);
+    std::vector<char> read_binary_file(const std::filesystem::path& path);
+    void write_binary_file(const std::vector<char>& content, const std::filesystem::path& path);
     bool create_folder(const std::filesystem::path& folder);
     std::vector<std::filesystem::path> create_folders(const std::vector<std::filesystem::path>& folders);
 } // file

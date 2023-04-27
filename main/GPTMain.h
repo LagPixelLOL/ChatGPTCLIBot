@@ -7,8 +7,8 @@
 
 #include "interface/network/Network.h"
 #include "interface/util/DocUtils.h"
-#include "interface/util/FileUtils.h"
 #include "Command.h"
+#include "FineTuneHelper.h"
 
 #define PATH_S(path) Term::color_fg(125, 225, 255) + "\"" + path.string() + "\""
 #define ENTER Term::color_fg(70, 200, 255) + "Enter" + Term::color_fg(Term::Color::Name::Default)
@@ -34,6 +34,9 @@ namespace GPT {
     bool p_check_set_api_key();
     void p_on_invalid_key();
     const std::string& get_f_suffix();
+    const std::string& get_json_suffix();
+    const std::string& get_me_id();
+    const std::string& get_bot_id();
 }
 
 #endif //GPT3BOT_GPTMAIN_H

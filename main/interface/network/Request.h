@@ -28,6 +28,11 @@ namespace curl {
                    const std::string& post_data = "", const std::vector<std::string>& headers = {}, const int& timeout_ms = 10000);
     void http_delete(const std::string& url, const std::function<void(const std::string&, CURL*)>& callback = [](const auto&, const auto*){},
                      const std::vector<std::string>& headers = {}, const int& timeout_ms = 10000);
+    void upload_binary(const std::string& url, const std::function<void(const std::string&, CURL*)>& callback,
+                       const std::string& post_data_field, const std::string& post_data,
+                       const std::string& binary_field, const std::vector<char>& binary_to_upload,
+                       const std::string& binary_filename, const std::string& binary_content_type,
+                       const std::vector<std::string>& headers, const int& timeout_ms);
 } // curl
 
 #endif //GPT3BOT_REQUEST_H

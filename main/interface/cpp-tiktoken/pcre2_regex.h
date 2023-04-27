@@ -26,13 +26,14 @@
 #include <pcre2.h>
 
 class PCRERegex {
+    pcre2_code_8* regex_ = nullptr;
+
 public:
-    PCRERegex(const std::string &pattern, int flags);
-    PCRERegex(const PCRERegex &) = delete;
+    PCRERegex(const std::string& pattern, int flags);
+    explicit PCRERegex(const std::string& pattern);
+    PCRERegex(const PCRERegex& ) = delete;
     ~PCRERegex();
 
-    [[nodiscard]] std::vector<std::string> all_matches(const std::string &text) const;
-
-private:
-    pcre2_code_8 *regex_ = nullptr;
+    [[nodiscard]] std::vector<std::string> all_matches(const std::string& text) const;
+    void replace_all(std::string& text, const std::string& replacement) const;
 };

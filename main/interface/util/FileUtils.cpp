@@ -74,6 +74,58 @@ namespace file {
     }
 
     /**
+     * Read binary data from a file.
+     * @param path Path to the file.
+     * @throw file::file_error If the file cannot be opened or read.
+     * @return Binary data as a vector of chars.
+     */
+    std::vector<char> read_binary_file(const std::filesystem::path& path) {
+        try {
+            if (!std::filesystem::exists(path) || !std::filesystem::is_regular_file(path)) {
+                throw file_error("File does not exist or is not a regular file.", path);
+            }
+            std::ifstream file(path, std::ios::binary);
+            if (!file.is_open() || file.bad()) {
+                throw file_error("File cannot be opened.", path);
+            }
+            std::vector<char> content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+            if (file.bad()) {
+                throw file_error("File cannot be read.", path);
+            }
+            file.close();
+            return content;
+        } catch (const file_error& e) {
+            throw;
+        } catch (const std::exception& e) {
+            throw file_error(e.what(), path);
+        }
+    }
+
+    /**
+     * Write binary data to a file.
+     * @param content The data to write.
+     * @param path Path to the file.
+     * @throw file::file_error If the file cannot be opened or written.
+     */
+    void write_binary_file(const std::vector<char>& content, const std::filesystem::path& path) {
+        try {
+            std::ofstream file(path, std::ios::binary);
+            if (!file.is_open() || file.bad()) {
+                throw file_error("File cannot be opened.", path);
+            }
+            file.write(content.data(), static_cast<std::streamsize>(content.size()));
+            if (file.bad()) {
+                throw file_error("File cannot be written.", path);
+            }
+            file.close();
+        } catch (const file_error& e) {
+            throw;
+        } catch (const std::exception& e) {
+            throw file_error(e.what(), path);
+        }
+    }
+
+    /**
      * Create a folder, including all parent folders.
      * @param folder Path to the folder.
      * @throw file::file_error If an error occurred while creating the folder.
