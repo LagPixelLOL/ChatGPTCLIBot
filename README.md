@@ -25,7 +25,7 @@ Please check the Wiki for more info: [Click Me](https://github.com/LagPixelLOL/C
 13. Ctrl+V pasting support, you can paste text from your clipboard by pressing Ctrl+V.
 14. Full UTF-8 support, you can type in any language you want!
 15. Full of colors(If your terminal supports it)!
-16. Fine tune helper, you can fine tune custom base models with this program(Only for professional users).
+16. Fine tune helper, you can fine tune base models with this program(Only for professional users).
 
 Written in C++ (Libraries used:
 [Boost](https://www.boost.org/),
