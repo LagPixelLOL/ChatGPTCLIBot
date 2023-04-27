@@ -1,6 +1,8 @@
 [submodule "main/interface/clip"]
 	path = main/interface/clip
 	url = https://github.com/dacap/clip.git
+                 update = merge
 [submodule "main/interface/cpp-tiktoken"]
 	path = main/interface/cpp-tiktoken
 	url = https://github.com/LagPixelLOL/cpp-tiktoken.git
+                 update = merge
