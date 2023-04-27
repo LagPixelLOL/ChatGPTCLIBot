@@ -3,4 +3,4 @@
 	url = https://github.com/dacap/clip.git
 [submodule "main/interface/cpp-tiktoken"]
 	path = main/interface/cpp-tiktoken
-	url = https://github.com/LagPixelLOL/cpp-tiktoken
+	url = https://github.com/LagPixelLOL/cpp-tiktoken.git
