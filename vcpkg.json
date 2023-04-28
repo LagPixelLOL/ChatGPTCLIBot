@@ -7,6 +7,7 @@
     "curl",
     "libproxy",
     "ftxui",
+    "tbb",
     "pcre2",
     "utf8proc"
   ]

@@ -34,6 +34,7 @@ Written in C++ (Libraries used:
 [libproxy](https://libproxy.github.io/libproxy/),
 [cpp-terminal](https://github.com/jupyter-xeus/cpp-terminal),
 [ftxui](https://github.com/ArthurSonzogni/FTXUI),
+[oneTBB](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onetbb.html),
 [clip](https://github.com/dacap/clip),
 [cpp-tiktoken](https://github.com/gh-markt/tiktoken),
 [pcre2](https://www.pcre.org/),

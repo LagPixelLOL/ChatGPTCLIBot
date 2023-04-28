@@ -4,6 +4,14 @@
 
 #include "PromptUtils.h"
 
+#ifdef min
+#undef min
+#endif
+#ifdef max
+#undef max
+#endif
+#include "tbb/tbb.h"
+
 #define USER_COLOR Term::color_fg(175, 200, 255)
 #define BOT_COLOR Term::color_fg(175, 255, 225)
 
@@ -45,6 +53,28 @@ namespace prompt {
         s.append("\nCurrent time: " + util::currentTimeFormatted() + "\n");
     }
 
+    inline std::vector<std::pair<std::shared_ptr<chat::Exchange>, double>> async_find_similar(
+            const std::vector<float>& input_embeddings, const std::vector<std::shared_ptr<chat::Exchange>>& chat_exchanges,
+            const bool& search_response) {
+        tbb::concurrent_vector<std::pair<std::shared_ptr<chat::Exchange>, double>> computed_exchanges;
+        tbb::parallel_for(tbb::blocked_range<size_t>(0, chat_exchanges.size()), [&](const tbb::blocked_range<size_t>& r){
+            for (size_t i = r.begin(); i != r.end(); i++) {
+                const std::shared_ptr<chat::Exchange>& exchange = chat_exchanges[i];
+                double similarity = emb::cosine_similarity(exchange->getInputEmbeddings(), input_embeddings);
+                if (search_response && exchange->hasResponse() && exchange->hasResponseEmbeddings()) {
+                    double response_similarity = emb::cosine_similarity(exchange->getResponseEmbeddings(), input_embeddings);
+                    if (response_similarity > similarity) {
+                        similarity = response_similarity;
+                    }
+                }
+                if (similarity >= 0.8) { //Similarity >= 0.8 is considered as a match.
+                    computed_exchanges.emplace_back(exchange, similarity);
+                }
+            }
+        });
+        return {computed_exchanges.begin(), computed_exchanges.end()};
+    }
+
     /**
      * Construct long-term memory reference for general chatting.
      * @return The constructed initial prompt.
@@ -62,19 +92,7 @@ namespace prompt {
         } else {
             chat_exchanges.clear();
         }
-        std::vector<std::pair<chat::Exchange, double>> computed_exchanges;
-        for (const auto& exchange : chat_exchanges) {
-            double similarity = emb::cosine_similarity(exchange->getInputEmbeddings(), input_embeddings);
-            if (search_response && exchange->hasResponse() && exchange->hasResponseEmbeddings()) {
-                double response_similarity = emb::cosine_similarity(exchange->getResponseEmbeddings(), input_embeddings);
-                if (response_similarity > similarity) {
-                    similarity = response_similarity;
-                }
-            }
-            if (similarity >= 0.8) {
-                computed_exchanges.emplace_back(*exchange, similarity);
-            }
-        }
+        auto computed_exchanges = async_find_similar(input_embeddings, chat_exchanges, search_response);
         if (computed_exchanges.empty()) {
             return initial_prompt;
         }
@@ -83,16 +101,16 @@ namespace prompt {
         });
         delete_front_keep_back(computed_exchanges, max_reference_length);
         std::sort(computed_exchanges.begin(), computed_exchanges.end(), [](const auto& a, const auto& b){
-            return a.first.getTimeMS() < b.first.getTimeMS();
+            return a.first->getTimeMS() < b.first->getTimeMS();
         });
         initial_prompt.append("\nChat exchanges for reference:\n\"\"\"\n");
         std::string ref;
         for (const auto& reference : computed_exchanges) {
-            chat::Exchange exchange = reference.first;
-            ref.append("\n\n" + util::ms_to_formatted_time(exchange.getTimeMS()));
-            ref.append("\n" + me_id + ": " + exchange.getInput());
-            if (exchange.hasResponse()) {
-                ref.append("\n" + bot_id + ": " + exchange.getResponse());
+            std::shared_ptr<chat::Exchange> exchange = reference.first;
+            ref.append("\n\n" + util::ms_to_formatted_time(exchange->getTimeMS()));
+            ref.append("\n" + me_id + ": " + exchange->getInput());
+            if (exchange->hasResponse()) {
+                ref.append("\n" + bot_id + ": " + exchange->getResponse());
             }
         }
         if (boost::starts_with(ref, "\n\n")) {
