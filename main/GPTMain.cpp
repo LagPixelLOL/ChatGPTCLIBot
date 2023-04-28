@@ -164,7 +164,7 @@ namespace GPT {
                 prompts.back()->setResponseEmbeddings(emb_response[1]);
             }
             /* No need to do prompts.pop_back() before this line. */
-            prompts.emplace_back(make_shared<chat::Exchange>(input, emb_response[0], util::currentTimeMillis()));
+            prompts.emplace_back(std::make_shared<chat::Exchange>(input, emb_response[0], util::currentTimeMillis()));
             /* Need to do prompts.pop_back() after this line before continue;. */
             print_prompt();
             std::string response;
