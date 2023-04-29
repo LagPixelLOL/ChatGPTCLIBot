@@ -8,124 +8,86 @@
 #include "iostream"
 
 Term::Result Term::prompt(const std::string& message, const std::string& first_option, const std::string& second_option,
-                          const std::string& prompt_indicator, bool immediate)
-{
-  Terminal term(false, true, false);
-  std::cout << message << " [" << first_option << '/' << second_option << ']' << prompt_indicator << ' ' << std::flush;
-
-  if(!Term::stdin_connected())
-  {
-    std::cout << '\n' << std::flush;
-    return Result::ERR;
-  }
-
-  int key;
-
-  if(immediate)
-  {
-    while(true)
-    {
-      key = Term::read_key();
-      if(key == 'y' || key == 'Y')
-      {
+                          const std::string& prompt_indicator, bool immediate) {
+    Terminal term(false, true, false);
+    std::cout << message << " [" << first_option << '/' << second_option << ']' << prompt_indicator << ' ' << std::flush;
+    if (!Term::stdin_connected()) {
         std::cout << '\n' << std::flush;
-        return Result::YES;
-      }
-      else if(key == 'n' || key == 'N')
-      {
-        std::cout << '\n' << std::flush;
-        return Result::NO;
-      }
-      else if(key == Term::Key::CTRL_C || key == Term::Key::CTRL_D)
-      {
-        std::cout << '\n' << std::flush;
-        return Result::ABORT;
-      }
-      else if(key == Term::Key::ENTER)
-      {
-        std::cout << '\n' << std::flush;
-        return Result::NONE;
-      }
-      else
-      {
-        std::cout << '\n' << std::flush;
-        return Result::INVALID;
-      }
+        return Result::ERR;
     }
-  }
-  else
-  {
-    std::vector<char>  input;
-    unsigned short int length = 0;
-    while(true)
-    {
-      key = Term::read_key();
-      if(key >= 'a' && key <= 'z')
-      {
-        std::cout << (char)key << std::flush;
-        length++;
-        input.push_back(static_cast<char>(key));
-      }
-      else if(key >= 'A' && key <= 'Z')
-      {
-        std::cout << (char)key << std::flush;
-        length++;
-        input.push_back(static_cast<char>(key + 32));  // convert upper case to lowercase
-      }
-      else if(key == Term::Key::CTRL_C || key == Term::Key::CTRL_D)
-      {
-        std::cout << '\n';
-        return Result::ABORT;
-      }
-      else if(key == Term::Key::BACKSPACE)
-      {
-        if(length != 0)
-        {
-          std::cout << "\033[D \033[D" << std::flush;  // erase last line and move the cursor back
-          length--;
-          input.pop_back();
+    int key;
+    if (immediate) {
+        while (true) {
+            key = Term::read_key();
+            if (key == 'y' || key == 'Y') {
+                std::cout << '\n' << std::flush;
+                return Result::YES;
+            } else if (key == 'n' || key == 'N') {
+                std::cout << '\n' << std::flush;
+                return Result::NO;
+            } else if (key == Term::Key::CTRL_C || key == Term::Key::CTRL_D) {
+                std::cout << '\n' << std::flush;
+                return Result::ABORT;
+            } else if (key == Term::Key::ENTER) {
+                std::cout << '\n' << std::flush;
+                return Result::NONE;
+            } else {
+                std::cout << '\n' << std::flush;
+                return Result::INVALID;
+            }
         }
-      }
-      else if(key == Term::Key::ENTER)
-      {
-        if(Private::vector_to_string(input) == "y" || Private::vector_to_string(input) == "yes")
-        {
-          std::cout << '\n' << std::flush;
-          return Result::YES;
+    } else {
+        std::vector<char> input;
+        unsigned short int length = 0;
+        while (true) {
+            key = Term::read_key();
+            if (key >= 'a' && key <= 'z') {
+                std::cout << (char)key << std::flush;
+                length++;
+                input.push_back(static_cast<char>(key));
+            } else if (key >= 'A' && key <= 'Z') {
+                std::cout << (char)key << std::flush;
+                length++;
+                input.push_back(static_cast<char>(key + 32));  // convert upper case to lowercase
+            } else if (key == Term::Key::CTRL_C || key == Term::Key::CTRL_D) {
+                std::cout << '\n';
+                return Result::ABORT;
+            } else if (key == Term::Key::BACKSPACE) {
+                if (length != 0) {
+                    std::cout << "\033[D \033[D" << std::flush;  // erase last line and move the cursor back
+                    length--;
+                    input.pop_back();
+                }
+            } else if (key == Term::Key::ENTER) {
+                if (Private::vector_to_string(input) == "y" || Private::vector_to_string(input) == "yes") {
+                    std::cout << '\n' << std::flush;
+                    return Result::YES;
+                } else if (Private::vector_to_string(input) == "n" || Private::vector_to_string(input) == "no") {
+                    std::cout << '\n' << std::flush;
+                    return Result::NO;
+                } else if (length == 0) {
+                    std::cout << '\n' << std::flush;
+                    return Result::NONE;
+                } else {
+                    std::cout << '\n' << std::flush;
+                    return Result::INVALID;
+                }
+            }
         }
-        else if(Private::vector_to_string(input) == "n" || Private::vector_to_string(input) == "no")
-        {
-          std::cout << '\n' << std::flush;
-          return Result::NO;
-        }
-        else if(length == 0)
-        {
-          std::cout << '\n' << std::flush;
-          return Result::NONE;
-        }
-        else
-        {
-          std::cout << '\n' << std::flush;
-          return Result::INVALID;
-        }
-      }
     }
-  }
 }
 
-Term::Result_simple Term::prompt_simple(const std::string& message)
-{
-  switch(prompt(message, "y", "N", ":", false))
-  {
-    case Result::YES: return Result_simple::YES;
-    case Result::ABORT: return Result_simple::ABORT;
-    case Result::NO:     // falls through
-    case Result::ERR:  // falls through
-    case Result::NONE:   // falls through
-    case Result::INVALID: return Result_simple::NO;
-  }
-  // shouldn't be reached
-  return Result_simple::NO;
+Term::Result_simple Term::prompt_simple(const std::string& message) {
+    switch (prompt(message, "y", "N", ":", false)) {
+        case Result::YES: return Result_simple::YES;
+        case Result::ABORT: return Result_simple::ABORT;
+        case Result::NO: //Falls through.
+        case Result::ERR: //Falls through.
+        case Result::NONE: //Falls through.
+        case Result::INVALID: return Result_simple::NO;
+    }
+    //Shouldn't be reached.
+    return Result_simple::NO;
 }
 
 std::string Term::concat(const std::vector<std::string>& lines) {
@@ -163,6 +125,19 @@ char32_t Term::UU(const std::string& s) {
     return s2[0];
 }
 
+/**
+ * Calculate the display length of a string, i.e. the number of columns it occupies on the terminal.
+ * Some characters occupy 2 columns, e.g. Chinese characters.
+ */
+inline size_t display_length(const std::u32string& u32str) {
+    size_t len = 0;
+    for (const auto& c : u32str) {
+        short width = Term::Private::c32_display_width(c);
+        len += width >= 0 ? width : 0;
+    }
+    return len;
+}
+
 void Term::print_left_curly_bracket(Term::Window& scr, const size_t& x, const size_t& y1, const size_t& y2,
                                     const std::vector<std::string>& display_vec) {
     size_t h = y2 - y1 + 1;
@@ -182,24 +157,11 @@ void Term::print_left_curly_bracket(Term::Window& scr, const size_t& x, const si
     }
 }
 
-/**
- * Calculate the display length of a string, i.e. the number of columns it occupies on the terminal.
- * Some characters occupy 2 columns, e.g. Chinese characters.
- */
-inline size_t Term::display_length(const std::u32string& u32str) {
-    size_t len = 0;
-    for (const auto& c : u32str) {
-        short width = Private::c32_display_width(c);
-        len += width >= 0 ? width : 0;
-    }
-    return len;
+inline size_t u8_to_u32_cursor_col(const std::string& str, const size_t& cursor_col) {
+    return Term::Private::utf8_to_utf32(str.substr(0, cursor_col - 1)).size() + 1;
 }
 
-inline size_t Term::u8_to_u32_cursor_col(const std::string& str, const size_t& cursor_col) {
-    return Private::utf8_to_utf32(str.substr(0, cursor_col - 1)).size() + 1;
-}
-
-inline size_t Term::u32_to_display_col(const std::u32string& u32str, const size_t& cursor_col) {
+inline size_t u32_to_display_col(const std::u32string& u32str, const size_t& cursor_col) {
     return display_length(u32str.substr(0, cursor_col)) + 1;
 }
 

@@ -10,8 +10,6 @@ namespace GPT {
     const std::string f_initial = "initial";
     const std::string f_saved = "saved";
     const std::string f_documentQA = "documentQA";
-    const std::string f_suffix = ".txt";
-    const std::string json_suffix = ".json";
     std::string model = "gpt-3.5-turbo";
     bool is_new_api = false;
     float temperature = 1;
@@ -869,14 +867,6 @@ namespace GPT {
             util::println_warn("Unusable api key detected, removed it.");
             p_save_config();
         }
-    }
-
-    const std::string& get_f_suffix() {
-        return f_suffix;
-    }
-
-    const std::string& get_json_suffix() {
-        return json_suffix;
     }
 
     const std::string& get_me_id() {

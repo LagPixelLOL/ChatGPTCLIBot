@@ -38,7 +38,8 @@ namespace Term {
     // The arguments are used like this: 1 [2/3]4 <user Input>
     // the immediate switch indicates toggles whether pressing enter for
     // confirming the input is required or not
-    Result prompt(const std::string& message, const std::string& first_option, const std::string& second_option, const std::string& prompt_indicator, bool);
+    Result prompt(const std::string& message, const std::string& first_option, const std::string& second_option,
+                  const std::string& prompt_indicator, bool);
 
     // The most simple prompt possible, requires the user to press enter to continue
     // The arguments are used like this: 1 [y/N]:
@@ -64,9 +65,6 @@ namespace Term {
     char32_t UU(const std::string&);
     void print_left_curly_bracket(Term::Window& scr, const size_t& x, const size_t& y1, const size_t& y2,
                                   const std::vector<std::string>& display_vec);
-    inline size_t display_length(const std::u32string& u32str);
-    inline size_t u8_to_u32_cursor_col(const std::string& str, const size_t& cursor_col);
-    inline size_t u32_to_display_col(const std::u32string& u32str, const size_t& cursor_col);
     std::vector<std::vector<std::string>> pre_process(const Window& w, const Model& m, size_t& cursor_x, size_t& cursor_y);
     std::pair<size_t, size_t> render(Window& scr, const Model& m, const size_t& cols);
     void replace_all(std::string& str, const std::string& from, const std::string& to);

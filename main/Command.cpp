@@ -172,14 +172,13 @@ namespace cmd {
                     }
                     break;
                 }
-                static const std::string f_suffix = GPT::get_f_suffix();
                 std::string filename;
                 while (true) {
                     std::cout << "Please enter the filename to dump the chat history to: ";
                     getline(std::cin, filename);
                     if (!filename.empty()) {
-                        if (boost::ends_with(filename, f_suffix)) {
-                            filename.erase(filename.size() - f_suffix.size());
+                        if (boost::ends_with(filename, GPT::f_suffix)) {
+                            filename.erase(filename.size() - GPT::f_suffix.size());
                         }
                         break;
                     }
@@ -196,7 +195,7 @@ namespace cmd {
                     GPT::print_enter_next_cycle();
                     return ReturnOpCode::CONTINUE;
                 }
-                const auto& path = std::filesystem::path(f_dump) / filename.append(f_suffix);
+                const auto& path = std::filesystem::path(f_dump) / filename.append(GPT::f_suffix);
                 try {
                     file::write_text_file(prompt::to_string(initial_prompt, prompts, me_id, bot_id, max_exchange_count, false,
                                                             space_between_exchanges), path);

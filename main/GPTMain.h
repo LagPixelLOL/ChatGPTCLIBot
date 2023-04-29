@@ -10,12 +10,15 @@
 #include "Command.h"
 #include "FineTuneHelper.h"
 
-#define PATH_S(path) Term::color_fg(125, 225, 255) + "\"" + path.string() + "\""
+#define PATH_S(path) Term::color_fg(125, 225, 255) + "\"" + (path).string() + "\""
 #define ENTER Term::color_fg(70, 200, 255) + "Enter" + Term::color_fg(Term::Color::Name::Default)
-#define GOLDEN_TEXT(n) Term::color_fg(255, 200, 0) + n + Term::color_fg(Term::Color::Name::Default)
+#define GOLDEN_TEXT(n) Term::color_fg(255, 200, 0) + (n) + Term::color_fg(Term::Color::Name::Default)
 
 namespace GPT {
     using Color = Term::Color;
+
+    inline const std::string f_suffix = ".txt";
+    inline const std::string json_suffix = ".json";
 
     void pre_settings();
     void start_loop();
@@ -33,8 +36,6 @@ namespace GPT {
     bool p_save_config();
     bool p_check_set_api_key();
     void p_on_invalid_key();
-    const std::string& get_f_suffix();
-    const std::string& get_json_suffix();
     const std::string& get_me_id();
     const std::string& get_bot_id();
 }

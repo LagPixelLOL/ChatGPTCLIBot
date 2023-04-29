@@ -7,7 +7,6 @@
 namespace fth {
     const std::filesystem::path f_finetune = "finetune";
     const std::filesystem::path f_download = "download";
-    const std::string& json_suffix = GPT::get_json_suffix();
     const std::string url_files = "https://api.openai.com/v1/files";
     const std::string url_fine_tunes = "https://api.openai.com/v1/fine-tunes";
     const std::string url_models = "https://api.openai.com/v1/models";
@@ -36,10 +35,10 @@ namespace fth {
         std::cout << "Please enter the source's filename you want to load: ";
         std::string s_filename;
         getline(std::cin, s_filename);
-        if (boost::ends_with(s_filename, json_suffix)) {
-            s_filename.erase(s_filename.size() - json_suffix.size());
+        if (boost::ends_with(s_filename, GPT::json_suffix)) {
+            s_filename.erase(s_filename.size() - GPT::json_suffix.size());
         }
-        const auto& path_ = f_finetune / (s_filename + json_suffix);
+        const auto& path_ = f_finetune / (s_filename + GPT::json_suffix);
         util::println_info("Loading source from file: " + PATH_S(path_));
         std::string content;
         try {
@@ -73,7 +72,7 @@ namespace fth {
             return;
         }
         try {
-            const auto& w_path = f_finetune / (s_filename + "_converted" + json_suffix);
+            const auto& w_path = f_finetune / (s_filename + "_converted" + GPT::json_suffix);
             util::println_info("Writing converted source to file: " + PATH_S(w_path));
             file::write_text_file(result.dump(2), w_path);
         } catch (const file::file_error& e) {
@@ -88,10 +87,10 @@ namespace fth {
         std::cout << "Please enter the converted source's filename you want to upload: ";
         std::string cs_filename;
         getline(std::cin, cs_filename);
-        if (boost::ends_with(cs_filename, json_suffix)) {
-            cs_filename.erase(cs_filename.size() - json_suffix.size());
+        if (boost::ends_with(cs_filename, GPT::json_suffix)) {
+            cs_filename.erase(cs_filename.size() - GPT::json_suffix.size());
         }
-        const auto& path_ = f_finetune / (cs_filename + json_suffix);
+        const auto& path_ = f_finetune / (cs_filename + GPT::json_suffix);
         util::println_info("Loading converted source from file: " + PATH_S(path_));
         std::string content;
         try {
