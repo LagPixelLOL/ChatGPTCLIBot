@@ -103,7 +103,7 @@ namespace api {
             curl::http_post(url, [&](const std::string& s, CURL* curl){
                 curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, timeout_checker.calc_next());
                 std::vector<std::string> split_str;
-                split_regex(split_str, s, boost::regex("[\n][\n][d][a][t][a][:][ ]"));
+                boost::split_regex(split_str, s, boost::regex("[\n][\n][d][a][t][a][:][ ]"));
                 for (auto& str : split_str) {
                     if (boost::starts_with(str, "data: ")) {
                         str.erase(0, 6);

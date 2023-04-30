@@ -319,6 +319,59 @@ namespace fth {
         util::println_info("\nDownload completed.");
     }
 
+    inline void merge() {
+        static std::vector<std::string> input_history;
+        std::cout << "Please enter the filenames you want to merge.\n"
+                     "(Note: Separate each filename with newline): ";
+        std::vector<std::string> filenames;
+        boost::split(filenames, util::get_multiline(input_history), boost::is_any_of("\n"));
+        nlohmann::json merged = nlohmann::json::array();
+        for (auto& filename : filenames) {
+            if (boost::ends_with(filename, GPT::json_suffix)) {
+                filename.erase(filename.size() - GPT::json_suffix.size());
+            }
+            const auto& path_ = f_finetune / (filename + GPT::json_suffix);
+            util::println_info("Loading converted source from file: " + PATH_S(path_));
+            std::string content;
+            try {
+                content = file::read_text_file(path_);
+            } catch (const file::file_error& e) {
+                util::println_err("Error reading file: " + PATH_S(e.get_path()));
+                util::println_err("Reason: " + std::string(e.what()));
+                return;
+            }
+            nlohmann::json j;
+            try {
+                j = nlohmann::json::parse(content);
+            } catch (const nlohmann::json::parse_error& e) {
+                util::println_err("Error parsing converted source: " + std::string(e.what()));
+                return;
+            }
+            if (!j.is_array()) {
+                util::println_err("Error parsing converted source: Converted source is not an array.");
+                return;
+            }
+            merged.insert(merged.end(), j.begin(), j.end());
+        }
+        std::cout << "Please enter the filename you want to save as: ";
+        std::string filename;
+        getline(std::cin, filename);
+        if (filename.empty()) {
+            util::println_err("Error: Filename cannot be empty.");
+            return;
+        }
+        try {
+            const auto& path_ = f_finetune / (filename + GPT::json_suffix);
+            util::println_info("Writing merged converted source to file: " + PATH_S(path_));
+            file::write_text_file(merged.dump(2), path_);
+        } catch (const file::file_error& e) {
+            util::println_err("Error writing merged converted source file: " + PATH_S(e.get_path()));
+            util::println_err("Reason: " + std::string(e.what()));
+            return;
+        }
+        util::println_info("Merging completed.");
+    }
+
     inline void create_fine_tune() {
         std::cout << "Please enter the file ID you want to use for this fine tune task.\n"
                      "(Note: It's the ID, NOT the filename): ";
@@ -486,15 +539,15 @@ namespace fth {
     void fine_tune_helper_main() {
         while (true) {
             util::print_cs("Please choose whether you want to convert source, upload file,\n"
-                           "view files, delete files, download file, create a new fine tune task, \n"
-                           "list fine tune tasks, retrieve a fine tune task, \n"
-                           "cancel a fine tune task, or delete a fine tuned model.\n"
+                           "view files, delete files, download file, merge files,\n"
+                           "create a new fine tune task, list fine tune tasks,\nretrieve a fine tune task, "
+                           "cancel a fine tune task,\nor delete a fine tuned model.\n"
                            "(Input " + GOLDEN_TEXT("c") + " for convert, " + GOLDEN_TEXT("u") + " for upload, "
                            + GOLDEN_TEXT("v") + " for view,\n " + GOLDEN_TEXT("d") + " for delete, "
-                           + GOLDEN_TEXT("dl") + " for download file,\n " + GOLDEN_TEXT("cf") + " for create fine tune, "
-                           + GOLDEN_TEXT("lf") + " for list fine tunes,\n " + GOLDEN_TEXT("rf") + " for retrieve fine tune, "
-                           + GOLDEN_TEXT("cn") + " for cancel fine tune,\n " + GOLDEN_TEXT("dm") + " for delete model, "
-                           + GOLDEN_TEXT("q") + " for quit): ");
+                           + GOLDEN_TEXT("dl") + " for download, " + GOLDEN_TEXT("m") + " for merge,\n "
+                           + GOLDEN_TEXT("cf") + " for create fine tune, " + GOLDEN_TEXT("lf") + " for list fine tunes,\n "
+                           + GOLDEN_TEXT("rf") + " for retrieve fine tune, " + GOLDEN_TEXT("cn") + " for cancel fine tune,\n "
+                           + GOLDEN_TEXT("dm") + " for delete model, " + GOLDEN_TEXT("q") + " for quit): ");
             std::string chose_mode;
             getline(std::cin, chose_mode);
             std::transform(chose_mode.begin(), chose_mode.end(), chose_mode.begin(), tolower);
@@ -511,6 +564,8 @@ namespace fth {
                 delete_();
             } else if (chose_mode == "dl") {
                 download();
+            } else if (chose_mode == "m") {
+                merge();
             } else if (chose_mode == "cf") {
                 create_fine_tune();
             } else if (chose_mode == "lf") {

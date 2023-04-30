@@ -61,7 +61,7 @@ namespace cmd {
                 if (!documentQA_mode) {
                     while (true) {
                         util::print_cs("Do you want to save the chat history?\n"
-                                       "(Input the file name to save, press " + ENTER + " to skip): ");
+                                       "(Input the filename to save, press " + ENTER + " to skip): ");
                         std::string save_name;
                         getline(std::cin, save_name);
                         if (!save_name.empty()) {
