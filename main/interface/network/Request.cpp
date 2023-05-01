@@ -15,8 +15,8 @@ namespace curl {
 
     enum class http_method {GET, POST, DEL};
 
-    size_t write_callback(char* char_ptr, size_t size, size_t mem, const std::function<size_t(char*, size_t, size_t)>* callback_function) {
-        return (*callback_function)(char_ptr, size, mem);
+    size_t write_callback(char* char_ptr, size_t batch, size_t size, const std::function<size_t(char*, size_t, size_t)>* callback_function) {
+        return (*callback_function)(char_ptr, batch, size);
     }
 
     void http_request(const http_method& method, const std::string& url, const std::function<void(const std::string&, CURL*)>& callback,
@@ -42,8 +42,8 @@ namespace curl {
         }
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
         std::exception_ptr exception_ptr = nullptr;
-        std::function<size_t(char*, size_t, size_t)> callback_lambda = [&](char* char_ptr, size_t size, size_t mem){
-            size_t length = size * mem;
+        std::function<size_t(char*, size_t, size_t)> callback_lambda = [&](char* char_ptr, size_t batch, size_t size){
+            size_t length = batch * size;
             try {
                 callback(std::string(char_ptr, char_ptr + length), curl);
             } catch (const std::exception& e) {

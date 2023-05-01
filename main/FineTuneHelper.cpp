@@ -55,8 +55,8 @@ namespace fth {
         std::cout << "): ";
         std::string source_type_in;
         getline(std::cin, source_type_in);
-        static const std::string me_id = GPT::get_me_id() + ": ";
-        static const std::string bot_id = GPT::get_bot_id() + ":"; //bot_id doesn't end with space because of tokenization reasons.
+        static const std::string me_id = GPT::me_id + ": ";
+        static const std::string bot_id = GPT::bot_id + ":"; //bot_id doesn't end with space because of tokenization reasons.
         std::cout << "Do you want to use the chat format(" << me_id << "and " << bot_id << ")? (y/n): ";
         std::string use_chat_format_yn;
         getline(std::cin, use_chat_format_yn);

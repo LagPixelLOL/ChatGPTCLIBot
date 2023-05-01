@@ -66,7 +66,7 @@ namespace api {
         return api_keys_.front();
     }
 
-    std::vector<std::string> get_keys() {
+    const std::vector<std::string>& get_keys() {
         return api_keys_;
     }
 
@@ -75,7 +75,7 @@ namespace api {
      */
     void set_key(const std::string& api_key) {
         api_keys_.clear();
-        api_keys_.push_back(api_key);
+        api_keys_.emplace_back(api_key);
     }
 
     /**

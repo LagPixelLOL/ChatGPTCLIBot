@@ -18,8 +18,6 @@ namespace GPT {
     float frequency_penalty = 0;
     float presence_penalty = 0.6;
     std::unordered_map<std::string, float> logit_bias;
-    const std::string me_id = "Me";
-    const std::string bot_id = "You";
     std::string initial_prompt = "You are an AI chat bot named Sapphire\n"
                                  "You are friendly and intelligent\n"
                                  "Your backend is OpenAI's ChatGPT API\n";
@@ -206,6 +204,9 @@ namespace GPT {
             if (!is_new_api && boost::starts_with(response, " ")) {
                 response.erase(0, 1);
             }
+            while (boost::ends_with(response, "\n")) {
+                response.pop_back();
+            }
             prompts.back()->setResponse(response);
         }
     }
@@ -257,16 +258,9 @@ namespace GPT {
         if (!exists(path_)) {
             try {
                 util::println_info("Creating default prompt file: " + PATH_S(path_));
-                std::ofstream file(path_);
-                if (file.is_open()) {
-                    file << initial_prompt;
-                    file.close();
-                } else {
-                    util::println_err("Error opening file for writing: " + PATH_S(path_));
-                    return false;
-                }
-            } catch (const std::exception& e) {
-                util::println_err("Error creating file: " + PATH_S(path_));
+                file::write_text_file(initial_prompt, path_);
+            } catch (const file::file_error& e) {
+                util::println_err("Error creating file: " + PATH_S(e.get_path()));
                 util::println_err("Reason: " + std::string(e.what()));
                 return false;
             }
@@ -303,89 +297,80 @@ namespace GPT {
             util::println_err("Saved chat file does not exist: " + PATH_S(path_));
             return false;
         }
+        nlohmann::json j;
         try {
             util::println_info("Reading saved chat file: " + PATH_S(path_));
-            std::ifstream file(path_);
-            if (file.is_open()) {
-                nlohmann::json j;
-                file >> j;
-                file.close();
-                if (j.count("initial") > 0 && j["initial"].is_string()) {
-                    initial_prompt = j["initial"].get<std::string>();
-                } else {
-                    util::println_err("Error reading saved chat file: " + PATH_S(path_));
-                    util::println_err("Reason: initial is not a string.");
-                    return false;
-                }
-                if (j.count("histories") > 0) {
-                    auto histories = j["histories"];
-                    if (histories.is_array()) {
-                        for (const auto& history : histories) {
-                            if (history.is_object()) {
-                                std::string input;
-                                std::vector<float> input_embeddings;
-                                std::string response;
-                                std::vector<float> response_embeddings;
-                                long long time_ms;
-                                if (history.count("input") > 0 && history["input"].is_string()) {
-                                    input = history["input"].get<std::string>();
-                                } else {
-                                    util::println_err("Error reading saved chat file: " + PATH_S(path_));
-                                    util::println_err("Reason: input is not a string.");
-                                    return false;
-                                }
-                                if (history.count("input_embeddings") > 0 && history["input_embeddings"].is_array()) {
-                                    input_embeddings = history["input_embeddings"].get<std::vector<float>>();
-                                } else {
-                                    util::println_err("Error reading saved chat file: " + PATH_S(path_));
-                                    util::println_err("Reason: input_embeddings is not an array.");
-                                    return false;
-                                }
-                                if (history.count("response") > 0 && history["response"].is_string()) {
-                                    response = history["response"].get<std::string>();
-                                    if (history.count("response_embeddings") > 0 && history["response_embeddings"].is_array()) {
-                                        response_embeddings = history["response_embeddings"].get<std::vector<float>>();
-                                    }
-                                }
-                                if (history.count("time_stamp") > 0 && history["time_stamp"].is_number_integer()) {
-                                    time_ms = history["time_stamp"].get<long long>();
-                                } else {
-                                    util::println_err("Error reading saved chat file: " + PATH_S(path_));
-                                    util::println_err("Reason: time_stamp is not an integer.");
-                                    return false;
-                                }
-                                if (response.empty()) {
-                                    prompts.push_back(std::make_shared<chat::Exchange>(input, input_embeddings, time_ms));
-                                } else if (response_embeddings.empty()) {
-                                    prompts.push_back(std::make_shared<chat::Exchange>(input, input_embeddings, response, time_ms));
-                                } else {
-                                    prompts.push_back(std::make_shared<chat::Exchange>(input, input_embeddings, response,
-                                                                                       response_embeddings, time_ms));
-                                }
-                            } else {
-                                util::println_err("Error reading saved chat file: " + PATH_S(path_));
-                                util::println_err("Reason: history is not an object.");
-                                return false;
-                            }
-                        }
-                    } else if (!histories.is_null()) {
-                        util::println_err("Error reading saved chat file: " + PATH_S(path_));
-                        util::println_err("Reason: histories is not an array.");
-                        return false;
-                    }
-                } else {
-                    util::println_err("Error reading saved chat file: " + PATH_S(path_));
-                    util::println_err("Reason: histories is not found.");
-                    return false;
-                }
-            } else {
-                util::println_err("Error opening saved chat file for reading: " + PATH_S(path_));
-                return false;
-            }
-        } catch (const std::exception& e) {
-            util::println_err("Error reading saved chat file: " + PATH_S(path_));
+            j = nlohmann::json::parse(file::read_text_file(path_));
+        } catch (const file::file_error& e) {
+            util::println_err("Error reading saved chat file: " + PATH_S(e.get_path()));
             util::println_err("Reason: " + std::string(e.what()));
             return false;
+        } catch (const nlohmann::json::parse_error& e) {
+            util::println_err("Error parsing saved chat file: " + PATH_S(path_));
+            util::println_err("Reason: " + std::string(e.what()));
+            return false;
+        }
+        if (!j.contains("initial") || !j["initial"].is_string()) {
+            util::println_err("Error reading saved chat file: " + PATH_S(path_));
+            util::println_err("Reason: initial is not a string.");
+            return false;
+        }
+        initial_prompt = j["initial"].get<std::string>();
+        if (!j.contains("histories")) {
+            util::println_err("Error reading saved chat file: " + PATH_S(path_));
+            util::println_err("Reason: histories is not found.");
+            return false;
+        }
+        auto histories = j["histories"];
+        if (!histories.is_null()) {
+            if (!histories.is_array()) {
+                util::println_err("Error reading saved chat file: " + PATH_S(path_));
+                util::println_err("Reason: histories is not an array.");
+                return false;
+            }
+            for (const auto& history : histories) {
+                if (!history.is_object()) {
+                    util::println_err("Error reading saved chat file: " + PATH_S(path_));
+                    util::println_err("Reason: history is not an object.");
+                    return false;
+                }
+                std::string input;
+                std::vector<float> input_embeddings;
+                std::string response;
+                std::vector<float> response_embeddings;
+                long long time_ms;
+                if (!history.contains("input") || !history["input"].is_string()) {
+                    util::println_err("Error reading saved chat file: " + PATH_S(path_));
+                    util::println_err("Reason: input is not a string.");
+                    return false;
+                }
+                if (!history.contains("input_embeddings") || !history["input_embeddings"].is_array()) {
+                    util::println_err("Error reading saved chat file: " + PATH_S(path_));
+                    util::println_err("Reason: input_embeddings is not an array.");
+                    return false;
+                }
+                if (!history.contains("time_stamp") || !history["time_stamp"].is_number_integer()) {
+                    util::println_err("Error reading saved chat file: " + PATH_S(path_));
+                    util::println_err("Reason: time_stamp is not an integer.");
+                    return false;
+                }
+                input = history["input"].get<std::string>();
+                input_embeddings = history["input_embeddings"].get<std::vector<float>>();
+                time_ms = history["time_stamp"].get<long long>();
+                if (history.contains("response") && history["response"].is_string()) {
+                    response = history["response"].get<std::string>();
+                    if (history.contains("response_embeddings") && history["response_embeddings"].is_array()) {
+                        response_embeddings = history["response_embeddings"].get<std::vector<float>>();
+                    }
+                }
+                if (response.empty()) {
+                    prompts.push_back(std::make_shared<chat::Exchange>(input, input_embeddings, time_ms));
+                } else if (response_embeddings.empty()) {
+                    prompts.push_back(std::make_shared<chat::Exchange>(input, input_embeddings, response, time_ms));
+                } else {
+                    prompts.push_back(std::make_shared<chat::Exchange>(input, input_embeddings, response, response_embeddings, time_ms));
+                }
+            }
         }
         util::println_info("Saved chat file reading completed.");
         return true;
@@ -400,33 +385,26 @@ namespace GPT {
         const auto& path_ = std::filesystem::path(f_saved) / name.append(json_suffix);
         try {
             util::println_info("Saving chat to file: " + PATH_S(path_));
-            std::ofstream file(path_);
-            if (file.is_open()) {
-                nlohmann::json j;
-                j["initial"] = initial_prompt;
-                nlohmann::json histories = nlohmann::json::array();
-                for (const auto& prompt : prompts) {
-                    nlohmann::json history = nlohmann::json::object();
-                    history["input"] = prompt->getInput();
-                    history["input_embeddings"] = prompt->getInputEmbeddings();
-                    if (prompt->hasResponse()) {
-                        history["response"] = prompt->getResponse();
-                        if (prompt->hasResponseEmbeddings()) {
-                            history["response_embeddings"] = prompt->getResponseEmbeddings();
-                        }
+            nlohmann::json j = nlohmann::json::object();
+            j["initial"] = initial_prompt;
+            nlohmann::json histories = nlohmann::json::array();
+            for (const auto& prompt : prompts) {
+                nlohmann::json history = nlohmann::json::object();
+                history["input"] = prompt->getInput();
+                history["input_embeddings"] = prompt->getInputEmbeddings();
+                if (prompt->hasResponse()) {
+                    history["response"] = prompt->getResponse();
+                    if (prompt->hasResponseEmbeddings()) {
+                        history["response_embeddings"] = prompt->getResponseEmbeddings();
                     }
-                    history["time_stamp"] = prompt->getTimeMS();
-                    histories.push_back(history);
                 }
-                j["histories"] = histories;
-                file << j.dump(2);
-                file.close();
-            } else {
-                util::println_err("Error opening file for writing: " + PATH_S(path_));
-                return false;
+                history["time_stamp"] = prompt->getTimeMS();
+                histories.push_back(history);
             }
-        } catch (const std::exception& e) {
-            util::println_err("Error creating file: " + PATH_S(path_));
+            j["histories"] = histories;
+            file::write_text_file(j.dump(2), path_);
+        } catch (const file::file_error& e) {
+            util::println_err("Error saving chat to file: " + PATH_S(e.get_path()));
             util::println_err("Reason: " + std::string(e.what()));
             return false;
         }
@@ -441,28 +419,26 @@ namespace GPT {
     bool p_load_docQA(std::string filename) {
         const auto& path_ = std::filesystem::path(f_documentQA) / filename.append(json_suffix);
         util::println_info("Loading document Q&A from file: " + PATH_S(path_));
-        std::string content;
+        nlohmann::json j;
         try {
-            content = file::read_text_file(path_);
+            j = nlohmann::json::parse(file::read_text_file(path_));
         } catch (const file::file_error& e) {
             util::println_err("Error reading document Q&A file: " + PATH_S(e.get_path()));
             util::println_err("Reason: " + std::string(e.what()));
             return false;
         }
-        nlohmann::json j;
         try {
-            j = nlohmann::json::parse(content);
         } catch (const nlohmann::json::parse_error& e) {
             util::println_err("Error parsing document Q&A file: " + PATH_S(path_));
             util::println_err("Reason: " + std::string(e.what()));
             return false;
         }
-        if (j.count("initial") <= 0 || !j["initial"].is_string()) {
+        if (!j.contains("initial") || !j["initial"].is_string()) {
             util::println_err("Error parsing document Q&A file: " + PATH_S(path_));
             util::println_err("Reason: initial is not a string.");
             return false;
         }
-        if (j.count("documents") <= 0 || !j["documents"].is_array()) {
+        if (!j.contains("documents") || !j["documents"].is_array()) {
             util::println_err("Error parsing document Q&A file: " + PATH_S(path_));
             util::println_err("Reason: documents is not an array.");
             return false;
@@ -614,179 +590,181 @@ namespace GPT {
             util::println_err("Creating new config file: " + PATH_S(path_));
             return p_save_config();
         }
+        nlohmann::json j;
         try {
             util::println_info("Reading config file: " + PATH_S(path_));
-            std::ifstream file(path_);
-            if (file.is_open()) {
-                nlohmann::json j;
-                file >> j;
-                file.close();
-                bool error = false;
-                if (j.count("api_key") > 0) {
-                    auto api_key = j["api_key"];
-                    if (api_key.is_string()) {
-                        api::set_key(api_key.get<std::string>());
-                    } else if (api_key.is_array()) {
-                        std::vector<std::string> keys;
-                        for (const auto& key : api_key) {
-                            if (key.is_string()) {
-                                keys.push_back(key.get<std::string>());
-                            } else {
-                                util::println_err("Error reading config file: " + PATH_S(path_));
-                                util::println_err("Reason: api_key has non-string element. Element: " + key.dump(2));
-                                error = true;
-                            }
-                        }
-                        api::set_key(keys);
-                    } else if (!api_key.is_null()) {
-                        util::println_err("Error reading config file: " + PATH_S(path_));
-                        util::println_err("Reason: api_key is not a string, array or null.");
-                        error = true;
-                    }
-                } else {
-                    util::println_err("Error reading config file: " + PATH_S(path_));
-                    util::println_err("Reason: api_key is not found.");
-                    error = true;
-                }
-                if (j.count("model") > 0 && j["model"].is_string()) {
-                    model = j["model"].get<std::string>();
-                } else {
-                    util::println_err("Error reading config file: " + PATH_S(path_));
-                    util::println_err("Reason: model is not a string.");
-                    error = true;
-                }
-                if (j.count("temperature") > 0 && j["temperature"].is_number()) {
-                    temperature = j["temperature"].get<float>();
-                } else {
-                    util::println_err("Error reading config file: " + PATH_S(path_));
-                    util::println_err("Reason: temperature is not a number.");
-                    error = true;
-                }
-                if (j.count("max_tokens") > 0 && j["max_tokens"].is_number_integer()) {
-                    max_tokens = j["max_tokens"].get<int>();
-                } else {
-                    util::println_err("Error reading config file: " + PATH_S(path_));
-                    util::println_err("Reason: max_tokens is not an integer number.");
-                    error = true;
-                }
-                if (j.count("top_p") > 0 && j["top_p"].is_number()) {
-                    top_p = j["top_p"].get<float>();
-                } else {
-                    util::println_err("Error reading config file: " + PATH_S(path_));
-                    util::println_err("Reason: top_p is not a number.");
-                    error = true;
-                }
-                if (j.count("frequency_penalty") > 0 && j["frequency_penalty"].is_number()) {
-                    frequency_penalty = j["frequency_penalty"].get<float>();
-                } else {
-                    util::println_err("Error reading config file: " + PATH_S(path_));
-                    util::println_err("Reason: frequency_penalty is not a number.");
-                    error = true;
-                }
-                if (j.count("presence_penalty") > 0 && j["presence_penalty"].is_number()) {
-                    presence_penalty = j["presence_penalty"].get<float>();
-                } else {
-                    util::println_err("Error reading config file: " + PATH_S(path_));
-                    util::println_err("Reason: presence_penalty is not a number.");
-                    error = true;
-                }
-                if (j.count("logit_bias") > 0 && j["logit_bias"].is_object()) {
-                    auto logit_bias_obj = j["logit_bias"].get<nlohmann::json>();
-                    logit_bias.clear();
-                    for (const auto& [key, value] : logit_bias_obj.items()) {
-                        if (!value.is_number()) {
-                            util::println_err("Error reading config file: " + PATH_S(path_));
-                            util::println_err("Reason: logit_bias has non-number bias. Value: " + value.dump(2));
-                            error = true;
-                            continue;
-                        }
-                        float bias = value.get<float>();
-                        if (bias < -100 || bias > 100) {
-                            util::println_err("Error reading config file: " + PATH_S(path_));
-                            util::println_err("Reason: logit_bias's bias is out of range, it must be between -100 and 100. Bias: "
-                            + std::to_string(bias));
-                            error = true;
-                            continue;
-                        }
-                        logit_bias[key] = bias;
-                    }
-                } else {
-                    util::println_err("Error reading config file: " + PATH_S(path_));
-                    util::println_err("Reason: logit_bias is not an object.");
-                    error = true;
-                }
-                if (j.count("max_display_length") > 0 && j["max_display_length"].is_number_unsigned()) {
-                    max_display_length = j["max_display_length"].get<unsigned int>();
-                    if (max_display_length == 0) {
-                        util::println_err("Error reading config file: " + PATH_S(path_));
-                        util::println_err("Reason: max_display_length cannot be 0.");
-                        max_display_length = 1;
-                        error = true;
-                    }
-                } else {
-                    util::println_err("Error reading config file: " + PATH_S(path_));
-                    util::println_err("Reason: max_display_length is not an unsigned integer.");
-                    error = true;
-                }
-                if (j.count("max_short_memory_length") > 0 && j["max_short_memory_length"].is_number_unsigned()) {
-                    max_short_memory_length = j["max_short_memory_length"].get<unsigned int>();
-                    if (max_short_memory_length == 0) {
-                        util::println_err("Error reading config file: " + PATH_S(path_));
-                        util::println_err("Reason: max_short_memory_length cannot be 0.");
-                        max_short_memory_length = 1;
-                        error = true;
-                    }
-                } else {
-                    util::println_err("Error reading config file: " + PATH_S(path_));
-                    util::println_err("Reason: max_short_memory_length is not an unsigned integer.");
-                    error = true;
-                }
-                if (j.count("max_reference_length") > 0 && j["max_reference_length"].is_number_unsigned()) {
-                    max_reference_length = j["max_reference_length"].get<unsigned int>();
-                } else {
-                    util::println_err("Error reading config file: " + PATH_S(path_));
-                    util::println_err("Reason: max_reference_length is not an unsigned integer.");
-                    error = true;
-                }
-                if (j.count("search_response") > 0 && j["search_response"].is_boolean()) {
-                    search_response = j["search_response"].get<bool>();
-                } else {
-                    util::println_err("Error reading config file: " + PATH_S(path_));
-                    util::println_err("Reason: search_response is not a boolean.");
-                    error = true;
-                }
-                if (j.count("space_between_exchanges") > 0 && j["space_between_exchanges"].is_boolean()) {
-                    space_between_exchanges = j["space_between_exchanges"].get<bool>();
-                } else {
-                    util::println_err("Error reading config file: " + PATH_S(path_));
-                    util::println_err("Reason: space_between_exchanges is not a boolean.");
-                    error = true;
-                }
-                if (j.count("debug_reference") > 0 && j["debug_reference"].is_boolean()) {
-                    debug_reference = j["debug_reference"].get<bool>();
-                } else {
-                    util::println_err("Error reading config file: " + PATH_S(path_));
-                    util::println_err("Reason: debug_reference is not a boolean.");
-                    error = true;
-                }
-#ifdef __linux__
-                if (j.count("ca_bundle_path") > 0 && j["ca_bundle_path"].is_string()) {
-                    util::set_ca_bundle_path(j["ca_bundle_path"].get<std::string>());
-                } else {
-                    util::println_err("Error reading config file: " + PATH_S(path_));
-                    util::println_err("Reason: ca_bundle_path is not a string.");
-                    error = true;
-                }
-#endif
-                if (error) {
-                    util::println_err("Error detected, creating new config file: " + PATH_S(path_));
-                    return p_save_config();
-                }
-            }
-        } catch (const std::exception& e) {
+            j = nlohmann::json::parse(file::read_text_file(path_));
+        } catch (const file::file_error& e) {
             util::println_err("Error reading config file: " + PATH_S(path_));
             util::println_err("Reason: " + std::string(e.what()));
             return false;
+        } catch (const nlohmann::json::parse_error& e) {
+            util::println_err("Error parsing config file: " + PATH_S(path_));
+            util::println_err("Reason: " + std::string(e.what()));
+            return false;
+        }
+        bool error = false;
+        if (j.contains("api_key")) {
+            auto api_key = j["api_key"];
+            if (!api_key.is_null()) {
+                if (api_key.is_string()) {
+                    api::set_key(api_key.get<std::string>());
+                } else if (api_key.is_array()) {
+                    std::vector<std::string> keys;
+                    for (const auto& key : api_key) {
+                        if (key.is_string()) {
+                            keys.push_back(key.get<std::string>());
+                        } else {
+                            util::println_err("Error reading config file: " + PATH_S(path_));
+                            util::println_err("Reason: api_key has non-string element. Element: " + key.dump(2));
+                            error = true;
+                        }
+                    }
+                    api::set_key(keys);
+                } else {
+                    util::println_err("Error reading config file: " + PATH_S(path_));
+                    util::println_err("Reason: api_key is not a string, array or null.");
+                    error = true;
+                }
+            }
+        } else {
+            util::println_err("Error reading config file: " + PATH_S(path_));
+            util::println_err("Reason: api_key is not found.");
+            error = true;
+        }
+        if (j.contains("model") && j["model"].is_string()) {
+            model = j["model"].get<std::string>();
+        } else {
+            util::println_err("Error reading config file: " + PATH_S(path_));
+            util::println_err("Reason: model is not a string.");
+            error = true;
+        }
+        if (j.contains("temperature") && j["temperature"].is_number()) {
+            temperature = j["temperature"].get<float>();
+        } else {
+            util::println_err("Error reading config file: " + PATH_S(path_));
+            util::println_err("Reason: temperature is not a number.");
+            error = true;
+        }
+        if (j.contains("max_tokens") && j["max_tokens"].is_number_integer()) {
+            max_tokens = j["max_tokens"].get<int>();
+        } else {
+            util::println_err("Error reading config file: " + PATH_S(path_));
+            util::println_err("Reason: max_tokens is not an integer number.");
+            error = true;
+        }
+        if (j.contains("top_p") && j["top_p"].is_number()) {
+            top_p = j["top_p"].get<float>();
+        } else {
+            util::println_err("Error reading config file: " + PATH_S(path_));
+            util::println_err("Reason: top_p is not a number.");
+            error = true;
+        }
+        if (j.contains("frequency_penalty") && j["frequency_penalty"].is_number()) {
+            frequency_penalty = j["frequency_penalty"].get<float>();
+        } else {
+            util::println_err("Error reading config file: " + PATH_S(path_));
+            util::println_err("Reason: frequency_penalty is not a number.");
+            error = true;
+        }
+        if (j.contains("presence_penalty") && j["presence_penalty"].is_number()) {
+            presence_penalty = j["presence_penalty"].get<float>();
+        } else {
+            util::println_err("Error reading config file: " + PATH_S(path_));
+            util::println_err("Reason: presence_penalty is not a number.");
+            error = true;
+        }
+        if (j.contains("logit_bias") && j["logit_bias"].is_object()) {
+            auto logit_bias_obj = j["logit_bias"].get<nlohmann::json>();
+            logit_bias.clear();
+            for (const auto& [key, value] : logit_bias_obj.items()) {
+                if (!value.is_number()) {
+                    util::println_err("Error reading config file: " + PATH_S(path_));
+                    util::println_err("Reason: logit_bias has non-number bias. Value: " + value.dump(2));
+                    error = true;
+                    continue;
+                }
+                float bias = value.get<float>();
+                if (bias < -100 || bias > 100) {
+                    util::println_err("Error reading config file: " + PATH_S(path_));
+                    util::println_err("Reason: logit_bias's bias is out of range, it must be between -100 and 100. Bias: "
+                    + std::to_string(bias));
+                    error = true;
+                    continue;
+                }
+                logit_bias[key] = bias;
+            }
+        } else {
+            util::println_err("Error reading config file: " + PATH_S(path_));
+            util::println_err("Reason: logit_bias is not an object.");
+            error = true;
+        }
+        if (j.contains("max_display_length") && j["max_display_length"].is_number_unsigned()) {
+            max_display_length = j["max_display_length"].get<unsigned int>();
+            if (max_display_length == 0) {
+                util::println_err("Error reading config file: " + PATH_S(path_));
+                util::println_err("Reason: max_display_length cannot be 0.");
+                max_display_length = 1;
+                error = true;
+            }
+        } else {
+            util::println_err("Error reading config file: " + PATH_S(path_));
+            util::println_err("Reason: max_display_length is not an unsigned integer.");
+            error = true;
+        }
+        if (j.contains("max_short_memory_length") && j["max_short_memory_length"].is_number_unsigned()) {
+            max_short_memory_length = j["max_short_memory_length"].get<unsigned int>();
+            if (max_short_memory_length == 0) {
+                util::println_err("Error reading config file: " + PATH_S(path_));
+                util::println_err("Reason: max_short_memory_length cannot be 0.");
+                max_short_memory_length = 1;
+                error = true;
+            }
+        } else {
+            util::println_err("Error reading config file: " + PATH_S(path_));
+            util::println_err("Reason: max_short_memory_length is not an unsigned integer.");
+            error = true;
+        }
+        if (j.contains("max_reference_length") && j["max_reference_length"].is_number_unsigned()) {
+            max_reference_length = j["max_reference_length"].get<unsigned int>();
+        } else {
+            util::println_err("Error reading config file: " + PATH_S(path_));
+            util::println_err("Reason: max_reference_length is not an unsigned integer.");
+            error = true;
+        }
+        if (j.contains("search_response") && j["search_response"].is_boolean()) {
+            search_response = j["search_response"].get<bool>();
+        } else {
+            util::println_err("Error reading config file: " + PATH_S(path_));
+            util::println_err("Reason: search_response is not a boolean.");
+            error = true;
+        }
+        if (j.contains("space_between_exchanges") && j["space_between_exchanges"].is_boolean()) {
+            space_between_exchanges = j["space_between_exchanges"].get<bool>();
+        } else {
+            util::println_err("Error reading config file: " + PATH_S(path_));
+            util::println_err("Reason: space_between_exchanges is not a boolean.");
+            error = true;
+        }
+        if (j.contains("debug_reference") && j["debug_reference"].is_boolean()) {
+            debug_reference = j["debug_reference"].get<bool>();
+        } else {
+            util::println_err("Error reading config file: " + PATH_S(path_));
+            util::println_err("Reason: debug_reference is not a boolean.");
+            error = true;
+        }
+#ifdef __linux__
+        if (j.contains("ca_bundle_path") && j["ca_bundle_path"].is_string()) {
+            util::set_ca_bundle_path(j["ca_bundle_path"].get<std::string>());
+        } else {
+            util::println_err("Error reading config file: " + PATH_S(path_));
+            util::println_err("Reason: ca_bundle_path is not a string.");
+            error = true;
+        }
+#endif
+        if (error) {
+            util::println_err("Error detected, creating new config file: " + PATH_S(path_));
+            return p_save_config();
         }
         util::println_info("Config loaded from file: " + PATH_S(path_));
         return true;
@@ -799,47 +777,40 @@ namespace GPT {
      */
     bool p_save_config() {
         const auto& path_ = std::filesystem::path("config.json");
-        try {
-            util::println_info("Saving config to file: " + PATH_S(path_));
-            std::ofstream file(path_);
-            if (file.is_open()) {
-                nlohmann::json j;
-                std::vector<std::string> api_keys = api::get_keys();
-                if (api_keys.empty()) {
-                    j["api_key"] = nlohmann::json::value_t::null;
-                } else if (api_keys.size() == 1) {
-                    j["api_key"] = api_keys[0];
-                } else {
-                    j["api_key"] = api_keys;
-                }
-                j["model"] = model;
-                j["temperature"] = temperature;
-                j["max_tokens"] = max_tokens;
-                j["top_p"] = top_p;
-                j["frequency_penalty"] = frequency_penalty;
-                j["presence_penalty"] = presence_penalty;
-                nlohmann::json pair_json_object = nlohmann::json::object();
-                for (const auto& pair : logit_bias) {
-                    pair_json_object[pair.first] = pair.second;
-                }
-                j["logit_bias"] = pair_json_object;
-                j["max_display_length"] = max_display_length;
-                j["max_short_memory_length"] = max_short_memory_length;
-                j["max_reference_length"] = max_reference_length;
-                j["search_response"] = search_response;
-                j["space_between_exchanges"] = space_between_exchanges;
-                j["debug_reference"] = debug_reference;
+        util::println_info("Saving config to file: " + PATH_S(path_));
+        nlohmann::json j;
+        std::vector<std::string> api_keys = api::get_keys();
+        if (api_keys.empty()) {
+            j["api_key"] = nlohmann::json::value_t::null;
+        } else if (api_keys.size() == 1) {
+            j["api_key"] = api_keys[0];
+        } else {
+            j["api_key"] = api_keys;
+        }
+        j["model"] = model;
+        j["temperature"] = temperature;
+        j["max_tokens"] = max_tokens;
+        j["top_p"] = top_p;
+        j["frequency_penalty"] = frequency_penalty;
+        j["presence_penalty"] = presence_penalty;
+        nlohmann::json pair_json_object = nlohmann::json::object();
+        for (const auto& pair : logit_bias) {
+            pair_json_object[pair.first] = pair.second;
+        }
+        j["logit_bias"] = pair_json_object;
+        j["max_display_length"] = max_display_length;
+        j["max_short_memory_length"] = max_short_memory_length;
+        j["max_reference_length"] = max_reference_length;
+        j["search_response"] = search_response;
+        j["space_between_exchanges"] = space_between_exchanges;
+        j["debug_reference"] = debug_reference;
 #ifdef __linux__
-                j["ca_bundle_path"] = util::get_ca_bundle_path();
+        j["ca_bundle_path"] = util::get_ca_bundle_path();
 #endif
-                file << j.dump(2);
-                file.close();
-            } else {
-                util::println_err("Error opening file for writing: " + PATH_S(path_));
-                return false;
-            }
-        } catch (const std::exception& e) {
-            util::println_err("Error creating file: " + PATH_S(path_));
+        try {
+            file::write_text_file(j.dump(2), path_);
+        } catch (const file::file_error& e) {
+            util::println_err("Error saving config file: " + PATH_S(e.get_path()));
             util::println_err("Reason: " + std::string(e.what()));
             return false;
         }
@@ -867,13 +838,5 @@ namespace GPT {
             util::println_warn("Unusable api key detected, removed it.");
             p_save_config();
         }
-    }
-
-    const std::string& get_me_id() {
-        return me_id;
-    }
-
-    const std::string& get_bot_id() {
-        return bot_id;
     }
 }

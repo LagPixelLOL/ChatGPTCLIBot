@@ -26,7 +26,7 @@ namespace api {
     void remove_first_key();
     bool has_key();
     std::string get_key();
-    std::vector<std::string> get_keys();
+    const std::vector<std::string>& get_keys();
     void set_key(const std::string& api_key);
     void set_key(const std::vector<std::string>& api_keys);
     APIKeyStatus check_key(const std::string& api_key);

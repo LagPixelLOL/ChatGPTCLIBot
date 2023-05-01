@@ -19,6 +19,8 @@ namespace GPT {
 
     inline const std::string f_suffix = ".txt";
     inline const std::string json_suffix = ".json";
+    inline const std::string me_id = "Me";
+    inline const std::string bot_id = "You";
 
     void pre_settings();
     void start_loop();
@@ -36,8 +38,6 @@ namespace GPT {
     bool p_save_config();
     bool p_check_set_api_key();
     void p_on_invalid_key();
-    const std::string& get_me_id();
-    const std::string& get_bot_id();
 }
 
 #endif //GPT3BOT_GPTMAIN_H

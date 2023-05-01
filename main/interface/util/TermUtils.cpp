@@ -16,10 +16,7 @@ namespace util {
      */
     std::string get_multiline(std::vector<std::string>& history, const std::string& prompt_string) {
         auto t = initialize_or_throw();
-        return Term::prompt_multiline(prompt_string, history, [](const auto& s){
-            if (s.size() > 1 && s.substr(s.size() - 2, 1) == "\\") {
-                return false;
-            }
+        return Term::prompt_multiline(prompt_string, history, [](const auto&){
             return true;
         });
     }
