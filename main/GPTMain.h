@@ -6,7 +6,6 @@
 #define GPT3BOT_GPTMAIN_H
 
 #include "interface/network/Network.h"
-#include "interface/util/DocUtils.h"
 #include "Command.h"
 #include "FineTuneHelper.h"
 

@@ -5,8 +5,8 @@
 #ifndef GPT3BOT_NETWORK_H
 #define GPT3BOT_NETWORK_H
 
-#include "boost/algorithm/string/regex.hpp"
 #include "../util/PromptUtils.h"
+#include "boost/algorithm/string/regex.hpp"
 
 namespace api {
 

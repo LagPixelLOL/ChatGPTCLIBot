@@ -5,10 +5,10 @@
 #ifndef GPT3BOT_TOKENUTILS_H
 #define GPT3BOT_TOKENUTILS_H
 
+#include "../cpp-tiktoken/encoding.h"
 #include "utility"
 #include "boost/algorithm/string.hpp"
 #include "nlohmann/json.hpp"
-#include "../cpp-tiktoken/encoding.h"
 
 namespace util {
 
