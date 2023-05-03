@@ -6,7 +6,6 @@
 #define GPT3BOT_FINETUNEHELPER_H
 
 #include "GPTMain.h"
-#include "interface/util/FileUtils.h"
 #include "interface/model/FineTune.h"
 
 namespace fth {

@@ -9,13 +9,31 @@ int main() {
         atexit(shutdown_hook); //Setup shutdown hook.
         curl_global_init(CURL_GLOBAL_ALL); //CURL global init.
         setup_console_encoding(); //Setup console encoding.
-
+// Set to 1 to run tests.
+#if 0
+#define GPT_MAIN_TEST_ENABLED
+#endif
+#ifndef GPT_MAIN_TEST_ENABLED
         //Main
         GPT::pre_settings(); //Start the bot.
+#else
+        //Test
+        std::cout << "Running test..." << std::endl;
+        doc::test_split_text();
+        std::cout << "Test finished." << std::endl;
+#endif
     } catch (const std::exception& e) {
+#ifndef GPT_MAIN_TEST_ENABLED
         util::println_err("An uncaught error occurred: " + std::string(e.what()));
+#else
+        std::cout << "An uncaught error occurred: " << e.what() << std::endl;
+#endif
     } catch (...) {
+#ifndef GPT_MAIN_TEST_ENABLED
         util::println_err("An unknown error occurred.");
+#else
+        std::cout << "An unknown error occurred." << std::endl;
+#endif
     }
     return 0;
 }
@@ -34,7 +52,9 @@ void setup_console_encoding() {
     wcscpy_s(info.FaceName, L"SimSun-ExtB");
     SetCurrentConsoleFontEx(GetStdHandle(STD_OUTPUT_HANDLE), 0, &info);
 #endif
+#ifndef GPT_MAIN_TEST_ENABLED
     util::initialize_or_throw();
+#endif
 }
 
 void shutdown_hook() {

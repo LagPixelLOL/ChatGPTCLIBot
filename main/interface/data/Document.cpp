@@ -3,6 +3,7 @@
 //
 
 #include "Document.h"
+#include "iostream"
 
 namespace doc {
 
@@ -54,7 +55,7 @@ namespace doc {
         return embeddings_;
     }
 
-    void Document::setContent(const std::string& text, const std::vector<float>& embeddings) {
+    [[maybe_unused]] void Document::setContent(const std::string& text, const std::vector<float>& embeddings) {
         text_ = text;
         embeddings_ = embeddings;
     }
@@ -109,6 +110,25 @@ namespace doc {
         return j;
     }
 
+    inline std::unordered_set<int> get_punctuation_token_set(const std::shared_ptr<GptEncoding>& tokenizer) {
+        static const PCRERegex regex("^(?:.|\\n)*[.!?\\n] *$");
+        std::unordered_set<int> result;
+        for (const auto& [byte_pair, token] : tokenizer->get_byte_pair_token_map()) {
+            std::string s(byte_pair.begin(), byte_pair.end());
+            if (regex.contains(s)) {
+                result.insert(token);
+            }
+        }
+        return result;
+    }
+
+    inline void process_append_str(std::string& s) {
+        static const PCRERegex regex("\n+");
+        regex.replace_all(s, " "); //Match one or more newlines and replace them with a single space.
+        s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch){return !std::isspace(ch);}));
+        s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch){return !std::isspace(ch);}).base(), s.end());
+    }
+
     /**
      * Split a text into chunks.
      * @param text The text to split.
@@ -124,54 +144,71 @@ namespace doc {
         } catch (const Term::Exception& e) {
             throw std::invalid_argument("Invalid UTF-8 encoding in text.[1]");
         }
-        std::shared_ptr<GptEncoding> tokenizer = util::get_enc_cache(LanguageModel::CL100K_BASE);
+        static const std::shared_ptr<GptEncoding> tokenizer = util::get_enc_cache(LanguageModel::CL100K_BASE);
+        static const std::unordered_set<int> punctuation_token_set = get_punctuation_token_set(tokenizer);
         std::vector<int> tokens = tokenizer->encode(text);
         std::vector<std::string> chunks;
         while (!tokens.empty()) {
             long long chunk_sub_size = std::min(static_cast<long long>(tokens_per_chunk), static_cast<long long>(tokens.size()));
             std::vector<int> chunk(tokens.begin(), tokens.begin() + chunk_sub_size);
-            std::string chunk_text = tokenizer->decode(chunk);
-            if (chunk_text.empty() || chunk_text.find_first_not_of(' ') == std::string::npos) {
+            if (chunk.empty()) {
                 tokens.erase(tokens.begin(), tokens.begin() + static_cast<long long>(chunk.size()));
                 continue;
             }
             long long additional_tokens = 0;
             while (true) { //UTF-8 characters may be split into multiple tokens, so we need to check if the chunk is valid.
                 try {
-                    Term::Private::utf8_to_utf32(chunk_text); //Check if the chunk's encoding is valid by converting it to UTF-32.
+                    //Check if the chunk's encoding is valid by converting it to UTF-32.
+                    Term::Private::utf8_to_utf32(tokenizer->decode(chunk));
                     break; //If it doesn't throw an exception, the chunk is valid.
-                } catch (const Term::Exception& e) { //If it throws an exception, the chunk is invalid.
+                } catch (const Term::Exception& e) {
                     long long new_index = chunk_sub_size + additional_tokens++; //The index of the next token.
-                    if (tokens.size() <= new_index) { //If we have reached the end of the text, we can't add any more tokens.
-                        throw std::invalid_argument("Invalid UTF-8 encoding in text.[2]"); //And this will only appear if the text is invalid.
+                    if (tokens.size() <= new_index) { //If the next token doesn't exist, the chunk is invalid.
+                        throw std::invalid_argument("Invalid UTF-8 encoding in text.[2]");
                     }
-                    chunk.emplace_back(tokens[new_index]); //Append the next token to the chunk.
-                    chunk_text = tokenizer->decode(chunk); //Decode the chunk again.
+                    chunk.emplace_back(tokens[new_index]); //Otherwise, add the next token to the chunk.
                 }
             }
-            size_t last_punctuation = std::max({chunk_text.rfind('.'), chunk_text.rfind('?'), chunk_text.rfind('!'), chunk_text.rfind('\n')});
-            if (last_punctuation != std::string::npos) {
-                chunk_text.erase(last_punctuation + 1);
+            for (size_t i = chunk.size(); i-- > 0;) { //Remove until the last punctuation token.
+                if (punctuation_token_set.contains(chunk[i])) {
+                    size_t erase_start_index = i + 1;
+                    if (erase_start_index >= tokens_per_chunk / 2) { //If the chunk is too small, don't perform the removal.
+                        chunk.erase(chunk.begin() + static_cast<long long>(erase_start_index), chunk.end());
+                    }
+                    break;
+                }
             }
-            std::string chunk_text_to_append = chunk_text;
-            PCRERegex("\n+").replace_all(chunk_text_to_append, " "); //Match one or more newlines and replace them with a single space.
-            chunk_text_to_append.erase(chunk_text_to_append.begin(), std::find_if(chunk_text_to_append.begin(), chunk_text_to_append.end(),
-                                                                                  [](unsigned char ch){return !std::isspace(ch);}));
-            chunk_text_to_append.erase(std::find_if(chunk_text_to_append.rbegin(), chunk_text_to_append.rend(),
-                                                    [](unsigned char ch){return !std::isspace(ch);}).base(), chunk_text_to_append.end());
-            chunks.push_back(chunk_text_to_append);
-            std::vector<int> tokenized_chunk_text = tokenizer->encode(chunk_text);
-            tokens.erase(tokens.begin(), tokens.begin() + static_cast<long long>(tokenized_chunk_text.size()));
+            std::string text_to_append = tokenizer->decode(chunk);
+            if (text_to_append.empty() || text_to_append.find_first_not_of(' ') == std::string::npos) {
+                tokens.erase(tokens.begin(), tokens.begin() + static_cast<long long>(chunk.size()));
+                continue;
+            }
+            process_append_str(text_to_append); //Remove leading and trailing whitespace and replace multiple newlines with a single space.
+            chunks.emplace_back(text_to_append);
+            tokens.erase(tokens.begin(), tokens.begin() + static_cast<long long>(chunk.size()));
         }
         if (!tokens.empty()) {
             std::string remaining_text = tokenizer->decode(tokens);
-            remaining_text.erase(std::remove(remaining_text.begin(), remaining_text.end(), '\n'), remaining_text.end());
-            remaining_text.erase(remaining_text.begin(), std::find_if(remaining_text.begin(), remaining_text.end(),
-                                                                      [](unsigned char ch){return !std::isspace(ch);}));
-            remaining_text.erase(std::find_if(remaining_text.rbegin(), remaining_text.rend(),
-                                              [](unsigned char ch){return !std::isspace(ch);}).base(), remaining_text.end());
-            chunks.push_back(remaining_text);
+            process_append_str(remaining_text);
+            chunks.emplace_back(remaining_text);
         }
         return chunks;
+    }
+
+    /**
+     * Test function for split_text, do not use this function in production.
+     */
+    [[maybe_unused]] void test_split_text() {
+        static const std::filesystem::path dir("documentQA");
+        std::string text = file::read_text_file(dir / "testdoc.txt");
+        std::vector<std::string> chunks = split_text(text, 50);
+        std::string to_write = "----------\n";
+        for (const std::string& chunk : chunks) {
+            to_write += chunk + "\n----------\n";
+        }
+        if (to_write.ends_with('\n')) {
+            to_write.erase(to_write.size() - 1);
+        }
+        file::write_text_file(to_write, dir / "test_result.txt");
     }
 } // doc

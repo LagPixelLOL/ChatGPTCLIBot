@@ -8,6 +8,7 @@
 #include "../cpp-terminal/platforms/conversion.hpp"
 #include "../cpp-tiktoken/pcre2_regex.h"
 #include "../util/TokenUtils.h"
+#include "../util/FileUtils.h"
 
 namespace doc {
 
@@ -24,13 +25,14 @@ namespace doc {
 
         [[nodiscard]] const std::string& getText() const;
         [[nodiscard]] const std::vector<float>& getEmbeddings() const;
-        void setContent(const std::string& text, const std::vector<float>& embeddings);
+        [[maybe_unused]] void setContent(const std::string& text, const std::vector<float>& embeddings);
     };
 
     std::vector<Document> from_raw(const std::vector<std::string>& texts, const std::vector<std::vector<float>>& embeddings);
     std::vector<Document> from_json(const nlohmann::json& j);
     nlohmann::json to_json(const std::vector<Document>& documents);
     std::vector<std::string> split_text(const std::string& text, const unsigned int& tokens_per_chunk);
+    [[maybe_unused]] void test_split_text();
 } // doc
 
 #endif //GPT3BOT_DOCUMENT_H
