@@ -15,20 +15,28 @@ namespace curl {
 
     enum class http_method {GET, POST, DEL};
 
-    size_t write_callback(char* char_ptr, size_t batch, size_t size, const std::function<size_t(char*, size_t, size_t)>* callback_function) {
-        return (*callback_function)(char_ptr, batch, size);
+    size_t write_callback(char* char_ptr, size_t batch, size_t size, const std::function<size_t(char*, size_t, size_t)>* callback) {
+        return (*callback)(char_ptr, batch, size);
+    }
+
+    int progress_callback(const std::function<int(curl_off_t, curl_off_t, curl_off_t, curl_off_t)>* callback,
+                          curl_off_t dl_total, curl_off_t dl_now, curl_off_t ul_total, curl_off_t ul_now) {
+        return (*callback)(dl_total, dl_now, ul_total, ul_now);
     }
 
     void http_request(const http_method& method, const std::string& url, const std::function<void(const std::string&, CURL*)>& callback,
-                      const std::vector<std::string>& headers, const std::optional<std::string>& post_data, const int& timeout_ms,
-                      curl_mime* mime = nullptr) {
+                      const std::vector<std::string>& headers, const std::optional<std::string>& post_data, const int& timeout_s,
+                      curl_mime* mime = nullptr, const std::function<int(curl_off_t, curl_off_t, curl_off_t, curl_off_t)>& progress
+                      = [](auto, auto, auto, auto){return 0;}) {
         CURLcode res;
         CURL* curl = curl_easy_init();
         if (!curl) {
             throw request_failed("Failed to initialize cURL.");
         }
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-        curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, timeout_ms);
+        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, timeout_s);
+        curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, timeout_s);
+        curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 1);
         util::set_curl_proxy(curl, util::system_proxy());
         util::set_curl_ssl_cert(curl);
         if (method == http_method::POST) {
@@ -52,6 +60,9 @@ namespace curl {
             return length;
         };
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &callback_lambda);
+        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, false);
+        curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, progress_callback);
+        curl_easy_setopt(curl, CURLOPT_XFERINFODATA, &progress);
         curl_slist* c_headers = nullptr;
         for (const auto& header : headers) {
             c_headers = curl_slist_append(c_headers, header.c_str());
@@ -59,7 +70,9 @@ namespace curl {
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, c_headers);
         res = curl_easy_perform(curl);
         util::curl_cleanup(curl, c_headers);
-        if (res != CURLE_OK) {
+        if (res == CURLE_ABORTED_BY_CALLBACK) {
+            throw request_failed("Request cancelled manually.");
+        } else if (res != CURLE_OK) {
             throw request_failed(curl_easy_strerror(res));
         } else if (exception_ptr) {
             std::rethrow_exception(exception_ptr);
@@ -67,25 +80,29 @@ namespace curl {
     }
 
     void http_get(const std::string& url, const std::function<void(const std::string&, CURL*)>& callback,
-                  const std::vector<std::string>& headers, const int& timeout_ms) {
-        http_request(http_method::GET, url, callback, headers, std::nullopt, timeout_ms);
+                  const std::vector<std::string>& headers, const int& timeout_s,
+                  const std::function<int(curl_off_t, curl_off_t, curl_off_t, curl_off_t)>& progress_callback) {
+        http_request(http_method::GET, url, callback, headers, std::nullopt, timeout_s, nullptr, progress_callback);
     }
 
     void http_post(const std::string& url, const std::function<void(const std::string&, CURL*)>& callback,
-                   const std::string& post_data, const std::vector<std::string>& headers, const int& timeout_ms) {
-        http_request(http_method::POST, url, callback, headers, post_data, timeout_ms);
+                   const std::string& post_data, const std::vector<std::string>& headers, const int& timeout_s,
+                   const std::function<int(curl_off_t, curl_off_t, curl_off_t, curl_off_t)>& progress_callback) {
+        http_request(http_method::POST, url, callback, headers, post_data, timeout_s, nullptr, progress_callback);
     }
 
     void http_delete(const std::string& url, const std::function<void(const std::string&, CURL*)>& callback,
-                     const std::vector<std::string>& headers, const int& timeout_ms) {
-        http_request(http_method::DEL, url, callback, headers, std::nullopt, timeout_ms);
+                     const std::vector<std::string>& headers, const int& timeout_s,
+                     const std::function<int(curl_off_t, curl_off_t, curl_off_t, curl_off_t)>& progress_callback) {
+        http_request(http_method::DEL, url, callback, headers, std::nullopt, timeout_s, nullptr, progress_callback);
     }
 
     void upload_binary(const std::string& url, const std::function<void(const std::string&, CURL*)>& callback,
                        const std::string& post_data_field, const std::string& post_data,
                        const std::string& binary_field, const std::vector<char>& binary_to_upload,
                        const std::string& binary_filename, const std::string& binary_content_type,
-                       const std::vector<std::string>& headers, const int& timeout_ms) {
+                       const std::vector<std::string>& headers, const int& timeout_s,
+                       const std::function<int(curl_off_t, curl_off_t, curl_off_t, curl_off_t)>& progress_callback) {
         CURL* curl = curl_easy_init();
         if (!curl) {
             throw curl::request_failed("Failed to initialize cURL.");
@@ -104,7 +121,7 @@ namespace curl {
         curl_mime_data(part, binary_to_upload.data(), binary_to_upload.size());
         std::exception_ptr exception_ptr = nullptr;
         try {
-            http_request(http_method::POST, url, callback, headers, std::nullopt, timeout_ms, mime);
+            http_request(http_method::POST, url, callback, headers, std::nullopt, timeout_s, mime, progress_callback);
         } catch (const std::exception& e) {
             exception_ptr = std::current_exception();
         }

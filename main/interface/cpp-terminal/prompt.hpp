@@ -2,8 +2,8 @@
 
 #include "terminal.hpp"
 #include "window.hpp"
-
-#include <functional>
+#include "functional"
+#include "optional"
 
 namespace Term {
     /* Basic prompt */
@@ -69,5 +69,7 @@ namespace Term {
     std::pair<size_t, size_t> render(Window& scr, const Model& m, const size_t& cols);
     void replace_all(std::string& str, const std::string& from, const std::string& to);
     long long calc_cursor_move(const std::string& str, const size_t& cursor_col, const long long& shift_amount);
-    std::string prompt_multiline(const std::string&, std::vector<std::string>&, const std::function<bool(std::string)>&);
+    std::string prompt_multiline(const std::string& prompt_string, std::vector<std::string>& m_history,
+                                 const std::optional<std::function<bool(const std::string&)>>& is_complete = std::nullopt,
+                                 const std::optional<std::function<bool(Model&)>>& ctrl_c_callback = std::nullopt);
 }  // namespace Term

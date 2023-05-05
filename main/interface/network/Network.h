@@ -10,17 +10,6 @@
 
 namespace api {
 
-    class TimeoutChecker {
-        long long creation_time;
-        const unsigned int timeout_ms_;
-
-    public:
-        explicit TimeoutChecker(const unsigned int& timeout_ms);
-        virtual ~TimeoutChecker();
-
-        [[nodiscard]] long long calc_next() const;
-    };
-
     void call_api(const std::string& initial_prompt, const std::vector<std::shared_ptr<chat::Exchange>>& chat_exchanges,
                   const std::string& api_key, const std::string& model, const float& temperature, const int& max_tokens,
                   const float& top_p, const float& frequency_penalty, const float& presence_penalty,
@@ -29,7 +18,9 @@ namespace api {
                   const std::string& me_id, const std::string& bot_id,
                   const std::function<void(const std::string& streamed_response)>& callback,
                   const bool& debug_reference = false, const bool& pause_when_showing_reference = false,
-                  const std::optional<std::vector<doc::Document>>& documents_opt = std::nullopt);
+                  const std::optional<std::vector<doc::Document>>& documents_opt = std::nullopt,
+                  const std::function<int(curl_off_t, curl_off_t, curl_off_t, curl_off_t)>& progress_callback
+                  = [](auto, auto, auto, auto){return 0;});
     bool is_new_api(const std::string& model_name);
 } // api
 

@@ -20,12 +20,13 @@ Please check the Wiki for more info: [Click Me](https://github.com/LagPixelLOL/C
 8. After you execute `/stop`, the program will ask you to input the filename to save. You can press enter directly to skip this and not save the chat. If you input any other text and then press enter, the chat will be saved into a json in the "saved" folder. When you open the program next time, you can simply input "s"(which means saved), press enter, then type the saved chat's json file's name to load your saved chat.
 9. Easy config file in `config.json`, can be easily modified.
 10. Unlike other bots, this one actually streams. This means it will display the output as soon as a token is sent from the API(Just like what ChatGPT's website is doing), no need to wait until the entire response is generated!
-11. Automatically use the system proxy. Note: This feature is only supported on Windows, because there's a bug in my proxy library that causes it fail to compile on Linux and macOS.
-12. Multiline input support, you need to press Ctrl+N or Alt+Enter to enter a new line.
-13. Ctrl+V pasting support, you can paste text from your clipboard by pressing Ctrl+V.
-14. Full UTF-8 support, you can type in any language you want!
-15. Full of colors(If your terminal supports it)!
-16. Fine tune helper, you can fine tune base models with this program(Only for professional users).
+11. When the response is being streamed, you can press Ctrl+C to cancel the stream.
+12. Automatically use the system proxy. Note: This feature is only supported on Windows, because there's a bug in my proxy library that causes it fail to compile on Linux and macOS.
+13. Multiline input support, you need to press Ctrl+N or Alt+Enter to enter a new line.
+14. Ctrl+V pasting support, you can paste text from your clipboard by pressing Ctrl+V.
+15. Full UTF-8 support, you can type in any language you want!
+16. Full of colors(If your terminal supports it)!
+17. Fine tune helper, you can fine tune base models with this program(Only for professional users).
 
 Written in C++ (Libraries used:
 [Boost](https://www.boost.org/),

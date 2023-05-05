@@ -33,7 +33,7 @@ namespace cmd {
     };
 
     Commands match_command(const std::string& input) {
-        if (input.empty() || !input.starts_with("/")) {
+        if (input.empty() || !input.starts_with('/')) {
             return Commands::NONE;
         }
         if (input == "/stop") {
@@ -60,11 +60,15 @@ namespace cmd {
             case Commands::STOP:
                 if (!documentQA_mode) {
                     while (true) {
-                        util::print_cs("Do you want to save the chat history?\n"
-                                       "(Input the filename to save, press " + ENTER + " to skip): ");
+                        util::print_cs("Do you want to save the chat history?\n(Input the filename to save, input "
+                        + GOLDEN_TEXT("n") + " to cancel, press " + ENTER + " to skip): ");
                         std::string save_name;
                         getline(std::cin, save_name);
-                        if (!save_name.empty()) {
+                        std::string check_cancel_copy = save_name;
+                        std::transform(check_cancel_copy.begin(), check_cancel_copy.end(), check_cancel_copy.begin(), tolower);
+                        if (check_cancel_copy == "n") {
+                            return ReturnOpCode::CONTINUE;
+                        } else if (!save_name.empty()) {
                             if (!GPT::p_save_chat(save_name)) {
                                 util::println_warn("An error occurred while saving the chat history, please try again.");
                                 continue;

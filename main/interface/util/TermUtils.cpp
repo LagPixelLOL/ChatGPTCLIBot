@@ -12,13 +12,13 @@ namespace util {
      * Note: Remember to do error handling by catching std::exception.
      * @param history Input history.
      * @param prompt_string The text that's displayed before the user's input.
+     * @param ctrl_c_callback Callback function that's called when the user presses Ctrl + C.
      * @return The user's input.
      */
-    std::string get_multiline(std::vector<std::string>& history, const std::string& prompt_string) {
-        auto t = initialize_or_throw();
-        return Term::prompt_multiline(prompt_string, history, [](const auto&){
-            return true;
-        });
+    std::string get_multiline(std::vector<std::string>& history, const std::string& prompt_string,
+                              const std::optional<std::function<bool(Term::Model&)>>& ctrl_c_callback) {
+        auto t = initialize_or_throw(false, true);
+        return Term::prompt_multiline(prompt_string, history, std::nullopt, ctrl_c_callback);
     }
 
     void ignore_line() {

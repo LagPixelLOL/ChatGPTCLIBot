@@ -6,16 +6,6 @@
 
 namespace api {
 
-    //class TimeoutCountDown start:
-    TimeoutChecker::TimeoutChecker(const unsigned int& timeout_ms) : creation_time(util::currentTimeMillis()), timeout_ms_(timeout_ms) {}
-
-    TimeoutChecker::~TimeoutChecker() = default;
-
-    long long TimeoutChecker::calc_next() const {
-        return util::currentTimeMillis() - creation_time + timeout_ms_;
-    }
-    //class TimeoutCountDown end.
-
     /**
      * Call the OpenAI API with a custom lambda function as callback.
      */
@@ -27,7 +17,8 @@ namespace api {
                   const std::string& me_id, const std::string& bot_id,
                   const std::function<void(const std::string& streamed_response)>& callback,
                   const bool& debug_reference, const bool& pause_when_showing_reference,
-                  const std::optional<std::vector<doc::Document>>& documents_opt) {
+                  const std::optional<std::vector<doc::Document>>& documents_opt,
+                  const std::function<int(curl_off_t, curl_off_t, curl_off_t, curl_off_t)>& progress_callback) {
         bool is_new_api_ = is_new_api(model);
         std::string url = is_new_api_ ? "https://api.openai.com/v1/chat/completions" : "https://api.openai.com/v1/completions";
         std::string constructed_initial;
@@ -99,9 +90,7 @@ namespace api {
             payload["logit_bias"] = logit_bias_json;
         }
         try {
-            TimeoutChecker timeout_checker(10000);
             curl::http_post(url, [&](const std::string& s, CURL* curl){
-                curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, timeout_checker.calc_next());
                 std::vector<std::string> split_str;
                 boost::split_regex(split_str, s, boost::regex("[\n][\n][d][a][t][a][:][ ]"));
                 for (auto& str : split_str) {
@@ -142,7 +131,7 @@ namespace api {
                         }
                     }
                 }
-            }, payload.dump(), headers, 20000);
+            }, payload.dump(), headers, 20, progress_callback);
         } catch (const std::exception& e) {
             throw curl::request_failed(e.what());
         }

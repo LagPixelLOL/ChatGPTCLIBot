@@ -137,7 +137,7 @@ namespace fth {
             curl::upload_binary(url_files, [&response](const std::string& s, CURL*){
                 response.append(s);
             }, "purpose", "fine-tune", "file", std::vector<char>(jsonl.begin(), jsonl.end()), cs_filename
-            + ".jsonl", "application/json", {"Authorization: Bearer " + api::get_key()}, 300000);
+            + ".jsonl", "application/json", {"Authorization: Bearer " + api::get_key()}, 10);
         } catch (const std::exception& e) {
             util::println_err("Error uploading converted source: " + std::string(e.what()));
             return;
@@ -170,7 +170,7 @@ namespace fth {
         try {
             curl::upload_binary(url_files, [&response](const std::string& s, CURL*){
                 response.append(s);
-            }, "purpose", "fine-tune", "file", content, filename, "", {"Authorization: Bearer " + api::get_key()}, 300000);
+            }, "purpose", "fine-tune", "file", content, filename, "", {"Authorization: Bearer " + api::get_key()}, 10);
         } catch (const std::exception& e) {
             util::println_err("Error uploading file: " + std::string(e.what()));
             return;
@@ -294,7 +294,7 @@ namespace fth {
         try {
             curl::http_get(url_files + '/' + file_id + "/content", [&response](const std::string& s, CURL*){
                 response.append(s);
-            }, {"Authorization: Bearer " + api::get_key()}, 300000);
+            }, {"Authorization: Bearer " + api::get_key()});
         } catch (const std::exception& e) {
             util::println_err("\nError downloading file: " + std::string(e.what()));
             return;

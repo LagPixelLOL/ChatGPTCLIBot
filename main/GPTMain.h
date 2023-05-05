@@ -8,6 +8,7 @@
 #include "interface/network/Network.h"
 #include "Command.h"
 #include "FineTuneHelper.h"
+#include "csignal"
 
 #define PATH_S(path) Term::color_fg(125, 225, 255) + "\"" + (path).string() + "\""
 #define ENTER Term::color_fg(70, 200, 255) + "Enter" + Term::color_fg(Term::Color::Name::Default)

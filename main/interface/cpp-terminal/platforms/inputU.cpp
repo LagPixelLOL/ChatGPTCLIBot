@@ -23,7 +23,8 @@
 namespace Term {
 
     std::string prompt_multiline(const std::string& prompt_string, std::vector<std::string>& m_history,
-                                 const std::function<bool(std::string)>& is_complete) {
+                                 const std::optional<std::function<bool(const std::string&)>>& is_complete,
+                                 const std::optional<std::function<bool(Model&)>>& ctrl_c_callback) {
         std::size_t row{1}, col{1};
         std::size_t rows{25}, cols{80};
         bool term_attached = Term::is_stdin_a_tty();
@@ -62,7 +63,11 @@ namespace Term {
             } else {
                 switch (key) {
                     case KeyU::ENTER:
-                        not_complete = !is_complete(concat(m.lines));
+                        if (!is_complete) {
+                            not_complete = false;
+                        } else {
+                            not_complete = !(*is_complete)(concat(m.lines));
+                        }
                         if (!not_complete) {
                             break;
                         }
@@ -80,6 +85,11 @@ namespace Term {
                             m.lines[m.cursor_row - 2] += m.lines[m.cursor_row - 1];
                             m.lines.erase(m.lines.begin() + (long long)m.cursor_row - 1);
                             m.cursor_row--;
+                        }
+                        break;
+                    case KeyU::CTRL_C:
+                        if (ctrl_c_callback) {
+                            not_complete = !(*ctrl_c_callback)(m);
                         }
                         break;
                     case KeyU::DEL: {

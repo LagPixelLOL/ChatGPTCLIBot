@@ -31,6 +31,18 @@ namespace GPT {
     bool space_between_exchanges = false;
     bool debug_reference = false;
 
+    std::atomic_bool ctrl_c_flag = false;
+    const std::function<int(curl_off_t, curl_off_t, curl_off_t, curl_off_t)> progress_callback = [](auto, auto, auto, auto){
+        bool return_value = ctrl_c_flag;
+        ctrl_c_flag = false;
+        return return_value;
+    };
+
+    void on_ctrl_c_interrupt(int signal_) {
+        ctrl_c_flag = true;
+        signal(SIGINT, on_ctrl_c_interrupt);
+    }
+
     /**
      * The main function for GPT3Bot.
      */
@@ -61,8 +73,7 @@ namespace GPT {
             getline(std::cin, chose_mode);
             std::transform(chose_mode.begin(), chose_mode.end(), chose_mode.begin(), tolower);
             if (chose_mode.empty() || chose_mode == "i") {
-                util::print_cs("Please enter the initial prompt's filename you want to load.\n"
-                               "(Press " + ENTER + " to use default): ");
+                util::print_cs("Please enter the initial prompt's filename you want to load.\n(Press " + ENTER + " to use default): ");
                 std::string i_p_filename;
                 getline(std::cin, i_p_filename);
                 if (boost::ends_with(i_p_filename, f_suffix)) {
@@ -106,6 +117,7 @@ namespace GPT {
                 util::println_warn("Invalid input, please try again.");
             }
         }
+        signal(SIGINT, on_ctrl_c_interrupt); //Setup SIGINT handler.
         start_loop();
     }
 
@@ -117,7 +129,12 @@ namespace GPT {
             print_prompt();
             std::string input;
             try {
-                input = util::get_multiline(input_history, me_id + ": ");
+                input = util::get_multiline(input_history, me_id + ": ", [](Term::Model& m){
+                    m.lines = {"/stop"};
+                    m.cursor_col = 1;
+                    m.cursor_row = 1;
+                    return true;
+                });
             } catch (const std::exception& e) {
                 util::println_err("\nAn error occurred while getting input: " + std::string(e.what()));
                 print_enter_next_cycle();
@@ -144,7 +161,8 @@ namespace GPT {
                 }
             }
             try {
-                emb_response = emb::get_embeddings(texts, api_key, key_status);
+                ctrl_c_flag = false;
+                emb_response = emb::get_embeddings(texts, api_key, key_status, progress_callback);
             } catch (const std::exception& e) {
                 std::string err_msg(e.what());
                 if (!err_msg.empty()) {
@@ -169,10 +187,10 @@ namespace GPT {
                 if (documentQA_mode) {
                     documents_opt = documents;
                 }
+                ctrl_c_flag = false;
                 api::call_api(initial_prompt, prompts, api_key, model, temperature, max_tokens, top_p,
                               frequency_penalty, presence_penalty, logit_bias, search_response && !documentQA_mode,
-                              max_short_memory_length, max_reference_length, me_id, bot_id,
-                              [&response](const auto& streamed_response){
+                              max_short_memory_length, max_reference_length, me_id, bot_id, [&response](const auto& streamed_response){
                     try {
                         nlohmann::json j = nlohmann::json::parse(streamed_response);
                         if (j.count("error") > 0 && j["error"].is_object()) {
@@ -182,7 +200,7 @@ namespace GPT {
                     } catch (const nlohmann::json::parse_error& e) {}
                     response.append(streamed_response);
                     util::print_cs(streamed_response, false, false);
-                }, debug_reference, true, documents_opt);
+                }, debug_reference, true, documents_opt, progress_callback);
                 util::print_cs(""); //Reset color.
             } catch (const std::exception& e) {
                 util::println_err("\nError when calling API: " + std::string(e.what()));
