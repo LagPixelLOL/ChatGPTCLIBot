@@ -194,14 +194,13 @@ namespace ChatGPT {
      *     {"role": "user", "content": "<user current input>"}
      * ]
      */
-    nlohmann::json to_payload(std::string initial_prompt, std::vector<std::shared_ptr<chat::Exchange>> prompts,
+    nlohmann::json to_payload(std::string initial_prompt, std::vector<std::shared_ptr<chat::Exchange>> prompts, const std::string& model,
                               const std::string& me_id, const std::string& bot_id, const unsigned int& max_length) {
         prompt::delete_front_keep_back(prompts, max_length);
         boost::replace_all(initial_prompt, GPT::get_pre_prompt(me_id, bot_id), "");
         nlohmann::json payload = nlohmann::json::array();
-        //For GPT-3.5, using "user" role is better for initial prompt, if OpenAI ever updates the API, I will change it to "system".
-        //Also for GPT-4, there's not much difference between "user" and "system".
-        payload.push_back({{"role", "user"}, {"content", initial_prompt}}); //system/user
+        //For GPT-3.5, using "user" role is better for initial prompt, if OpenAI ever updates the model, I will change it to "system".
+        payload.push_back({{"role", boost::starts_with(model, "gpt-3.5") ? "user" : "system"}, {"content", initial_prompt}});
         for (const auto& exchange : prompts) {
             payload.push_back({{"role", "user"}, {"content", exchange->getInput()}});
             if (exchange->hasResponse()) {

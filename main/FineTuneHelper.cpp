@@ -134,8 +134,8 @@ namespace fth {
         util::println_info("Uploading converted source...");
         std::string response;
         try {
-            curl::upload_binary(url_files, [&response](const std::string& s, CURL*){
-                response.append(s);
+            curl::upload_binary(url_files, [&response](const std::vector<char>& vec, CURL*){
+                response.append(vec.begin(), vec.end());
             }, "purpose", "fine-tune", "file", std::vector<char>(jsonl.begin(), jsonl.end()), cs_filename
             + ".jsonl", "application/json", {"Authorization: Bearer " + api::get_key()}, 10);
         } catch (const std::exception& e) {
@@ -168,8 +168,8 @@ namespace fth {
         util::println_info("Uploading file...");
         std::string response;
         try {
-            curl::upload_binary(url_files, [&response](const std::string& s, CURL*){
-                response.append(s);
+            curl::upload_binary(url_files, [&response](const std::vector<char>& vec, CURL*){
+                response.append(vec.begin(), vec.end());
             }, "purpose", "fine-tune", "file", content, filename, "", {"Authorization: Bearer " + api::get_key()}, 10);
         } catch (const std::exception& e) {
             util::println_err("Error uploading file: " + std::string(e.what()));
@@ -183,8 +183,8 @@ namespace fth {
         util::println_info("Getting file list from API...");
         std::string response;
         try {
-            curl::http_get(url_files, [&response](const std::string& s, CURL*){
-                response.append(s);
+            curl::http_get(url_files, [&response](const std::vector<char>& vec, CURL*){
+                response.append(vec.begin(), vec.end());
             }, {"Authorization: Bearer " + api::get_key()});
         } catch (const std::exception& e) {
             util::println_err("Error getting file list from API: " + std::string(e.what()));
@@ -260,8 +260,8 @@ namespace fth {
         util::println_info("Deleting file...");
         std::string response;
         try {
-            curl::http_delete(url_files + '/' + file_id, [&response](const std::string& s, CURL*){
-                response.append(s);
+            curl::http_delete(url_files + '/' + file_id, [&response](const std::vector<char>& vec, CURL*){
+                response.append(vec.begin(), vec.end());
             }, {"Authorization: Bearer " + api::get_key()});
         } catch (const std::exception& e) {
             util::println_err("Error deleting file: " + std::string(e.what()));
@@ -290,10 +290,10 @@ namespace fth {
             return;
         }
         util::println_info("Downloading file...", false);
-        std::string response;
+        std::vector<char> response;
         try {
-            curl::http_get(url_files + '/' + file_id + "/content", [&response](const std::string& s, CURL*){
-                response.append(s);
+            curl::http_get(url_files + '/' + file_id + "/content", [&response](const std::vector<char>& vec, CURL*){
+                response.insert(response.end(), vec.begin(), vec.end());
             }, {"Authorization: Bearer " + api::get_key()});
         } catch (const std::exception& e) {
             util::println_err("\nError downloading file: " + std::string(e.what()));
@@ -301,16 +301,15 @@ namespace fth {
         }
         nlohmann::json j;
         try {
-            j = nlohmann::json::parse(response);
+            j = nlohmann::json::parse(response.begin(), response.end());
             api::APIKeyStatus status = api::APIKeyStatus::VALID;
             if (api::check_err_obj(j, status)) {
                 return;
             }
         } catch (const nlohmann::json::parse_error& e) {}
-        std::vector<char> bin_data(response.begin(), response.end());
         try {
             const auto& w_path = f_download / filename;
-            file::write_binary_file(bin_data, w_path);
+            file::write_binary_file(response, w_path);
         } catch (const file::file_error& e) {
             util::println_err("\nError saving file: " + PATH_S(e.get_path()));
             util::println_err("Reason: " + std::string(e.what()));
@@ -402,8 +401,8 @@ namespace fth {
         util::println_info("Creating fine tune task...");
         std::string response;
         try {
-            curl::http_post(url_fine_tunes, [&response](const std::string& s, CURL*){
-                response.append(s);
+            curl::http_post(url_fine_tunes, [&response](const std::vector<char>& vec, CURL*){
+                response.append(vec.begin(), vec.end());
             }, payload.dump(), headers);
         } catch (const std::exception& e) {
             util::println_err("Error creating fine tune task: " + std::string(e.what()));
@@ -417,8 +416,8 @@ namespace fth {
         util::println_info("Getting fine tune tasks from API...");
         std::string response;
         try {
-            curl::http_get(url_fine_tunes, [&response](const std::string& s, CURL*){
-                response.append(s);
+            curl::http_get(url_fine_tunes, [&response](const std::vector<char>& vec, CURL*){
+                response.append(vec.begin(), vec.end());
             }, {"Authorization: Bearer " + api::get_key()});
         } catch (const std::exception& e) {
             util::println_err("Error getting fine tune tasks from API: " + std::string(e.what()));
@@ -480,8 +479,8 @@ namespace fth {
         util::println_info("Getting fine tune task...");
         std::string response;
         try {
-            curl::http_get(url_fine_tunes + '/' + fine_tune_id, [&response](const std::string& s, CURL*){
-                response.append(s);
+            curl::http_get(url_fine_tunes + '/' + fine_tune_id, [&response](const std::vector<char>& vec, CURL*){
+                response.append(vec.begin(), vec.end());
             }, {"Authorization: Bearer " + api::get_key()});
         } catch (const std::exception& e) {
             util::println_err("Error getting fine tune task: " + std::string(e.what()));
@@ -503,8 +502,8 @@ namespace fth {
         util::println_info("Canceling fine tune task...");
         std::string response;
         try {
-            curl::http_post(url_fine_tunes + '/' + fine_tune_id + "/cancel", [&response](const std::string& s, CURL*){
-                response.append(s);
+            curl::http_post(url_fine_tunes + '/' + fine_tune_id + "/cancel", [&response](const std::vector<char>& vec, CURL*){
+                response.append(vec.begin(), vec.end());
             }, "", {"Authorization: Bearer " + api::get_key()});
         } catch (const std::exception& e) {
             util::println_err("Error canceling fine tune task: " + std::string(e.what()));
@@ -525,8 +524,8 @@ namespace fth {
         util::println_info("Deleting model...");
         std::string response;
         try {
-            curl::http_delete(url_models + '/' + model_name, [&response](const std::string& s, CURL*){
-                response.append(s);
+            curl::http_delete(url_models + '/' + model_name, [&response](const std::vector<char>& vec, CURL*){
+                response.append(vec.begin(), vec.end());
             }, {"Authorization: Bearer " + api::get_key()});
         } catch (const std::exception& e) {
             util::println_err("Error deleting model: " + std::string(e.what()));

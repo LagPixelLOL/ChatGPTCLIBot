@@ -24,7 +24,7 @@ namespace curl {
         return (*callback)(dl_total, dl_now, ul_total, ul_now);
     }
 
-    void http_request(const http_method& method, const std::string& url, const std::function<void(const std::string&, CURL*)>& callback,
+    void http_request(const http_method& method, const std::string& url, const std::function<void(const std::vector<char>&, CURL*)>& callback,
                       const std::vector<std::string>& headers, const std::optional<std::string>& post_data, const int& timeout_s,
                       curl_mime* mime = nullptr, const std::function<int(curl_off_t, curl_off_t, curl_off_t, curl_off_t)>& progress
                       = [](auto, auto, auto, auto){return 0;}) {
@@ -36,7 +36,7 @@ namespace curl {
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
         curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, timeout_s);
         curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, timeout_s);
-        curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 1);
+        curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, true);
         util::set_curl_proxy(curl, util::system_proxy());
         util::set_curl_ssl_cert(curl);
         if (method == http_method::POST) {
@@ -53,7 +53,7 @@ namespace curl {
         std::function<size_t(char*, size_t, size_t)> callback_lambda = [&](char* char_ptr, size_t batch, size_t size){
             size_t length = batch * size;
             try {
-                callback(std::string(char_ptr, char_ptr + length), curl);
+                callback(std::vector<char>(char_ptr, char_ptr + length), curl);
             } catch (const std::exception& e) {
                 exception_ptr = std::current_exception();
             }
@@ -61,6 +61,7 @@ namespace curl {
         };
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &callback_lambda);
         curl_easy_setopt(curl, CURLOPT_NOPROGRESS, false);
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, true);
         curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, progress_callback);
         curl_easy_setopt(curl, CURLOPT_XFERINFODATA, &progress);
         curl_slist* c_headers = nullptr;
@@ -79,25 +80,25 @@ namespace curl {
         }
     }
 
-    void http_get(const std::string& url, const std::function<void(const std::string&, CURL*)>& callback,
+    void http_get(const std::string& url, const std::function<void(const std::vector<char>&, CURL*)>& callback,
                   const std::vector<std::string>& headers, const int& timeout_s,
                   const std::function<int(curl_off_t, curl_off_t, curl_off_t, curl_off_t)>& progress_callback) {
         http_request(http_method::GET, url, callback, headers, std::nullopt, timeout_s, nullptr, progress_callback);
     }
 
-    void http_post(const std::string& url, const std::function<void(const std::string&, CURL*)>& callback,
+    void http_post(const std::string& url, const std::function<void(const std::vector<char>&, CURL*)>& callback,
                    const std::string& post_data, const std::vector<std::string>& headers, const int& timeout_s,
                    const std::function<int(curl_off_t, curl_off_t, curl_off_t, curl_off_t)>& progress_callback) {
         http_request(http_method::POST, url, callback, headers, post_data, timeout_s, nullptr, progress_callback);
     }
 
-    void http_delete(const std::string& url, const std::function<void(const std::string&, CURL*)>& callback,
+    void http_delete(const std::string& url, const std::function<void(const std::vector<char>&, CURL*)>& callback,
                      const std::vector<std::string>& headers, const int& timeout_s,
                      const std::function<int(curl_off_t, curl_off_t, curl_off_t, curl_off_t)>& progress_callback) {
         http_request(http_method::DEL, url, callback, headers, std::nullopt, timeout_s, nullptr, progress_callback);
     }
 
-    void upload_binary(const std::string& url, const std::function<void(const std::string&, CURL*)>& callback,
+    void upload_binary(const std::string& url, const std::function<void(const std::vector<char>&, CURL*)>& callback,
                        const std::string& post_data_field, const std::string& post_data,
                        const std::string& binary_field, const std::vector<char>& binary_to_upload,
                        const std::string& binary_filename, const std::string& binary_content_type,

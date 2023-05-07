@@ -62,7 +62,7 @@ namespace api {
             payload["prompt"] = prompt;
             payload["stop"] = {me_id + suffix, bot_id + suffix};
         } else {
-            nlohmann::json messages = ChatGPT::to_payload(constructed_initial, chat_exchanges, me_id, bot_id, max_short_memory_length);
+            nlohmann::json messages = ChatGPT::to_payload(constructed_initial, chat_exchanges, model, me_id, bot_id, max_short_memory_length);
             if ((token_count = util::get_token_count(messages, model)) >= model_max_tokens) {
                 throw util::max_tokens_exceeded(
                         "Max tokens exceeded in messages: " + std::to_string(token_count) + " >= " + std::to_string(model_max_tokens));
@@ -90,9 +90,9 @@ namespace api {
             payload["logit_bias"] = logit_bias_json;
         }
         try {
-            curl::http_post(url, [&](const std::string& s, CURL* curl){
+            curl::http_post(url, [&](const std::vector<char>& vec, CURL* curl){
                 std::vector<std::string> split_str;
-                boost::split_regex(split_str, s, boost::regex("[\n][\n][d][a][t][a][:][ ]"));
+                boost::split_regex(split_str, std::string(vec.begin(), vec.end()), boost::regex("\\n\\ndata: "));
                 for (auto& str : split_str) {
                     if (boost::starts_with(str, "data: ")) {
                         str.erase(0, 6);

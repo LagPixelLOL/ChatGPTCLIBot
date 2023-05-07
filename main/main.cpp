@@ -9,7 +9,7 @@ int main() {
         atexit(shutdown_hook); //Setup shutdown hook.
         curl_global_init(CURL_GLOBAL_ALL); //CURL global init.
         setup_console_encoding(); //Setup console encoding.
-// Set to 1 to run tests.
+//Set to 1 to run tests.
 #if 0
 #define GPT_MAIN_TEST_ENABLED
 #endif

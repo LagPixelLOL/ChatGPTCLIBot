@@ -101,8 +101,8 @@ namespace api {
         APIKeyStatus status = APIKeyStatus::API_REQUEST_FAILED;
         std::string response;
         try {
-            curl::http_post("https://api.openai.com/v1/embeddings", [&](const std::string& s, CURL*){
-                response.append(s);
+            curl::http_post("https://api.openai.com/v1/embeddings", [&](const std::vector<char>& vec, CURL*){
+                response.append(vec.begin(), vec.end());
             }, payload.dump(), headers);
         } catch (const std::exception& e) {
             util::println_err("API request failed: " + std::string(e.what()));

@@ -108,14 +108,14 @@ namespace cmd {
                     static std::vector<std::string> input_history;
                     std::string input_tc;
                     input_tc = util::get_multiline(input_history);
-                    util::print_cs(
-                            "[" + GOLDEN_TEXT("1") + " = " + GOLDEN_TEXT("CL100K_BASE")
-                            + ", " + GOLDEN_TEXT("2") + " = " + GOLDEN_TEXT("P50K_BASE")
-                            + ", " + GOLDEN_TEXT("3") + " = " + GOLDEN_TEXT("P50K_EDIT")
-                            + ", " + GOLDEN_TEXT("4") + " = " + GOLDEN_TEXT("R50K_BASE")
-                            + "]\nChoose the tokenizer(" + GOLDEN_TEXT("1") + "/" + GOLDEN_TEXT("2")
-                            + "/" + GOLDEN_TEXT("3") + "/" + GOLDEN_TEXT("4") + "), press " + ENTER
-                            + " directly to use " + GOLDEN_TEXT("1") + ": ");
+                    boost::replace_all(input_tc, "<|\\r|>", "\r");
+                    util::print_cs("[" + GOLDEN_TEXT("1") + " = " + GOLDEN_TEXT("CL100K_BASE")
+                    + ", " + GOLDEN_TEXT("2") + " = " + GOLDEN_TEXT("P50K_BASE")
+                    + ", " + GOLDEN_TEXT("3") + " = " + GOLDEN_TEXT("P50K_EDIT")
+                    + ", " + GOLDEN_TEXT("4") + " = " + GOLDEN_TEXT("R50K_BASE")
+                    + "]\nChoose the tokenizer(" + GOLDEN_TEXT("1") + "/" + GOLDEN_TEXT("2")
+                    + "/" + GOLDEN_TEXT("3") + "/" + GOLDEN_TEXT("4") + "), press " + ENTER
+                    + " directly to use " + GOLDEN_TEXT("1") + ": ");
                     std::string tokenizer;
                     getline(std::cin, tokenizer);
                     LanguageModel tokenizer_;
@@ -231,6 +231,7 @@ namespace cmd {
             }
             std::string background_color_str = color_iterator.next_color_str();
             util::print_cs(background_color_str, false, false);
+            boost::replace_all(decoded, "\r", "<|\\r|>");
             if (boost::contains(decoded, "\n")) {
                 boost::replace_all(decoded, "\n", " " + Term::color_bg(Color::Name::Default) + "\n" + background_color_str);
                 util::print_cs(decoded, false, false);

@@ -53,8 +53,8 @@ namespace emb {
         }
         nlohmann::json payload = {{"model", model}, {"input", inputs}};
         std::string response;
-        curl::http_post("https://api.openai.com/v1/embeddings", [&](const std::string& s, CURL*){
-            response.append(s);
+        curl::http_post("https://api.openai.com/v1/embeddings", [&](const std::vector<char>& vec, CURL*){
+            response.append(vec.begin(), vec.end());
         }, payload.dump(), headers, 10, progress_callback);
         try {
             nlohmann::json j = nlohmann::json::parse(response);

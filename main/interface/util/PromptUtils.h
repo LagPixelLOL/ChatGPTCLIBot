@@ -35,7 +35,7 @@ namespace GPT {
 
 namespace ChatGPT {
 
-    nlohmann::json to_payload(std::string initial_prompt, std::vector<std::shared_ptr<chat::Exchange>> prompts,
+    nlohmann::json to_payload(std::string initial_prompt, std::vector<std::shared_ptr<chat::Exchange>> prompts, const std::string& model,
                               const std::string& me_id, const std::string& bot_id, const unsigned int& max_length);
 } // ChatGPT
 
