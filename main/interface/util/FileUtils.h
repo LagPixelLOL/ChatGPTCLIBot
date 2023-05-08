@@ -31,6 +31,7 @@ namespace file {
     void write_binary_file(const std::vector<char>& content, const std::filesystem::path& path);
     bool create_folder(const std::filesystem::path& folder);
     std::vector<std::filesystem::path> create_folders(const std::vector<std::filesystem::path>& folders);
+    bool exists(const std::filesystem::path& path);
 } // file
 
 #endif //GPT3BOT_FILEUTILS_H

@@ -4,7 +4,30 @@
 
 #include "FileUtils.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <limits.h>
+#include <unistd.h>
+#endif
+
 namespace file {
+
+    std::filesystem::path get_exe_parent_path_intern() {
+        std::filesystem::path path;
+#ifdef _WIN32
+        wchar_t result[MAX_PATH] = {0};
+        GetModuleFileNameW(nullptr, result, MAX_PATH);
+        path = std::filesystem::path(result);
+#else
+        char result[PATH_MAX];
+        ssize_t count = readlink("/proc/self/exe", result, PATH_MAX);
+        path = std::filesystem::path(std::string(result, count > 0 ? count : 0));
+#endif
+        return path.parent_path();
+    }
+
+    const std::filesystem::path exe_parent_path = get_exe_parent_path_intern();
 
     //class file_error start:
     file_error::file_error(std::string message, std::filesystem::path path) : message(std::move(message)), path(std::move(path)) {}
@@ -27,10 +50,11 @@ namespace file {
      */
     std::string read_text_file(const std::filesystem::path& path) {
         try {
-            if (!std::filesystem::exists(path) || !std::filesystem::is_regular_file(path)) {
+            std::filesystem::path exe_base_path = path.is_absolute() ? path : exe_parent_path / path;
+            if (!std::filesystem::exists(exe_base_path) || !std::filesystem::is_regular_file(exe_base_path)) {
                 throw file_error("File does not exist or is not a regular file.", path);
             }
-            std::ifstream file(path);
+            std::ifstream file(exe_base_path);
             if (!file.is_open() || file.bad()) {
                 throw file_error("File cannot be opened.", path);
             }
@@ -57,7 +81,7 @@ namespace file {
      */
     void write_text_file(const std::string& content, const std::filesystem::path& path) {
         try {
-            std::ofstream file(path);
+            std::ofstream file(path.is_absolute() ? path : exe_parent_path / path);
             if (!file.is_open() || file.bad()) {
                 throw file_error("File cannot be opened.", path);
             }
@@ -81,10 +105,11 @@ namespace file {
      */
     std::vector<char> read_binary_file(const std::filesystem::path& path) {
         try {
-            if (!std::filesystem::exists(path) || !std::filesystem::is_regular_file(path)) {
+            std::filesystem::path exe_base_path = path.is_absolute() ? path : exe_parent_path / path;
+            if (!std::filesystem::exists(exe_base_path) || !std::filesystem::is_regular_file(exe_base_path)) {
                 throw file_error("File does not exist or is not a regular file.", path);
             }
-            std::ifstream file(path, std::ios::binary);
+            std::ifstream file(exe_base_path, std::ios::binary);
             if (!file.is_open() || file.bad()) {
                 throw file_error("File cannot be opened.", path);
             }
@@ -109,7 +134,7 @@ namespace file {
      */
     void write_binary_file(const std::vector<char>& content, const std::filesystem::path& path) {
         try {
-            std::ofstream file(path, std::ios::binary);
+            std::ofstream file(path.is_absolute() ? path : exe_parent_path / path, std::ios::binary);
             if (!file.is_open() || file.bad()) {
                 throw file_error("File cannot be opened.", path);
             }
@@ -133,7 +158,7 @@ namespace file {
      */
     bool create_folder(const std::filesystem::path& folder) {
         try {
-            return std::filesystem::create_directories(folder);
+            return std::filesystem::create_directories(folder.is_absolute() ? folder : exe_parent_path / folder);
         } catch (const std::exception& e) {
             throw file_error(e.what(), folder);
         }
@@ -153,5 +178,9 @@ namespace file {
             }
         }
         return created_folders;
+    }
+
+    bool exists(const std::filesystem::path& path) {
+        return std::filesystem::exists(path.is_absolute() ? path : exe_parent_path / path);
     }
 } // file

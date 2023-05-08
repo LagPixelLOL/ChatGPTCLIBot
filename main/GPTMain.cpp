@@ -273,7 +273,7 @@ namespace GPT {
      */
     bool p_default_prompt() {
         const auto& path_ = std::filesystem::path(f_initial) / (default_initial_prompt_filename + f_suffix);
-        if (!exists(path_)) {
+        if (!file::exists(path_)) {
             try {
                 util::println_info("Creating default prompt file: " + PATH_S(path_));
                 file::write_text_file(initial_prompt, path_);
@@ -311,7 +311,7 @@ namespace GPT {
      */
     bool p_load_saved(std::string filename) {
         const auto& path_ = std::filesystem::path(f_saved) / filename.append(json_suffix);
-        if (!exists(path_)) {
+        if (!file::exists(path_)) {
             util::println_err("Saved chat file does not exist: " + PATH_S(path_));
             return false;
         }
@@ -603,7 +603,7 @@ namespace GPT {
      */
     bool p_load_config() {
         const auto& path_ = std::filesystem::path("config.json");
-        if (!exists(path_)) {
+        if (!file::exists(path_)) {
             util::println_err("Config file does not exist: " + PATH_S(path_));
             util::println_err("Creating new config file: " + PATH_S(path_));
             return p_save_config();
