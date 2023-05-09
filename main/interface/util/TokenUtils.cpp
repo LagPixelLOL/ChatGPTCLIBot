@@ -123,8 +123,9 @@ namespace util {
     }
 
     std::shared_ptr<GptEncoding> get_enc_cache(LanguageModel model) {
-        if (tokenizer_cache.contains(model)) {
-            return tokenizer_cache[model];
+        auto it = tokenizer_cache.find(model);
+        if (it != tokenizer_cache.end()) {
+            return it->second;
         }
         auto encoding = GptEncoding::get_encoding(model);
         tokenizer_cache[model] = encoding;
