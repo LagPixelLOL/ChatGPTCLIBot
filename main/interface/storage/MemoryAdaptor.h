@@ -79,27 +79,27 @@ namespace db {
             return memory.empty();
         }
 
-        Memory::iterator begin() {
+        typename Memory::iterator begin() {
             return memory.begin();
         }
 
-        Memory::iterator end() {
+        typename Memory::iterator end() {
             return memory.end();
         }
 
-        Memory::const_iterator cbegin() const {
+        typename Memory::const_iterator cbegin() const {
             return memory.cbegin();
         }
 
-        Memory::const_iterator cend() const {
+        typename Memory::const_iterator cend() const {
             return memory.cend();
         }
 
-        Memory::const_iterator begin() const {
+        typename Memory::const_iterator begin() const {
             return cbegin();
         }
 
-        Memory::const_iterator end() const {
+        typename Memory::const_iterator end() const {
             return cend();
         }
     };
