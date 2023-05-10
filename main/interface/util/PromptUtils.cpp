@@ -27,16 +27,9 @@ namespace prompt {
     }
 
     template<typename T>
-    inline void delete_front_keep_back(std::vector<T>& vec, const unsigned int& keep_back_count) {
-        if (vec.size() > keep_back_count) {
-            vec.erase(vec.begin(), vec.end() - keep_back_count);
-        }
-    }
-
-    template<typename T>
-    inline void delete_front_keep_back(std::list<T>& list, const unsigned int& keep_back_count) {
-        if (list.size() > keep_back_count) {
-            list.erase(list.begin(), std::prev(list.end(), keep_back_count));
+    inline void delete_front_keep_back(T& s, const unsigned int& keep_back_count) {
+        if (s.size() > keep_back_count) {
+            s.erase(s.begin(), std::prev(s.end(), keep_back_count));
         }
     }
 

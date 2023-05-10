@@ -7,18 +7,9 @@
 
 #include "interface/data/ExchangeHistory.h"
 #include "interface/data/Document.h"
+#include "interface/log/LogMsg.h"
 
 namespace config {
-
-    enum log_level {
-        INFO, ERR
-    };
-
-    struct log {
-        log_level level = INFO;
-        std::string message;
-        std::optional<std::filesystem::path> path = std::nullopt;
-    };
 
     class Config {
     public:
@@ -53,8 +44,10 @@ namespace config {
         explicit Config(std::filesystem::path config_path);
         virtual ~Config();
 
-        void load_config(const std::function<void(const log& msg)>& log_callback = [](const auto&){});
-        void save_config(const std::function<void(const log& msg)>& log_callback = [](const auto&){});
+        void load_config(const std::function<void(const Log::LogMsg<std::filesystem::path>& msg)>& log_callback = [](const auto&){});
+        void save_config(const std::function<void(const Log::LogMsg<std::filesystem::path>& msg)>& log_callback = [](const auto&){});
+        void load_documents(const std::string& filename,
+                            const std::function<void(const Log::LogMsg<std::filesystem::path>& msg)>& log_callback = [](const auto&){});
     };
 } // config
 

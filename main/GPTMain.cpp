@@ -35,25 +35,25 @@ namespace GPT {
                 {{255, 15, 125}, {125, 40, 255}}, true);
         std::cout << "\n\n";
         try {
-            config.load_config([](const config::log& log){
-                switch (log.level) {
-                    case config::log_level::INFO:
-                        util::println_info(log.message);
-                        if (log.path) {
-                            util::println_info("Config file: " + PATH_S(*log.path));
+            config.load_config([](const Log::LogMsg<std::filesystem::path>& log){
+                switch (log.get_level()) {
+                    case Log::Level::INFO:
+                        util::println_info(log.get_message());
+                        if (log.get_payload()) {
+                            util::println_info("Config file: " + PATH_S(*log.get_payload()));
                         }
                         break;
-                    case config::log_level::ERR:
-                        util::println_err("Error loading config file: " + log.message);
-                        if (log.path) {
-                            util::println_err("Config file: " + PATH_S(*log.path));
+                    case Log::Level::ERR:
+                        util::println_err("Error loading config file: " + log.get_message());
+                        if (log.get_payload()) {
+                            util::println_err("Config file: " + PATH_S(*log.get_payload()));
                         }
                         break;
                     default:
                         break;
                 }
             });
-        } catch (const std::exception &e) {
+        } catch (const std::exception& e) {
             util::println_err("Error loading config file: " + std::string(e.what()));
             return;
         }
@@ -100,7 +100,15 @@ namespace GPT {
                 if (boost::ends_with(d_filename, json_suffix)) {
                     d_filename.erase(d_filename.size() - json_suffix.size());
                 }
-                if (!p_load_docQA(d_filename)) {
+                try {
+                    config.load_documents(d_filename, [](const Log::LogMsg<std::filesystem::path>& log){
+                        util::println_info(log.get_message());
+                        if (log.get_payload()) {
+                            util::println_info("Document file: " + PATH_S(*log.get_payload()));
+                        }
+                    });
+                } catch (const std::exception& e) {
+                    util::println_err("Error loading document Q&A file: " + std::string(e.what()));
                     return;
                 }
                 break;
@@ -377,48 +385,6 @@ namespace GPT {
     }
 
     /**
-     * Load the document Q&A from the file(name.json), and also does error handling.
-     * @return True if the file is correctly loaded, false if an error occurred.
-     */
-    bool p_load_docQA(std::string filename) {
-        const auto& path_ = std::filesystem::path(config.f_documentQA) / filename.append(json_suffix);
-        util::println_info("Loading document Q&A from file: " + PATH_S(path_));
-        nlohmann::json j;
-        try {
-            j = nlohmann::json::parse(file::read_text_file(path_));
-        } catch (const file::file_error& e) {
-            util::println_err("Error reading document Q&A file: " + PATH_S(e.get_path()));
-            util::println_err("Reason: " + std::string(e.what()));
-            return false;
-        } catch (const nlohmann::json::parse_error& e) {
-            util::println_err("Error parsing document Q&A file: " + PATH_S(path_));
-            util::println_err("Reason: " + std::string(e.what()));
-            return false;
-        }
-        if (!j.contains("initial") || !j["initial"].is_string()) {
-            util::println_err("Error parsing document Q&A file: " + PATH_S(path_));
-            util::println_err("Reason: initial is not a string.");
-            return false;
-        }
-        if (!j.contains("documents") || !j["documents"].is_array()) {
-            util::println_err("Error parsing document Q&A file: " + PATH_S(path_));
-            util::println_err("Reason: documents is not an array.");
-            return false;
-        }
-        try {
-            config.documents = doc::from_json(j["documents"]);
-        } catch (const std::exception& e) {
-            util::println_err("Error parsing document Q&A file: " + PATH_S(path_));
-            util::println_err("Reason: " + std::string(e.what()));
-            return false;
-        }
-        config.initial_prompt = j["initial"].get<std::string>();
-        config.documentQA_mode = true;
-        util::println_info("Document Q&A loading completed.");
-        return true;
-    }
-
-    /**
      * Create the document Q&A from the file(name.txt), and also does error handling.
      * Turn the document .txt file and save it as a json file, then load it using p_load_docQA().
      * @return True if the function is correctly executed, false if an error occurred.
@@ -536,7 +502,33 @@ namespace GPT {
             }
             util::println_warn("An error occurred when saving the document Q&A file, please try again.");
         }
-        return p_load_docQA(name_to_save);
+        try {
+            config.load_documents(name_to_save, [](const Log::LogMsg<std::filesystem::path>& log){
+                util::println_info(log.get_message());
+                if (log.get_payload()) {
+                    util::println_info("Document file: " + PATH_S(*log.get_payload()));
+                }
+            });
+        } catch (const std::exception& e) {
+            util::println_err("Error loading document Q&A file: " + std::string(e.what()));
+            return false;
+        }
+        return true;
+    }
+
+    inline bool p_save_config() {
+        try {
+            config.save_config([](const Log::LogMsg<std::filesystem::path>& log){
+                util::println_info(log.get_message());
+                if (log.get_payload()) {
+                    util::println_info("Config file: " + PATH_S(*log.get_payload()));
+                }
+            });
+        } catch (const std::exception& e) {
+            util::println_err("Error saving config file: " + std::string(e.what()));
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -546,17 +538,7 @@ namespace GPT {
     bool p_check_set_api_key() {
         if (!api::has_key()) {
             api::set_key(api::get_key_from_console());
-            try {
-                config.save_config([](const config::log& log){
-                    util::println_info(log.message);
-                    if (log.path) {
-                        util::println_info("Config file: " + PATH_S(*log.path));
-                    }
-                });
-            } catch (const std::exception& e) {
-                util::println_err("Error saving config file: " + std::string(e.what()));
-                return false;
-            }
+            return p_save_config();
         }
         return true;
     }
@@ -565,16 +547,7 @@ namespace GPT {
         if (api::get_key_count() > 1) {
             api::remove_first_key();
             util::println_warn("Unusable api key detected, removed it.");
-            try {
-                config.save_config([](const config::log& log){
-                    util::println_info(log.message);
-                    if (log.path) {
-                        util::println_info("Config file: " + PATH_S(*log.path));
-                    }
-                });
-            } catch (const std::exception& e) {
-                util::println_err("Error saving config file: " + std::string(e.what()));
-            }
+            p_save_config();
         }
     }
 }

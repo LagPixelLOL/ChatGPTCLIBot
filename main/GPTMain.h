@@ -33,7 +33,6 @@ namespace GPT {
     bool p_load_prompt(std::string filename);
     bool p_load_saved(std::string filename);
     bool p_save_chat(std::string name);
-    bool p_load_docQA(std::string filename);
     bool p_create_docQA();
     bool p_check_set_api_key();
     void p_on_invalid_key();
