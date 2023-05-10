@@ -6,6 +6,7 @@
 #define GPT3BOT_MEMORYADAPTOR_H
 
 #include "nlohmann/json.hpp"
+#include "list"
 
 namespace db {
 
