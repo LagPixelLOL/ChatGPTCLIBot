@@ -21,7 +21,7 @@ namespace GPT {
     std::string initial_prompt = "You are an AI chat bot named Sapphire\n"
                                  "You are friendly and intelligent\n"
                                  "Your backend is OpenAI's ChatGPT API\n";
-    std::vector<std::shared_ptr<chat::Exchange>> prompts;
+    std::shared_ptr<chat::ExchangeHistory> chat_history = std::make_shared<chat::ExchangeHistory>();
     unsigned int max_display_length = 100;
     unsigned int max_short_memory_length = 4;
     unsigned int max_reference_length = 4;
@@ -140,7 +140,7 @@ namespace GPT {
                 print_enter_next_cycle();
                 continue;
             }
-            cmd::ReturnOpCode rc = cmd::handle_command(input, initial_prompt, prompts, me_id, bot_id, max_display_length,
+            cmd::ReturnOpCode rc = cmd::handle_command(input, initial_prompt, chat_history, me_id, bot_id, max_display_length,
                                                        space_between_exchanges, documentQA_mode);
             if (rc == cmd::ReturnOpCode::CONTINUE) {
                 continue;
@@ -153,8 +153,8 @@ namespace GPT {
             std::vector<std::vector<float>> emb_response;
             std::vector<std::string> texts{input};
             bool need_to_get_response_embeddings = false;
-            if (search_response && !documentQA_mode && !prompts.empty()) {
-                const chat::Exchange& last_exchange = *prompts.back();
+            if (search_response && !documentQA_mode && !chat_history->empty()) {
+                const chat::Exchange& last_exchange = *chat_history->back();
                 if (!last_exchange.hasResponseEmbeddings() && last_exchange.hasResponse()) {
                     need_to_get_response_embeddings = true;
                     texts.emplace_back(last_exchange.getResponse());
@@ -175,10 +175,10 @@ namespace GPT {
                 continue;
             }
             if (need_to_get_response_embeddings) {
-                prompts.back()->setResponseEmbeddings(emb_response[1]);
+                chat_history->back()->setResponseEmbeddings(emb_response[1]);
             }
             /* No need to do prompts.pop_back() before this line. */
-            prompts.emplace_back(std::make_shared<chat::Exchange>(input, emb_response[0], util::currentTimeMillis()));
+            chat_history->push_back(std::make_shared<chat::Exchange>(input, emb_response[0], util::currentTimeMillis()));
             /* Need to do prompts.pop_back() after this line before continue;. */
             print_prompt();
             std::string response;
@@ -188,7 +188,7 @@ namespace GPT {
                     documents_opt = documents;
                 }
                 ctrl_c_flag = false;
-                api::call_api(initial_prompt, prompts, api_key, model, temperature, max_tokens, top_p,
+                api::call_api(initial_prompt, chat_history, api_key, model, temperature, max_tokens, top_p,
                               frequency_penalty, presence_penalty, logit_bias, search_response && !documentQA_mode,
                               max_short_memory_length, max_reference_length, me_id, bot_id, [&response](const auto& streamed_response){
                     try {
@@ -205,7 +205,7 @@ namespace GPT {
             } catch (const std::exception& e) {
                 util::println_err("\nError when calling API: " + std::string(e.what()));
                 print_enter_next_cycle();
-                prompts.pop_back();
+                chat_history->pop_back();
                 continue;
             }
             try {
@@ -215,7 +215,7 @@ namespace GPT {
                         p_on_invalid_key();
                     }
                     print_enter_next_cycle();
-                    prompts.pop_back();
+                    chat_history->pop_back();
                     continue;
                 }
             } catch (const nlohmann::json::parse_error& e) {}
@@ -225,13 +225,13 @@ namespace GPT {
             while (boost::ends_with(response, "\n")) {
                 response.pop_back();
             }
-            prompts.back()->setResponse(response);
+            chat_history->back()->setResponse(response);
         }
     }
 
     void print_prompt() {
         clear_console();
-        prompt::print_prompt(initial_prompt, prompts, me_id, bot_id, max_display_length, is_new_api, space_between_exchanges);
+        prompt::print_prompt(initial_prompt, chat_history, me_id, bot_id, max_display_length, is_new_api, space_between_exchanges);
     }
 
     void print_enter_next_cycle() {
@@ -341,53 +341,12 @@ namespace GPT {
         }
         auto histories = j["histories"];
         if (!histories.is_null()) {
-            if (!histories.is_array()) {
+            try {
+                chat_history = std::make_shared<chat::ExchangeHistory>(histories);
+            } catch (const std::exception& e) {
                 util::println_err("Error reading saved chat file: " + PATH_S(path_));
-                util::println_err("Reason: histories is not an array.");
+                util::println_err("Reason: " + std::string(e.what()));
                 return false;
-            }
-            for (const auto& history : histories) {
-                if (!history.is_object()) {
-                    util::println_err("Error reading saved chat file: " + PATH_S(path_));
-                    util::println_err("Reason: history is not an object.");
-                    return false;
-                }
-                std::string input;
-                std::vector<float> input_embeddings;
-                std::string response;
-                std::vector<float> response_embeddings;
-                long long time_ms;
-                if (!history.contains("input") || !history["input"].is_string()) {
-                    util::println_err("Error reading saved chat file: " + PATH_S(path_));
-                    util::println_err("Reason: input is not a string.");
-                    return false;
-                }
-                if (!history.contains("input_embeddings") || !history["input_embeddings"].is_array()) {
-                    util::println_err("Error reading saved chat file: " + PATH_S(path_));
-                    util::println_err("Reason: input_embeddings is not an array.");
-                    return false;
-                }
-                if (!history.contains("time_stamp") || !history["time_stamp"].is_number_integer()) {
-                    util::println_err("Error reading saved chat file: " + PATH_S(path_));
-                    util::println_err("Reason: time_stamp is not an integer.");
-                    return false;
-                }
-                input = history["input"].get<std::string>();
-                input_embeddings = history["input_embeddings"].get<std::vector<float>>();
-                time_ms = history["time_stamp"].get<long long>();
-                if (history.contains("response") && history["response"].is_string()) {
-                    response = history["response"].get<std::string>();
-                    if (history.contains("response_embeddings") && history["response_embeddings"].is_array()) {
-                        response_embeddings = history["response_embeddings"].get<std::vector<float>>();
-                    }
-                }
-                if (response.empty()) {
-                    prompts.push_back(std::make_shared<chat::Exchange>(input, input_embeddings, time_ms));
-                } else if (response_embeddings.empty()) {
-                    prompts.push_back(std::make_shared<chat::Exchange>(input, input_embeddings, response, time_ms));
-                } else {
-                    prompts.push_back(std::make_shared<chat::Exchange>(input, input_embeddings, response, response_embeddings, time_ms));
-                }
             }
         }
         util::println_info("Saved chat file reading completed.");
@@ -401,25 +360,11 @@ namespace GPT {
      */
     bool p_save_chat(std::string name) {
         const auto& path_ = std::filesystem::path(f_saved) / name.append(json_suffix);
+        util::println_info("Saving chat to file: " + PATH_S(path_));
+        nlohmann::json j = nlohmann::json::object();
+        j["initial"] = initial_prompt;
+        j["histories"] = chat_history->to_json();
         try {
-            util::println_info("Saving chat to file: " + PATH_S(path_));
-            nlohmann::json j = nlohmann::json::object();
-            j["initial"] = initial_prompt;
-            nlohmann::json histories = nlohmann::json::array();
-            for (const auto& prompt : prompts) {
-                nlohmann::json history = nlohmann::json::object();
-                history["input"] = prompt->getInput();
-                history["input_embeddings"] = prompt->getInputEmbeddings();
-                if (prompt->hasResponse()) {
-                    history["response"] = prompt->getResponse();
-                    if (prompt->hasResponseEmbeddings()) {
-                        history["response_embeddings"] = prompt->getResponseEmbeddings();
-                    }
-                }
-                history["time_stamp"] = prompt->getTimeMS();
-                histories.push_back(history);
-            }
-            j["histories"] = histories;
             file::write_text_file(j.dump(2), path_);
         } catch (const file::file_error& e) {
             util::println_err("Error saving chat to file: " + PATH_S(e.get_path()));

@@ -28,8 +28,9 @@ namespace cmd {
     };
 
     ReturnOpCode handle_command(const std::string& input, const std::string& initial_prompt,
-                                std::vector<std::shared_ptr<chat::Exchange>>& prompts, const std::string& me_id, const std::string& bot_id,
-                                const unsigned int& max_display_length, const bool& space_between_exchanges, const bool& documentQA_mode);
+                                const std::shared_ptr<chat::ExchangeHistory>& chat_history, const std::string& me_id,
+                                const std::string& bot_id, const unsigned int& max_display_length,
+                                const bool& space_between_exchanges, const bool& documentQA_mode);
 } // cmd
 
 #endif //GPT3BOT_COMMAND_H

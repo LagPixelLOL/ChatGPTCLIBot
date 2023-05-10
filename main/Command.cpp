@@ -53,8 +53,9 @@ namespace cmd {
     }
 
     ReturnOpCode handle_command(const std::string& input, const std::string& initial_prompt,
-                                std::vector<std::shared_ptr<chat::Exchange>>& prompts, const std::string& me_id, const std::string& bot_id,
-                                const unsigned int& max_display_length, const bool& space_between_exchanges, const bool& documentQA_mode) {
+                                const std::shared_ptr<chat::ExchangeHistory>& chat_history, const std::string& me_id,
+                                const std::string& bot_id, const unsigned int& max_display_length,
+                                const bool& space_between_exchanges, const bool& documentQA_mode) {
         const auto& cmd = match_command(input);
         switch (cmd) {
             case Commands::STOP:
@@ -92,12 +93,12 @@ namespace cmd {
                 std::cout << std::endl;
                 return ReturnOpCode::STOP;
             case Commands::UNDO:
-                if (!prompts.empty()) {
-                    prompts.pop_back();
+                if (!chat_history->empty()) {
+                    chat_history->pop_back();
                 }
                 return ReturnOpCode::CONTINUE;
             case Commands::RESET:
-                prompts.clear();
+                chat_history->clear();
                 return ReturnOpCode::CONTINUE;
             case Commands::UWU:
                 print_uwu();
@@ -201,7 +202,7 @@ namespace cmd {
                 }
                 const auto& path = std::filesystem::path(f_dump) / filename.append(GPT::f_suffix);
                 try {
-                    file::write_text_file(prompt::to_string(initial_prompt, prompts, me_id, bot_id, max_exchange_count, false,
+                    file::write_text_file(prompt::to_string(initial_prompt, chat_history, me_id, bot_id, max_exchange_count, false,
                                                             space_between_exchanges), path);
                 } catch (const file::file_error& e) {
                     util::println_err("Failed to write file: " + PATH_S(e.get_path()));

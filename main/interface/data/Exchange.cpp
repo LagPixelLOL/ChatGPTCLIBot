@@ -21,6 +21,38 @@ namespace chat {
         response_embeddings_ = std::move(response_embeddings);
     }
 
+    /**
+     * @throw std::invalid_argument If j is not valid.
+     */
+    Exchange::Exchange(const nlohmann::json& j) {
+        if (!j.is_object()) {
+            throw std::invalid_argument("Argument is not an object.");
+        }
+        auto it_input = j.find("input");
+        if (it_input == j.end() || !it_input->is_string()) {
+            throw std::invalid_argument("Key input is not a string.");
+        }
+        auto it_input_embeddings = j.find("input_embeddings");
+        if (it_input_embeddings == j.end() || !it_input_embeddings->is_array()) {
+            throw std::invalid_argument("Key input_embeddings is not an array.");
+        }
+        auto it_time_stamp = j.find("time_stamp");
+        if (it_time_stamp == j.end() || !it_time_stamp->is_number_integer()) {
+            throw std::invalid_argument("Key time_stamp is not an integer.");
+        }
+        input_ = it_input->get<std::string>();
+        input_embeddings_ = it_input_embeddings->get<std::vector<float>>();
+        time_ms_ = it_time_stamp->get<long long>();
+        auto it_response = j.find("response");
+        if (it_response != j.end() && it_response->is_string()) {
+            response_ = it_response->get<std::string>();
+            auto it_response_embeddings = j.find("response_embeddings");
+            if (it_response_embeddings != j.end() && it_response_embeddings->is_array()) {
+                response_embeddings_ = it_response_embeddings->get<std::vector<float>>();
+            }
+        }
+    }
+
     Exchange::~Exchange() = default;
 
     bool Exchange::operator==(const Exchange& rhs) const {
@@ -38,6 +70,20 @@ namespace chat {
         seed ^= std::hash<std::string>{}(instance.response_) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
         seed ^= std::hash<long long>{}(instance.time_ms_) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
         return seed;
+    }
+
+    nlohmann::json Exchange::to_json() const {
+        nlohmann::json j = nlohmann::json::object();
+        j["input"] = getInput();
+        j["input_embeddings"] = getInputEmbeddings();
+        j["time_stamp"] = getTimeMS();
+        if (hasResponse()) {
+            j["response"] = getResponse();
+            if (hasResponseEmbeddings()) {
+                j["response_embeddings"] = getResponseEmbeddings();
+            }
+        }
+        return j;
     }
 
     const std::string& Exchange::getInput() const {

@@ -10,7 +10,7 @@
 
 namespace api {
 
-    void call_api(const std::string& initial_prompt, const std::vector<std::shared_ptr<chat::Exchange>>& chat_exchanges,
+    void call_api(const std::string& initial_prompt, const std::shared_ptr<chat::ExchangeHistory>& chat_history,
                   const std::string& api_key, const std::string& model, const float& temperature, const int& max_tokens,
                   const float& top_p, const float& frequency_penalty, const float& presence_penalty,
                   const std::unordered_map<std::string, float>& logit_bias, const bool& search_response,

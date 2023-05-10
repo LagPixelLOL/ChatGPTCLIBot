@@ -9,7 +9,7 @@ namespace api {
     /**
      * Call the OpenAI API with a custom lambda function as callback.
      */
-    void call_api(const std::string& initial_prompt, const std::vector<std::shared_ptr<chat::Exchange>>& chat_exchanges,
+    void call_api(const std::string& initial_prompt, const std::shared_ptr<chat::ExchangeHistory>& chat_history,
                   const std::string& api_key, const std::string& model, const float& temperature, const int& max_tokens,
                   const float& top_p, const float& frequency_penalty, const float& presence_penalty,
                   const std::unordered_map<std::string, float>& logit_bias, const bool& search_response,
@@ -23,11 +23,11 @@ namespace api {
         std::string url = is_new_api_ ? "https://api.openai.com/v1/chat/completions" : "https://api.openai.com/v1/completions";
         std::string constructed_initial;
         if (!documents_opt) {
-            constructed_initial = prompt::construct_reference(initial_prompt, chat_exchanges.back()->getInputEmbeddings(),
-                                                              chat_exchanges, search_response, max_reference_length,
+            constructed_initial = prompt::construct_reference(initial_prompt, chat_history->back()->getInputEmbeddings(),
+                                                              chat_history, search_response, max_reference_length,
                                                               max_short_memory_length, me_id, bot_id);
         } else {
-            constructed_initial = prompt::construct_reference(initial_prompt, chat_exchanges.back()->getInputEmbeddings(),
+            constructed_initial = prompt::construct_reference(initial_prompt, chat_history->back()->getInputEmbeddings(),
                                                               *documents_opt, max_reference_length);
         }
         std::string suffix = ": ";
@@ -54,7 +54,7 @@ namespace api {
         unsigned int model_max_tokens = util::get_max_tokens(model);
         unsigned int token_count; //No need to initialize.
         if (!is_new_api_) {
-            std::string prompt = GPT::to_payload(constructed_initial, chat_exchanges, me_id, bot_id, max_short_memory_length);
+            std::string prompt = GPT::to_payload(constructed_initial, chat_history, me_id, bot_id, max_short_memory_length);
             if ((token_count = util::get_token_count(prompt, model)) >= model_max_tokens) {
                 throw util::max_tokens_exceeded(
                         "Max tokens exceeded in prompt: " + std::to_string(token_count) + " >= " + std::to_string(model_max_tokens));
@@ -62,7 +62,7 @@ namespace api {
             payload["prompt"] = prompt;
             payload["stop"] = {me_id + suffix, bot_id + suffix};
         } else {
-            nlohmann::json messages = ChatGPT::to_payload(constructed_initial, chat_exchanges, model, me_id, bot_id, max_short_memory_length);
+            nlohmann::json messages = ChatGPT::to_payload(constructed_initial, chat_history, model, me_id, bot_id, max_short_memory_length);
             if ((token_count = util::get_token_count(messages, model)) >= model_max_tokens) {
                 throw util::max_tokens_exceeded(
                         "Max tokens exceeded in messages: " + std::to_string(token_count) + " >= " + std::to_string(model_max_tokens));

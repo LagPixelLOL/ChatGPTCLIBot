@@ -17,11 +17,11 @@
 
 namespace prompt {
 
-    void print_prompt(const std::string& initial_prompt, const std::vector<std::shared_ptr<chat::Exchange>>& prompts,
+    void print_prompt(const std::string& initial_prompt, const std::shared_ptr<chat::ExchangeHistory>& chat_history,
                       const std::string& me_id, const std::string& bot_id, const unsigned int& max_length,
                       const bool& is_new_api, const bool& space_between_exchanges) {
-        util::print_cs(to_string(initial_prompt, prompts, me_id, bot_id, max_length, true, space_between_exchanges), true);
-        if (!prompts.empty() && !prompts.back()->hasResponse()) {
+        util::print_cs(to_string(initial_prompt, chat_history, me_id, bot_id, max_length, true, space_between_exchanges), true);
+        if (!chat_history->empty() && !chat_history->back()->hasResponse()) {
             util::print_cs(BOT_COLOR + bot_id + (is_new_api ? ": " : ":"), false, false);
         }
     }
@@ -33,9 +33,17 @@ namespace prompt {
         }
     }
 
-    std::string to_string(std::string initial_prompt, std::vector<std::shared_ptr<chat::Exchange>> prompts,
+    template<typename T>
+    inline void delete_front_keep_back(std::list<T>& list, const unsigned int& keep_back_count) {
+        if (list.size() > keep_back_count) {
+            list.erase(list.begin(), std::prev(list.end(), keep_back_count));
+        }
+    }
+
+    std::string to_string(std::string initial_prompt, const std::shared_ptr<chat::ExchangeHistory>& chat_history,
                           const std::string& me_id, const std::string& bot_id, const unsigned int& max_length,
                           const bool& add_color, const bool& space_between_exchanges) {
+        std::list<std::shared_ptr<chat::Exchange>> prompts(chat_history->begin(), chat_history->end());
         delete_front_keep_back(prompts, max_length);
         for (const auto& exchange : prompts) {
             initial_prompt.append((add_color ? USER_COLOR : "") + (boost::format("\n%1%: %2%") % me_id % exchange->getInput()).str());
@@ -54,12 +62,12 @@ namespace prompt {
     }
 
     inline std::vector<std::pair<std::shared_ptr<chat::Exchange>, double>> async_find_similar(
-            const std::vector<float>& input_embeddings, const std::vector<std::shared_ptr<chat::Exchange>>& chat_exchanges,
+            const std::vector<float>& input_embeddings, const std::vector<std::shared_ptr<chat::Exchange>>& chat_history,
             const bool& search_response) {
         tbb::concurrent_vector<std::pair<std::shared_ptr<chat::Exchange>, double>> computed_exchanges;
-        tbb::parallel_for(tbb::blocked_range<size_t>(0, chat_exchanges.size()), [&](const tbb::blocked_range<size_t>& r){
+        tbb::parallel_for(tbb::blocked_range<size_t>(0, chat_history.size()), [&](const tbb::blocked_range<size_t>& r){
             for (size_t i = r.begin(); i != r.end(); i++) {
-                const std::shared_ptr<chat::Exchange>& exchange = chat_exchanges[i];
+                const std::shared_ptr<chat::Exchange>& exchange = chat_history[i];
                 double similarity = emb::cosine_similarity(exchange->getInputEmbeddings(), input_embeddings);
                 if (search_response && exchange->hasResponse() && exchange->hasResponseEmbeddings()) {
                     double response_similarity = emb::cosine_similarity(exchange->getResponseEmbeddings(), input_embeddings);
@@ -80,19 +88,20 @@ namespace prompt {
      * @return The constructed initial prompt.
      */
     std::string construct_reference(std::string initial_prompt, const std::vector<float>& input_embeddings,
-                                    std::vector<std::shared_ptr<chat::Exchange>> chat_exchanges, const bool& search_response,
+                                    const std::shared_ptr<chat::ExchangeHistory>& chat_history, const bool& search_response,
                                     const unsigned int& max_reference_length, const unsigned int& max_short_memory_length,
                                     const std::string& me_id, const std::string& bot_id) {
         append_time(initial_prompt);
         if (max_reference_length == 0) {
             return initial_prompt;
         }
-        if (chat_exchanges.size() > max_short_memory_length) {
-            chat_exchanges.erase(chat_exchanges.end() - max_short_memory_length, chat_exchanges.end());
+        std::vector<std::shared_ptr<chat::Exchange>> chat_history_vec(chat_history->begin(), chat_history->end());
+        if (chat_history_vec.size() > max_short_memory_length) {
+            chat_history_vec.erase(chat_history_vec.end() - max_short_memory_length, chat_history_vec.end());
         } else {
-            chat_exchanges.clear();
+            chat_history_vec.clear();
         }
-        auto computed_exchanges = async_find_similar(input_embeddings, chat_exchanges, search_response);
+        auto computed_exchanges = async_find_similar(input_embeddings, chat_history_vec, search_response);
         if (computed_exchanges.empty()) {
             return initial_prompt;
         }
@@ -170,13 +179,13 @@ namespace GPT {
                 "%2%: is the prefix of your response, texts start with it are your response\n") % me_id % bot_id).str();
     }
 
-    std::string to_payload(std::string initial_prompt, const std::vector<std::shared_ptr<chat::Exchange>>& prompts,
+    std::string to_payload(std::string initial_prompt, const std::shared_ptr<chat::ExchangeHistory>& chat_history,
                            const std::string& me_id, const std::string& bot_id, const unsigned int& max_length) {
         const std::string& pre_prompt = get_pre_prompt(me_id, bot_id);
         if (!boost::starts_with(initial_prompt, pre_prompt)) {
             initial_prompt.insert(0, pre_prompt);
         }
-        return prompt::to_string(initial_prompt, prompts, me_id, bot_id, max_length) + "\n" + bot_id + ":";
+        return prompt::to_string(initial_prompt, chat_history, me_id, bot_id, max_length) + "\n" + bot_id + ":";
     }
 } // GPT
 
@@ -194,8 +203,9 @@ namespace ChatGPT {
      *     {"role": "user", "content": "<user current input>"}
      * ]
      */
-    nlohmann::json to_payload(std::string initial_prompt, std::vector<std::shared_ptr<chat::Exchange>> prompts, const std::string& model,
-                              const std::string& me_id, const std::string& bot_id, const unsigned int& max_length) {
+    nlohmann::json to_payload(std::string initial_prompt, const std::shared_ptr<chat::ExchangeHistory>& chat_history,
+                              const std::string& model, const std::string& me_id, const std::string& bot_id, const unsigned int& max_length) {
+        std::list<std::shared_ptr<chat::Exchange>> prompts(chat_history->begin(), chat_history->end());
         prompt::delete_front_keep_back(prompts, max_length);
         boost::replace_all(initial_prompt, GPT::get_pre_prompt(me_id, bot_id), "");
         nlohmann::json payload = nlohmann::json::array();

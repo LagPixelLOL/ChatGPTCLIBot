@@ -22,10 +22,14 @@ namespace chat {
         Exchange(std::string input, std::vector<float> input_embeddings, std::string response, long long time_ms);
         Exchange(std::string input, std::vector<float> input_embeddings, std::string response,
                  std::vector<float> response_embeddings, long long int time_ms);
+        explicit Exchange(const nlohmann::json& j);
         virtual ~Exchange();
+
         bool operator==(const Exchange& rhs) const;
         bool operator!=(const Exchange& rhs) const;
         friend std::size_t hash_value(const Exchange& instance);
+
+        [[nodiscard]] nlohmann::json to_json() const;
 
         [[nodiscard]] const std::string& getInput() const;
         [[nodiscard]] const std::vector<float>& getInputEmbeddings() const;
@@ -41,7 +45,7 @@ namespace chat {
 
 namespace std {
 
-    template <>
+    template<>
     struct hash<chat::Exchange> {
         size_t operator()(const chat::Exchange& instance) const;
     };
