@@ -5,9 +5,20 @@
 #ifndef GPT3BOT_CONFIG_H
 #define GPT3BOT_CONFIG_H
 
-#include "GPTMain.h"
+#include "interface/data/ExchangeHistory.h"
+#include "interface/data/Document.h"
 
 namespace config {
+
+    enum log_level {
+        INFO, ERR
+    };
+
+    struct log {
+        log_level level = INFO;
+        std::string message;
+        std::optional<std::filesystem::path> path = std::nullopt;
+    };
 
     class Config {
     public:
@@ -42,8 +53,8 @@ namespace config {
         explicit Config(std::filesystem::path config_path);
         virtual ~Config();
 
-        void load_config();
-        void save_config();
+        void load_config(const std::function<void(const log& msg)>& log_callback = [](const auto&){});
+        void save_config(const std::function<void(const log& msg)>& log_callback = [](const auto&){});
     };
 } // config
 

@@ -6,6 +6,7 @@
 #define GPT3BOT_GPTMAIN_H
 
 #include "interface/network/Network.h"
+#include "Config.h"
 #include "Command.h"
 #include "FineTuneHelper.h"
 #include "csignal"
@@ -34,8 +35,6 @@ namespace GPT {
     bool p_save_chat(std::string name);
     bool p_load_docQA(std::string filename);
     bool p_create_docQA();
-    bool p_load_config();
-    bool p_save_config();
     bool p_check_set_api_key();
     void p_on_invalid_key();
 }
