@@ -5,8 +5,8 @@
 #ifndef GPT3BOT_CURLUTILS_H
 #define GPT3BOT_CURLUTILS_H
 
+#include "FileUtils.h"
 #include "curl/curl.h"
-#include "string"
 
 namespace util {
 

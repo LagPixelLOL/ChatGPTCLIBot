@@ -17,18 +17,20 @@ namespace doc {
      */
     Document::Document(const nlohmann::json& j) {
         if (!j.is_object()) {
-            throw std::invalid_argument("Argument j must be a json object.");
+            throw std::invalid_argument("Argument must be a json object.");
         }
-        if (!j.contains("text") || !j.contains("embeddings")) {
-            throw std::invalid_argument("Argument j must contain 'text' and 'embeddings' fields.");
+        auto it_text = j.find("text");
+        auto it_embeddings = j.find("embeddings");
+        if (it_text == j.end() || it_embeddings == j.end()) {
+            throw std::invalid_argument("Argument must contain 'text' and 'embeddings' fields.");
         }
-        if (!j["text"].is_string() || !j["embeddings"].is_array()) {
-            throw std::invalid_argument("Argument j must contain 'text' and 'embeddings' fields of type string and array.");
+        if (!it_text->is_string() || !it_embeddings->is_array()) {
+            throw std::invalid_argument("Argument must contain 'text' and 'embeddings' fields of type string and array.");
         }
-        text_ = j["text"].get<std::string>();
-        for (const nlohmann::json& e : j["embeddings"]) {
+        text_ = it_text->get<std::string>();
+        for (const nlohmann::json& e : *it_embeddings) {
             if (!e.is_number()) {
-                throw std::invalid_argument("Argument j must contain 'text' and 'embeddings' fields of type string and array.");
+                throw std::invalid_argument("Elements of 'embeddings' field must be numbers.");
             }
             embeddings_.emplace_back(e.get<float>());
         }

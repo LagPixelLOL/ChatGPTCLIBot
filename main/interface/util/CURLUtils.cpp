@@ -5,7 +5,38 @@
 #include "CURLUtils.h"
 
 namespace util {
-    std::string ca_bundle_path = "/etc/ssl/certs/ca-bundle.crt";
+
+    inline std::string search_ca_cert() {
+#ifdef __linux__
+        static const std::vector<std::filesystem::path> ca_cert_extensions = {".crt", ".pem"};
+        static const std::vector<std::filesystem::path> possible_ca_path = {
+                "/etc/ssl/certs",
+                "/etc/pki/tls/certs",
+                "/usr/local/share/ca-certificates",
+                "/usr/local/etc/ssl/certs",
+                "/usr/share/ca-certificates",
+                "/usr/share/ssl/certs",
+                "/usr/local/ssl/certs",
+                "/etc/pki/ca-trust/extracted/pem",
+                "/etc/pki/ca-trust/extracted/openssl"
+        };
+        for (const auto& path : possible_ca_path) {
+            try {
+                std::unordered_set<std::filesystem::path> certs = file::list_files(path);
+                for (const auto& cert : certs) {
+                    for (const auto& extension : ca_cert_extensions) {
+                        if (cert.extension() == extension) {
+                            return cert.string();
+                        }
+                    }
+                }
+            } catch (const std::exception& e) {}
+        }
+#endif
+        return "/etc/ssl/certs/ca-bundle.crt";
+    }
+
+    std::string ca_bundle_path = search_ca_cert();
 
     void set_curl_proxy(CURL* curl, const std::string& proxy) {
         if (!proxy.empty()) {

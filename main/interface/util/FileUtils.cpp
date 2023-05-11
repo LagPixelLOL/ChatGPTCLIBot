@@ -180,6 +180,32 @@ namespace file {
         return created_folders;
     }
 
+    /**
+     * List all files in a folder, doesn't contain subfolders.
+     * @param folder Path to the folder.
+     * @throw file::file_error If the folder does not exist, is not a directory, or an error occurred.
+     * @return Vector of paths to the files.
+     */
+    std::unordered_set<std::filesystem::path> list_files(const std::filesystem::path& folder) {
+        try {
+            std::filesystem::path exe_base_path = folder.is_absolute() ? folder : exe_parent_path / folder;
+            if (!std::filesystem::exists(exe_base_path) || !std::filesystem::is_directory(exe_base_path)) {
+                throw file_error("Folder does not exist or is not a directory.", folder);
+            }
+            std::unordered_set<std::filesystem::path> files;
+            for (const auto& entry : std::filesystem::directory_iterator(exe_base_path)) {
+                if (std::filesystem::is_regular_file(entry)) {
+                    files.insert(entry.path());
+                }
+            }
+            return files;
+        } catch (const file_error& e) {
+            throw;
+        } catch (const std::exception& e) {
+            throw file_error(e.what(), folder);
+        }
+    }
+
     bool exists(const std::filesystem::path& path) {
         return std::filesystem::exists(path.is_absolute() ? path : exe_parent_path / path);
     }

@@ -76,6 +76,21 @@ namespace prompt {
         return {computed_exchanges.begin(), computed_exchanges.end()};
     }
 
+    inline std::vector<std::tuple<doc::Document, double, size_t>> async_find_similar(const std::vector<float>& input_embeddings,
+                                                                                     const std::vector<doc::Document>& documents) {
+        tbb::concurrent_vector<std::tuple<doc::Document, double, size_t>> computed_documents;
+        tbb::parallel_for(tbb::blocked_range<size_t>(0, documents.size()), [&](const tbb::blocked_range<size_t>& r){
+            for (size_t i = r.begin(); i != r.end(); i++) {
+                const doc::Document& document = documents[i];
+                double similarity = emb::cosine_similarity(document.getEmbeddings(), input_embeddings);
+                if (similarity >= 0.8) {
+                    computed_documents.emplace_back(document, similarity, i);
+                }
+            }
+        });
+        return {computed_documents.begin(), computed_documents.end()};
+    }
+
     /**
      * Construct long-term memory reference for general chatting.
      * @return The constructed initial prompt.
@@ -131,15 +146,8 @@ namespace prompt {
         if (max_reference_length == 0) {
             return initial_prompt;
         }
-        /* tuple<document, similarity, index> */
-        std::vector<std::tuple<doc::Document, double, size_t>> computed_documents;
-        for (size_t i = 0; i < documents.size(); i++) {
-            const auto& document = documents[i];
-            double similarity = emb::cosine_similarity(document.getEmbeddings(), input_embeddings);
-            if (similarity >= 0.8) {
-                computed_documents.emplace_back(document, similarity, i);
-            }
-        }
+        //tuple<document, similarity, index>
+        auto computed_documents = async_find_similar(input_embeddings, documents);
         if (computed_documents.empty()) {
             return initial_prompt;
         }

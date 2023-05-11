@@ -36,7 +36,7 @@ namespace curl {
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
         curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, timeout_s);
         curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, timeout_s);
-        curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, true);
+        curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 1);
         util::set_curl_proxy(curl, util::system_proxy());
         util::set_curl_ssl_cert(curl);
         if (method == http_method::POST) {

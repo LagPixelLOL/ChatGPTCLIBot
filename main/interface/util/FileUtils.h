@@ -9,6 +9,7 @@
 #include "filesystem"
 #include "fstream"
 #include "vector"
+#include "unordered_set"
 
 namespace file {
 
@@ -31,6 +32,7 @@ namespace file {
     void write_binary_file(const std::vector<char>& content, const std::filesystem::path& path);
     bool create_folder(const std::filesystem::path& folder);
     std::vector<std::filesystem::path> create_folders(const std::vector<std::filesystem::path>& folders);
+    std::unordered_set<std::filesystem::path> list_files(const std::filesystem::path& folder);
     bool exists(const std::filesystem::path& path);
 } // file
 
