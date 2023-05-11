@@ -22,7 +22,7 @@ namespace util {
         };
         for (const auto& path : possible_ca_path) {
             try {
-                std::unordered_set<std::filesystem::path> certs = file::list_files(path);
+                std::unordered_set<std::filesystem::path, file::path_hash> certs = file::list_files(path);
                 for (const auto& cert : certs) {
                     for (const auto& extension : ca_cert_extensions) {
                         if (cert.extension() == extension) {

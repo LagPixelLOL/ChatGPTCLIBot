@@ -13,6 +13,12 @@
 
 namespace file {
 
+    struct path_hash {
+        size_t operator()(const std::filesystem::path& path) const noexcept {
+            return std::filesystem::hash_value(path);
+        }
+    };
+
     class file_error : public std::exception {
         const std::string message;
         const std::filesystem::path path;
@@ -32,7 +38,7 @@ namespace file {
     void write_binary_file(const std::vector<char>& content, const std::filesystem::path& path);
     bool create_folder(const std::filesystem::path& folder);
     std::vector<std::filesystem::path> create_folders(const std::vector<std::filesystem::path>& folders);
-    std::unordered_set<std::filesystem::path> list_files(const std::filesystem::path& folder);
+    std::unordered_set<std::filesystem::path, path_hash> list_files(const std::filesystem::path& folder);
     bool exists(const std::filesystem::path& path);
 } // file
 
