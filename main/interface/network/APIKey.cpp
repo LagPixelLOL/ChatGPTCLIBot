@@ -151,7 +151,8 @@ namespace api {
                 }
                 if (print_err_msg) {
                     if (error_obj.count("message") > 0 && error_obj["message"].is_string()) {
-                        util::println_err("\nAPI returned error: " + error_obj["message"].get<std::string>());
+                        util::println_err("\nAPI returned error: " + (status_in != APIKeyStatus::INVALID_KEY ?
+                        error_obj["message"].get<std::string>() : "The API key is invalid."));
                     }
                 }
                 return true;

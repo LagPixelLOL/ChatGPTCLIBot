@@ -6,42 +6,21 @@
 
 namespace api {
 
+    void handle_streamed_response(const std::vector<char>& raw_vec, const bool& is_new_api,
+                                  const std::function<void(const std::string& streamed_response)>& stream_callback);
+
     /**
      * Call the OpenAI API with a custom lambda function as callback.
      */
-    void call_api(const std::string& initial_prompt, const std::shared_ptr<chat::ExchangeHistory>& chat_history,
+    void call_api(const std::string& constructed_initial, const std::shared_ptr<chat::ExchangeHistory>& chat_history,
                   const std::string& api_key, const std::string& model, const float& temperature, const int& max_tokens,
                   const float& top_p, const float& frequency_penalty, const float& presence_penalty,
-                  const std::unordered_map<std::string, float>& logit_bias, const bool& search_response,
-                  const unsigned int& max_short_memory_length, const unsigned int& max_reference_length,
+                  const std::vector<std::pair<std::string, float>>& logit_bias, const unsigned int& max_short_memory_length,
                   const std::string& me_id, const std::string& bot_id,
-                  const std::function<void(const std::string& streamed_response)>& callback,
-                  const bool& debug_reference, const bool& pause_when_showing_reference,
-                  const std::optional<std::vector<doc::Document>>& documents_opt,
+                  const std::function<void(const std::string& streamed_response)>& stream_callback,
                   const std::function<int(curl_off_t, curl_off_t, curl_off_t, curl_off_t)>& progress_callback) {
         bool is_new_api_ = is_new_api(model);
         std::string url = is_new_api_ ? "https://api.openai.com/v1/chat/completions" : "https://api.openai.com/v1/completions";
-        std::string constructed_initial;
-        if (!documents_opt) {
-            constructed_initial = prompt::construct_reference(initial_prompt, chat_history->back()->getInputEmbeddings(),
-                                                              chat_history, search_response, max_reference_length,
-                                                              max_short_memory_length, me_id, bot_id);
-        } else {
-            constructed_initial = prompt::construct_reference(initial_prompt, chat_history->back()->getInputEmbeddings(),
-                                                              *documents_opt, max_reference_length);
-        }
-        std::string suffix = ": ";
-        if (debug_reference) {
-            std::string dr_prefix = Term::color_fg(255, 200, 0) + "<Debug Reference> " + Term::color_fg(Term::Color::Name::Default);
-            util::print_cs("\n" + dr_prefix + Term::color_fg(255, 225, 0)
-            + "Constructed initial prompt:\n----------\n" + constructed_initial + "\n----------", true);
-            if (pause_when_showing_reference) {
-                util::print_cs(dr_prefix + "Press " + Term::color_fg(70, 200, 255) + "Enter"
-                + Term::color_fg(Term::Color::Name::Default) + " to continue: ");
-                util::ignore_line();
-            }
-            util::print_cs(Term::color_fg(175, 255, 225) + bot_id + (is_new_api_ ? suffix : ":"), false, false);
-        }
         std::vector<std::string> headers = {"Content-Type: application/json"};
         std::string auth = "Authorization: Bearer ";
         headers.emplace_back(auth.append(api_key));
@@ -60,6 +39,7 @@ namespace api {
                         "Max tokens exceeded in prompt: " + std::to_string(token_count) + " >= " + std::to_string(model_max_tokens));
             }
             payload["prompt"] = prompt;
+            static const std::string suffix = ": ";
             payload["stop"] = {me_id + suffix, bot_id + suffix};
         } else {
             nlohmann::json messages = ChatGPT::to_payload(constructed_initial, chat_history, model, me_id, bot_id, max_short_memory_length);
@@ -74,63 +54,20 @@ namespace api {
         if (!logit_bias.empty()) {
             nlohmann::json logit_bias_json = nlohmann::json::object();
             std::shared_ptr<GptEncoding> tokenizer = util::get_enc_cache(util::get_tokenizer(model));
-            std::unordered_map<uint32_t, float> converted_logit_bias;
-            for (const auto& [key, value] : logit_bias) {
-                if (key.empty()) {
+            for (const auto& pair : logit_bias) {
+                if (pair.first.empty()) {
                     continue;
                 }
-                std::vector<int> token_ids = tokenizer->encode(key);
+                std::vector<int> token_ids = tokenizer->encode(pair.first);
                 for (const auto& token_id : token_ids) {
-                    converted_logit_bias[token_id] = value;
+                    logit_bias_json[std::to_string(token_id)] = pair.second;
                 }
-            }
-            for (const auto& [key, value] : converted_logit_bias) {
-                logit_bias_json[std::to_string(key)] = value;
             }
             payload["logit_bias"] = logit_bias_json;
         }
         try {
             curl::http_post(url, [&](const std::vector<char>& vec, CURL* curl){
-                std::vector<std::string> split_str;
-                boost::split_regex(split_str, std::string(vec.begin(), vec.end()), boost::regex("\\n\\ndata: "));
-                for (auto& str : split_str) {
-                    if (boost::starts_with(str, "data: ")) {
-                        str.erase(0, 6);
-                    }
-                    if (boost::ends_with(str, "\n\n")) {
-                        str.erase(str.size() - 2);
-                    }
-                    if (str != "[DONE]") {
-                        try {
-                            nlohmann::json j = nlohmann::json::parse(str);
-                            std::string response;
-                            if (j.count("choices") > 0 && j["choices"].is_array()) {
-                                auto choices = j["choices"];
-                                if (!is_new_api_) {
-                                    for (const auto& choice: choices) {
-                                        if (choice.count("text") > 0 && choice["text"].is_string()) {
-                                            response = choice["text"].get<std::string>();
-                                        }
-                                    }
-                                } else {
-                                    for (const auto& choice: choices) {
-                                        if (choice.count("delta") > 0 && choice["delta"].is_object()) {
-                                            auto delta = choice["delta"];
-                                            if (delta.count("content") > 0 && delta["content"].is_string()) {
-                                                response = delta["content"].get<std::string>();
-                                            }
-                                        }
-                                    }
-                                }
-                            } else {
-                                response = j.dump();
-                            }
-                            callback(response);
-                        } catch (const nlohmann::json::parse_error& e) {
-                            throw curl::request_failed("Error parsing JSON: " + std::string(e.what()));
-                        }
-                    }
-                }
+                handle_streamed_response(vec, is_new_api_, stream_callback);
             }, payload.dump(), headers, 20, progress_callback);
         } catch (const std::exception& e) {
             throw curl::request_failed(e.what());
@@ -139,5 +76,55 @@ namespace api {
 
     bool is_new_api(const std::string& model_name) {
         return boost::starts_with(model_name, "gpt-3.5") || boost::starts_with(model_name, "gpt-4");
+    }
+
+    void handle_streamed_response(const std::vector<char>& raw_vec, const bool& is_new_api,
+                                  const std::function<void(const std::string& streamed_response)>& stream_callback) {
+        std::vector<std::string> split_str;
+        boost::split_regex(split_str, std::string(raw_vec.begin(), raw_vec.end()), boost::regex("\\n\\ndata: "));
+        for (auto& str : split_str) {
+            if (boost::starts_with(str, "data: ")) {
+                str.erase(0, 6);
+            }
+            if (boost::ends_with(str, "\n\n")) {
+                str.erase(str.size() - 2);
+            }
+            if (str == "[DONE]") {
+                break;
+            }
+            try {
+                nlohmann::json j = nlohmann::json::parse(str);
+                std::string response;
+                auto it_choices = j.find("choices");
+                if (it_choices != j.end() && it_choices->is_array()) {
+                    if (it_choices->empty()) {
+                        continue;
+                    }
+                    const auto& choice = (*it_choices)[0];
+                    if (!choice.is_object()) {
+                        continue;
+                    }
+                    if (!is_new_api) {
+                        auto it_text = choice.find("text");
+                        if (it_text != choice.end() && it_text->is_string()) {
+                            response = it_text->get<std::string>();
+                        }
+                    } else {
+                        auto it_delta = choice.find("delta");
+                        if (it_delta != choice.end() && it_delta->is_object()) {
+                            auto it_content = (*it_delta).find("content");
+                            if (it_content != (*it_delta).end() && it_content->is_string()) {
+                                response = it_content->get<std::string>();
+                            }
+                        }
+                    }
+                } else {
+                    response = j.dump();
+                }
+                stream_callback(response);
+            } catch (const nlohmann::json::parse_error& e) {
+                throw curl::request_failed("Error parsing JSON: " + std::string(e.what()));
+            }
+        }
     }
 } // api

@@ -18,6 +18,7 @@ namespace chat {
         long long time_ms_;
 
     public:
+        Exchange() = delete;
         Exchange(std::string input, std::vector<float> input_embeddings, long long time_ms);
         Exchange(std::string input, std::vector<float> input_embeddings, std::string response, long long time_ms);
         Exchange(std::string input, std::vector<float> input_embeddings, std::string response,

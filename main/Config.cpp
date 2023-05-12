@@ -11,6 +11,27 @@ namespace config {
     Config::Config(std::filesystem::path config_path) : config_path(std::move(config_path)) {}
     Config::~Config() = default;
 
+    chat::Completion Config::to_completion() const {
+        chat::Completion completion;
+        completion.setAPIKey(api::get_key());
+        completion.setModel(model);
+        completion.setInitialPrompt(initial_prompt);
+        completion.setChatHistory(chat_history);
+        completion.setTemperature(temperature);
+        completion.setTopP(top_p);
+        completion.setMaxTokens(max_tokens);
+        completion.setPresencePenalty(presence_penalty);
+        completion.setFrequencyPenalty(frequency_penalty);
+        completion.setLogitBias(logit_bias);
+        completion.setMaxShortMemoryLength(max_short_memory_length);
+        completion.setMaxReferenceLength(max_reference_length);
+        if (documentQA_mode) {
+            completion.setDocuments(documents);
+        }
+        completion.setSearchResponse(search_response);
+        return completion;
+    }
+
     /**
      * @throw std::exception If an error occurred when loading the config file.
      */
@@ -51,6 +72,7 @@ namespace config {
         auto it_model = j.find("model");
         if (it_model != j.end() && it_model->is_string()) {
             model = it_model->get<std::string>();
+            is_new_api_ = api::is_new_api(model);
         } else {
             log_callback({Log::Level::ERR, "Argument model is not a string."});
             error = true;
@@ -97,7 +119,7 @@ namespace config {
         }
         auto it_logit_bias = j.find("logit_bias");
         if (it_logit_bias != j.end() && it_logit_bias->is_object()) {
-            logit_bias.clear();
+            std::unordered_map<std::string, float> logit_bias_map_tmp;
             for (const auto& [key, value] : it_logit_bias->items()) {
                 if (!value.is_number()) {
                     log_callback({Log::Level::ERR, "Argument logit_bias has non-number bias. Value: " + value.dump(2)});
@@ -111,7 +133,10 @@ namespace config {
                     error = true;
                     continue;
                 }
-                logit_bias[key] = bias;
+                logit_bias_map_tmp[key] = bias;
+            }
+            for (const auto& [key, value] : logit_bias_map_tmp) {
+                logit_bias.emplace_back(key, value);
             }
         } else {
             log_callback({Log::Level::ERR, "Argument logit_bias is not an object."});
@@ -244,6 +269,19 @@ namespace config {
         initial_prompt = it_initial->get<std::string>();
         documentQA_mode = true;
         log_callback({Log::Level::INFO, "Document Q&A loaded."});
+    }
+
+    [[maybe_unused]] std::string Config::get_model() const {
+        return model;
+    }
+
+    [[maybe_unused]] void Config::set_model(const std::string& model_) {
+        model = model_;
+        is_new_api_ = api::is_new_api(model);
+    }
+
+    bool Config::is_new_api() const {
+        return is_new_api_;
     }
     //class Config end.
 } // config

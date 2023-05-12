@@ -60,7 +60,6 @@ namespace GPT {
         if (!create_folders({config.f_initial, config.f_saved, config.f_documentQA}) || !p_default_prompt()) {
             return;
         }
-        config.is_new_api = api::is_new_api(config.model);
         p_check_set_api_key();
         while (true) {
             util::print_cs("Please choose whether you want to load the initial prompt, load the saved chat history,\n"
@@ -190,15 +189,21 @@ namespace GPT {
             print_prompt();
             std::string response;
             try {
-                std::optional<std::vector<doc::Document>> documents_opt = std::nullopt;
-                if (config.documentQA_mode) {
-                    documents_opt = config.documents;
-                }
                 ctrl_c_flag = false;
-                api::call_api(config.initial_prompt, config.chat_history, api_key, config.model, config.temperature, config.max_tokens,
-                              config.top_p, config.frequency_penalty, config.presence_penalty, config.logit_bias,
-                              config.search_response && !config.documentQA_mode, config.max_short_memory_length,
-                              config.max_reference_length, me_id, bot_id, [&response](const auto& streamed_response){
+                chat::Completion completion = config.to_completion();
+                completion.setMeID(me_id);
+                completion.setBotID(bot_id);
+                completion.construct_initial();
+                if (config.debug_reference) {
+                    std::string dr_prefix = Term::color_fg(255, 200, 0) + "<Debug Reference> " + Term::color_fg(Term::Color::Name::Default);
+                    util::print_cs("\n" + dr_prefix + Term::color_fg(255, 225, 0)
+                    + "Constructed initial prompt:\n----------\n" + completion.getConstructedInitial() + "\n----------", true);
+                    util::print_cs(dr_prefix + "Press " + Term::color_fg(70, 200, 255) + "Enter"
+                    + Term::color_fg(Term::Color::Name::Default) + " to continue: ");
+                    util::ignore_line();
+                    util::print_cs(Term::color_fg(175, 255, 225) + bot_id + (config.is_new_api() ? ": " : ":"), false, false);
+                }
+                completion.setStreamCallback([&response](const auto& streamed_response){
                     try {
                         nlohmann::json j = nlohmann::json::parse(streamed_response);
                         if (j.count("error") > 0 && j["error"].is_object()) {
@@ -208,7 +213,9 @@ namespace GPT {
                     } catch (const nlohmann::json::parse_error& e) {}
                     response.append(streamed_response);
                     util::print_cs(streamed_response, false, false);
-                }, config.debug_reference, true, documents_opt, progress_callback);
+                });
+                completion.setProgressCallback(progress_callback);
+                completion.call_api();
                 util::print_cs(""); //Reset color.
             } catch (const std::exception& e) {
                 util::println_err("\nError when calling API: " + std::string(e.what()));
@@ -227,7 +234,7 @@ namespace GPT {
                     continue;
                 }
             } catch (const nlohmann::json::parse_error& e) {}
-            if (!config.is_new_api && boost::starts_with(response, " ")) {
+            if (!config.is_new_api() && boost::starts_with(response, " ")) {
                 response.erase(0, 1);
             }
             while (boost::ends_with(response, "\n")) {
@@ -239,7 +246,7 @@ namespace GPT {
 
     void print_prompt() {
         clear_console();
-        prompt::print_prompt(config.initial_prompt, config.chat_history, me_id, bot_id, config.max_display_length, config.is_new_api,
+        prompt::print_prompt(config.initial_prompt, config.chat_history, me_id, bot_id, config.max_display_length, config.is_new_api(),
                              config.space_between_exchanges);
     }
 

@@ -184,7 +184,7 @@ namespace file {
      * List all files in a folder, doesn't contain subfolders.
      * @param folder Path to the folder.
      * @throw file::file_error If the folder does not exist, is not a directory, or an error occurred.
-     * @return Vector of paths to the files.
+     * @return List of paths to the files.
      */
     std::unordered_set<std::filesystem::path, path_hash> list_files(const std::filesystem::path& folder) {
         try {
