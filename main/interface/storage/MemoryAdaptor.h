@@ -5,6 +5,7 @@
 #ifndef GPT3BOT_MEMORYADAPTOR_H
 #define GPT3BOT_MEMORYADAPTOR_H
 
+#include "../data/Messages.h"
 #include "nlohmann/json.hpp"
 #include "list"
 
@@ -33,6 +34,7 @@ namespace db {
             return !other.operator==(*this);
         }
 
+        [[nodiscard]] virtual chat::Messages to_messages() const = 0;
         [[nodiscard]] virtual nlohmann::json to_json() const = 0;
 
         std::shared_ptr<MemoryType>& front() {
@@ -71,35 +73,35 @@ namespace db {
             memory.clear();
         }
 
-        [[nodiscard]] size_t size() const {
+        [[nodiscard]] size_t size() const noexcept {
             return memory.size();
         }
 
-        [[nodiscard]] bool empty() const {
+        [[nodiscard]] bool empty() const noexcept {
             return memory.empty();
         }
 
-        typename Memory::iterator begin() {
+        typename Memory::iterator begin() noexcept {
             return memory.begin();
         }
 
-        typename Memory::iterator end() {
+        typename Memory::iterator end() noexcept {
             return memory.end();
         }
 
-        typename Memory::const_iterator cbegin() const {
+        typename Memory::const_iterator cbegin() const noexcept {
             return memory.cbegin();
         }
 
-        typename Memory::const_iterator cend() const {
+        typename Memory::const_iterator cend() const noexcept {
             return memory.cend();
         }
 
-        typename Memory::const_iterator begin() const {
+        typename Memory::const_iterator begin() const noexcept {
             return cbegin();
         }
 
-        typename Memory::const_iterator end() const {
+        typename Memory::const_iterator end() const noexcept {
             return cend();
         }
     };

@@ -33,21 +33,30 @@ namespace prompt {
         }
     }
 
-    std::string to_string(std::string initial_prompt, const std::shared_ptr<chat::ExchangeHistory>& chat_history,
-                          const std::string& me_id, const std::string& bot_id, const unsigned int& max_length,
-                          const bool& add_color, const bool& space_between_exchanges) {
-        std::list<std::shared_ptr<chat::Exchange>> prompts(chat_history->begin(), chat_history->end());
-        delete_front_keep_back(prompts, max_length);
-        for (const auto& exchange : prompts) {
-            initial_prompt.append((add_color ? USER_COLOR : "") + (boost::format("\n%1%: %2%") % me_id % exchange->getInput()).str());
-            if (exchange->hasResponse()) {
-                initial_prompt.append((add_color ? BOT_COLOR : "") + (boost::format("\n%1%: %2%") % bot_id % exchange->getResponse()).str());
-                if (space_between_exchanges) {
-                    initial_prompt.append("\n");
-                }
+    std::string to_string(std::string initial_prompt, chat::Messages messages, const std::string& me_id,
+                          const std::string& bot_id, const unsigned int& max_length, const bool& add_color,
+                          const bool& space_between_exchanges) {
+        delete_front_keep_back(messages, max_length);
+        for (const auto& message : messages) {
+            switch (message.second) {
+                case chat::Messages::Role::ASSISTANT:
+                    initial_prompt.append((add_color ? BOT_COLOR : "") + (boost::format("\n%1%: %2%") % bot_id % message.first).str());
+                    if (space_between_exchanges) {
+                        initial_prompt.append("\n");
+                    }
+                    break;
+                default:
+                    initial_prompt.append((add_color ? USER_COLOR : "") + (boost::format("\n%1%: %2%") % me_id % message.first).str());
+                    break;
             }
         }
         return initial_prompt;
+    }
+
+    std::string to_string(const std::string& initial_prompt, const std::shared_ptr<chat::ExchangeHistory>& chat_history,
+                          const std::string& me_id, const std::string& bot_id, const unsigned int& max_length,
+                          const bool& add_color, const bool& space_between_exchanges) {
+        return to_string(initial_prompt, chat_history->to_messages(), me_id, bot_id, max_length, add_color, space_between_exchanges);
     }
 
     inline void append_time(std::string& s) {
@@ -180,13 +189,13 @@ namespace GPT {
                 "%2%: is the prefix of your response, texts start with it are your response\n") % me_id % bot_id).str();
     }
 
-    std::string to_payload(std::string initial_prompt, const std::shared_ptr<chat::ExchangeHistory>& chat_history,
-                           const std::string& me_id, const std::string& bot_id, const unsigned int& max_length) {
+    std::string to_payload(std::string initial_prompt, const chat::Messages& messages, const std::string& me_id, const std::string& bot_id,
+                           const unsigned int& max_length) {
         const std::string& pre_prompt = get_pre_prompt(me_id, bot_id);
         if (!boost::starts_with(initial_prompt, pre_prompt)) {
             initial_prompt.insert(0, pre_prompt);
         }
-        return prompt::to_string(initial_prompt, chat_history, me_id, bot_id, max_length) + "\n" + bot_id + ":";
+        return prompt::to_string(initial_prompt, messages, me_id, bot_id, max_length) + "\n" + bot_id + ":";
     }
 } // GPT
 
@@ -204,19 +213,28 @@ namespace ChatGPT {
      *     {"role": "user", "content": "<user current input>"}
      * ]
      */
-    nlohmann::json to_payload(std::string initial_prompt, const std::shared_ptr<chat::ExchangeHistory>& chat_history,
-                              const std::string& model, const std::string& me_id, const std::string& bot_id, const unsigned int& max_length) {
-        std::list<std::shared_ptr<chat::Exchange>> prompts(chat_history->begin(), chat_history->end());
-        prompt::delete_front_keep_back(prompts, max_length);
+    nlohmann::json to_payload(std::string initial_prompt, chat::Messages messages, const std::string& model, const std::string& me_id,
+                              const std::string& bot_id, const unsigned int& max_length) {
+        prompt::delete_front_keep_back(messages, max_length);
         boost::replace_all(initial_prompt, GPT::get_pre_prompt(me_id, bot_id), "");
         nlohmann::json payload = nlohmann::json::array();
         //For GPT-3.5, using "user" role is better for initial prompt, if OpenAI ever updates the model, I will change it to "system".
         payload.push_back({{"role", boost::starts_with(model, "gpt-3.5") ? "user" : "system"}, {"content", initial_prompt}});
-        for (const auto& exchange : prompts) {
-            payload.push_back({{"role", "user"}, {"content", exchange->getInput()}});
-            if (exchange->hasResponse()) {
-                payload.push_back({{"role", "assistant"}, {"content", exchange->getResponse()}});
+        for (const auto& message : messages) {
+            nlohmann::json j = nlohmann::json::object();
+            switch (message.second) {
+                case chat::Messages::Role::SYSTEM:
+                    j["role"] = "system";
+                    break;
+                case chat::Messages::Role::ASSISTANT:
+                    j["role"] = "assistant";
+                    break;
+                default:
+                    j["role"] = "user";
+                    break;
             }
+            j["content"] = message.first;
+            payload.push_back(j);
         }
         return payload;
     }

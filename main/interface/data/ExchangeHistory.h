@@ -21,6 +21,7 @@ namespace chat {
 
         ExchangeHistory& operator=(const MemoryAdaptor& other) override;
 
+        [[nodiscard]] Messages to_messages() const override;
         [[nodiscard]] nlohmann::json to_json() const override;
     };
 } // db

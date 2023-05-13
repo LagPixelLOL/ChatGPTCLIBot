@@ -30,6 +30,17 @@ namespace chat {
         return *this;
     }
 
+    Messages ExchangeHistory::to_messages() const {
+        Messages messages;
+        for (const auto& e : *this) {
+            messages.emplace_back(e->getInput(), Messages::Role::USER);
+            if (e->hasResponse()) {
+                messages.emplace_back(e->getResponse(), Messages::Role::ASSISTANT);
+            }
+        }
+        return messages;
+    }
+
     nlohmann::json ExchangeHistory::to_json() const {
         nlohmann::json j = nlohmann::json::array();
         for (const auto& e : *this) {

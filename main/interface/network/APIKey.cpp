@@ -128,35 +128,36 @@ namespace api {
      */
     bool check_err_obj(const nlohmann::json& json_to_check, APIKeyStatus& status_in, const bool& print_err_msg) {
         status_in = APIKeyStatus::VALID;
-        if (json_to_check.count("error") > 0) {
-            auto error_obj = json_to_check["error"];
-            if (error_obj.is_object()) {
-                status_in = APIKeyStatus::API_REQUEST_FAILED;
-                if (error_obj.count("code") > 0 && error_obj["code"].is_string()) {
-                    std::string error_code = error_obj["code"].get<std::string>();
-                    if (error_code == "invalid_api_key") {
-                        status_in = APIKeyStatus::INVALID_KEY;
-                    } else if (!print_err_msg) {
-                        util::println_err("API returned error code. Code: " + error_code);
-                    }
-                } else if (error_obj.count("type") > 0 && error_obj["type"].is_string()) {
-                    std::string error_type = error_obj["type"].get<std::string>();
-                    if (error_type == "insufficient_quota") {
-                        status_in = APIKeyStatus::QUOTA_EXCEEDED;
-                    } else if (!print_err_msg) {
-                        util::println_err("API returned error type. Type: " + error_type);
-                    }
-                } else {
-                    util::println_err("API returned unknown error. Json: " + json_to_check.dump(2));
+        auto it_err = json_to_check.find("error");
+        if (it_err != json_to_check.end() && it_err->is_object()) {
+            status_in = APIKeyStatus::API_REQUEST_FAILED;
+            auto it_code = it_err->find("code");
+            nlohmann::json::const_iterator it_type;
+            if (it_code != it_err->end() && it_code->is_string()) {
+                std::string error_code = it_code->get<std::string>();
+                if (error_code == "invalid_api_key" || error_code == "account_deactivated") {
+                    status_in = APIKeyStatus::INVALID_KEY;
+                } else if (!print_err_msg) {
+                    util::println_err("API returned error code. Code: " + error_code);
                 }
-                if (print_err_msg) {
-                    if (error_obj.count("message") > 0 && error_obj["message"].is_string()) {
-                        util::println_err("\nAPI returned error: " + (status_in != APIKeyStatus::INVALID_KEY ?
-                        error_obj["message"].get<std::string>() : "The API key is invalid."));
-                    }
+            } else if ((it_type = it_err->find("type")) != it_err->end() && it_type->is_string()) {
+                std::string error_type = it_type->get<std::string>();
+                if (error_type == "insufficient_quota") {
+                    status_in = APIKeyStatus::QUOTA_EXCEEDED;
+                } else if (!print_err_msg) {
+                    util::println_err("API returned error type. Type: " + error_type);
                 }
-                return true;
+            } else {
+                util::println_err("API returned unknown error. Json: " + json_to_check.dump(2));
             }
+            if (print_err_msg) {
+                auto it_message = it_err->find("message");
+                if (it_message != it_err->end() && it_message->is_string()) {
+                    util::println_err("\nAPI returned error: " + (status_in != APIKeyStatus::INVALID_KEY ?
+                    it_message->get<std::string>() : "The API key is invalid."));
+                }
+            }
+            return true;
         }
         return false;
     }

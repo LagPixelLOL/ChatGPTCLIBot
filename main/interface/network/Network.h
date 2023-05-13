@@ -6,11 +6,12 @@
 #define GPT3BOT_NETWORK_H
 
 #include "../util/PromptUtils.h"
+#include "../data/Messages.h"
 #include "boost/algorithm/string/regex.hpp"
 
 namespace api {
 
-    void call_api(const std::string& constructed_initial, const std::shared_ptr<chat::ExchangeHistory>& chat_history,
+    void call_api(const std::string& constructed_initial, const chat::Messages& chat_history,
                   const std::string& api_key, const std::string& model, const float& temperature, const int& max_tokens,
                   const float& top_p, const float& frequency_penalty, const float& presence_penalty,
                   const std::vector<std::pair<std::string, float>>& logit_bias, const unsigned int& max_short_memory_length,
