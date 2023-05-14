@@ -104,6 +104,22 @@ namespace db {
         typename Memory::const_iterator end() const noexcept {
             return cend();
         }
+
+        typename Memory::iterator erase(typename Memory::iterator pos) {
+            return memory.erase(pos);
+        }
+
+        typename Memory::const_iterator erase(typename Memory::const_iterator pos) {
+            return memory.erase(pos);
+        }
+
+        typename Memory::iterator erase(typename Memory::iterator begin, typename Memory::iterator end) {
+            return memory.erase(begin, end);
+        }
+
+        typename Memory::const_iterator erase(typename Memory::const_iterator begin, typename Memory::const_iterator end) {
+            return memory.erase(begin, end);
+        }
     };
 } // db
 

@@ -34,8 +34,10 @@ namespace chat {
      * @throw std::exception When an error occurred.
      */
     void Completion::call_api() const {
-        api::call_api(constructed_initial, chat_history->to_messages(), api_key, model, temperature, max_tokens, top_p, frequency_penalty,
-                      presence_penalty, logit_bias, max_short_memory_length, me_id, bot_id, stream_callback, progress_callback);
+        ExchangeHistory tmp = *chat_history;
+        prompt::erase_except_back(tmp, max_short_memory_length);
+        api::call_api(constructed_initial, tmp.to_messages(), api_key, model, temperature, max_tokens, top_p, frequency_penalty,
+                      presence_penalty, logit_bias, me_id, bot_id, stream_callback, progress_callback);
     }
 
     const std::string& Completion::getApiKey() const {

@@ -27,16 +27,14 @@ namespace prompt {
     }
 
     template<typename T>
-    inline void delete_front_keep_back(T& s, const unsigned int& keep_back_count) {
+    void erase_except_back(T& s, const unsigned int& keep_back_count) {
         if (s.size() > keep_back_count) {
             s.erase(s.begin(), std::prev(s.end(), keep_back_count));
         }
     }
 
-    std::string to_string(std::string initial_prompt, chat::Messages messages, const std::string& me_id,
-                          const std::string& bot_id, const unsigned int& max_length, const bool& add_color,
-                          const bool& space_between_exchanges) {
-        delete_front_keep_back(messages, max_length);
+    std::string to_string(std::string initial_prompt, const chat::Messages& messages, const std::string& me_id,
+                          const std::string& bot_id, const bool& add_color, const bool& space_between_exchanges) {
         for (const auto& message : messages) {
             switch (message.second) {
                 case chat::Messages::Role::ASSISTANT:
@@ -56,7 +54,9 @@ namespace prompt {
     std::string to_string(const std::string& initial_prompt, const std::shared_ptr<chat::ExchangeHistory>& chat_history,
                           const std::string& me_id, const std::string& bot_id, const unsigned int& max_length,
                           const bool& add_color, const bool& space_between_exchanges) {
-        return to_string(initial_prompt, chat_history->to_messages(), me_id, bot_id, max_length, add_color, space_between_exchanges);
+        chat::ExchangeHistory tmp = *chat_history;
+        erase_except_back(tmp, max_length);
+        return to_string(initial_prompt, tmp.to_messages(), me_id, bot_id, add_color, space_between_exchanges);
     }
 
     inline void append_time(std::string& s) {
@@ -125,7 +125,7 @@ namespace prompt {
         std::sort(computed_exchanges.begin(), computed_exchanges.end(), [](const auto& a, const auto& b){
             return a.second < b.second;
         });
-        delete_front_keep_back(computed_exchanges, max_reference_length);
+        erase_except_back(computed_exchanges, max_reference_length);
         std::sort(computed_exchanges.begin(), computed_exchanges.end(), [](const auto& a, const auto& b){
             return a.first->getTimeMS() < b.first->getTimeMS();
         });
@@ -163,7 +163,7 @@ namespace prompt {
         std::sort(computed_documents.begin(), computed_documents.end(), [](const auto& a, const auto& b){
             return std::get<1>(a) < std::get<1>(b);
         });
-        delete_front_keep_back(computed_documents, max_reference_length);
+        erase_except_back(computed_documents, max_reference_length);
         std::sort(computed_documents.begin(), computed_documents.end(), [](const auto& a, const auto& b){
             return std::get<2>(a) < std::get<2>(b);
         });
@@ -189,13 +189,12 @@ namespace GPT {
                 "%2%: is the prefix of your response, texts start with it are your response\n") % me_id % bot_id).str();
     }
 
-    std::string to_payload(std::string initial_prompt, const chat::Messages& messages, const std::string& me_id, const std::string& bot_id,
-                           const unsigned int& max_length) {
+    std::string to_payload(std::string initial_prompt, const chat::Messages& messages, const std::string& me_id, const std::string& bot_id) {
         const std::string& pre_prompt = get_pre_prompt(me_id, bot_id);
         if (!boost::starts_with(initial_prompt, pre_prompt)) {
             initial_prompt.insert(0, pre_prompt);
         }
-        return prompt::to_string(initial_prompt, messages, me_id, bot_id, max_length) + "\n" + bot_id + ":";
+        return prompt::to_string(initial_prompt, messages, me_id, bot_id) + "\n" + bot_id + ":";
     }
 } // GPT
 
@@ -213,9 +212,8 @@ namespace ChatGPT {
      *     {"role": "user", "content": "<user current input>"}
      * ]
      */
-    nlohmann::json to_payload(std::string initial_prompt, chat::Messages messages, const std::string& model, const std::string& me_id,
-                              const std::string& bot_id, const unsigned int& max_length) {
-        prompt::delete_front_keep_back(messages, max_length);
+    nlohmann::json to_payload(std::string initial_prompt, const chat::Messages& messages, const std::string& model, const std::string& me_id,
+                              const std::string& bot_id) {
         boost::replace_all(initial_prompt, GPT::get_pre_prompt(me_id, bot_id), "");
         nlohmann::json payload = nlohmann::json::array();
         //For GPT-3.5, using "user" role is better for initial prompt, if OpenAI ever updates the model, I will change it to "system".

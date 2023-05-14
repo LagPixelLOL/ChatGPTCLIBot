@@ -37,9 +37,9 @@ namespace chat {
         void emplace_back(const std::string& message = "", const Role& role = Role::USER);
         void pop_front();
         void pop_back();
-        std::list<std::pair<std::string, Role>>::iterator erase(const std::list<std::pair<std::string, Role>>::iterator& iterator);
+        std::list<std::pair<std::string, Role>>::iterator erase(const std::list<std::pair<std::string, Role>>::iterator& pos);
         std::list<std::pair<std::string, Role>>::const_iterator erase(
-                const std::list<std::pair<std::string, Role>>::const_iterator& iterator);
+                const std::list<std::pair<std::string, Role>>::const_iterator& pos);
         std::list<std::pair<std::string, Role>>::iterator erase(const std::list<std::pair<std::string, Role>>::iterator& begin,
                                                                 const std::list<std::pair<std::string, Role>>::iterator& end);
         std::list<std::pair<std::string, Role>>::const_iterator erase(const std::list<std::pair<std::string, Role>>::const_iterator& begin,

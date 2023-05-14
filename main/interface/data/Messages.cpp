@@ -95,13 +95,13 @@ namespace chat {
     }
 
     std::list<std::pair<std::string, Messages::Role>>::iterator Messages::erase(
-            const std::list<std::pair<std::string, Messages::Role>>::iterator& iterator) {
-        return messages.erase(iterator);
+            const std::list<std::pair<std::string, Messages::Role>>::iterator& pos) {
+        return messages.erase(pos);
     }
 
     std::list<std::pair<std::string, Messages::Role>>::const_iterator Messages::erase(
-            const std::list<std::pair<std::string, Messages::Role>>::const_iterator& iterator) {
-        return messages.erase(iterator);
+            const std::list<std::pair<std::string, Messages::Role>>::const_iterator& pos) {
+        return messages.erase(pos);
     }
 
     std::list<std::pair<std::string, Messages::Role>>::iterator Messages::erase(

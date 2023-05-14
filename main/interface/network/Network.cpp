@@ -15,8 +15,7 @@ namespace api {
     void call_api(const std::string& constructed_initial, const chat::Messages& chat_history,
                   const std::string& api_key, const std::string& model, const float& temperature, const int& max_tokens,
                   const float& top_p, const float& frequency_penalty, const float& presence_penalty,
-                  const std::vector<std::pair<std::string, float>>& logit_bias, const unsigned int& max_short_memory_length,
-                  const std::string& me_id, const std::string& bot_id,
+                  const std::vector<std::pair<std::string, float>>& logit_bias, const std::string& me_id, const std::string& bot_id,
                   const std::function<void(const std::string& streamed_response)>& stream_callback,
                   const std::function<int(curl_off_t, curl_off_t, curl_off_t, curl_off_t)>& progress_callback) {
         bool is_new_api_ = is_new_api(model);
@@ -33,7 +32,7 @@ namespace api {
         unsigned int model_max_tokens = util::get_max_tokens(model);
         unsigned int token_count; //No need to initialize.
         if (!is_new_api_) {
-            std::string prompt = GPT::to_payload(constructed_initial, chat_history, me_id, bot_id, max_short_memory_length);
+            std::string prompt = GPT::to_payload(constructed_initial, chat_history, me_id, bot_id);
             if ((token_count = util::get_token_count(prompt, model)) >= model_max_tokens) {
                 throw util::max_tokens_exceeded(
                         "Max tokens exceeded in prompt: " + std::to_string(token_count) + " >= " + std::to_string(model_max_tokens));
@@ -42,7 +41,7 @@ namespace api {
             static const std::string suffix = ": ";
             payload["stop"] = {me_id + suffix, bot_id + suffix};
         } else {
-            nlohmann::json messages = ChatGPT::to_payload(constructed_initial, chat_history, model, me_id, bot_id, max_short_memory_length);
+            nlohmann::json messages = ChatGPT::to_payload(constructed_initial, chat_history, model, me_id, bot_id);
             if ((token_count = util::get_token_count(messages, model)) >= model_max_tokens) {
                 throw util::max_tokens_exceeded(
                         "Max tokens exceeded in messages: " + std::to_string(token_count) + " >= " + std::to_string(model_max_tokens));
