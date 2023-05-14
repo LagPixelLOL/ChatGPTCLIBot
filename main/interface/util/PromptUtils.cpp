@@ -26,13 +26,6 @@ namespace prompt {
         }
     }
 
-    template<typename T>
-    void erase_except_back(T& s, const unsigned int& keep_back_count) {
-        if (s.size() > keep_back_count) {
-            s.erase(s.begin(), std::prev(s.end(), keep_back_count));
-        }
-    }
-
     std::string to_string(std::string initial_prompt, const chat::Messages& messages, const std::string& me_id,
                           const std::string& bot_id, const bool& add_color, const bool& space_between_exchanges) {
         for (const auto& message : messages) {

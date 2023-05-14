@@ -16,8 +16,14 @@ namespace prompt {
     void print_prompt(const std::string& initial_prompt, const std::shared_ptr<chat::ExchangeHistory>& chat_history,
                       const std::string& me_id, const std::string& bot_id, const unsigned int& max_length,
                       const bool& is_new_api, const bool& space_between_exchanges);
+
     template<typename T>
-    void erase_except_back(T& s, const unsigned int& keep_back_count);
+    inline void erase_except_back(T& s, const unsigned int& keep_back_count) {
+        if (s.size() > keep_back_count) {
+            s.erase(s.begin(), std::prev(s.end(), keep_back_count));
+        }
+    }
+
     std::string to_string(std::string initial_prompt, const chat::Messages& messages, const std::string& me_id,
                           const std::string& bot_id, const bool& add_color = false, const bool& space_between_exchanges = false);
     std::string to_string(const std::string& initial_prompt, const std::shared_ptr<chat::ExchangeHistory>& chat_history,
