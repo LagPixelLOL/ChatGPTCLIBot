@@ -7,7 +7,8 @@ You can add custom initial prompts and save/load your chat history! \
 Download and double-click the `GPT3Bot.exe` or `run.bat` to run the program! \
 In Linux and macOS, you can run `./GPT3Bot` to run the program. \
 \
-Please check the Wiki for more info: [Click Me](https://github.com/LagPixelLOL/ChatGPTCLIBot/wiki)
+Click to download: [Stable Release](https://github.com/LagPixelLOL/ChatGPTCLIBot/releases) | [Development Build](https://github.com/LagPixelLOL/ChatGPTCLIBot/actions) \
+Please check the Wiki for more information: [Click Me](https://github.com/LagPixelLOL/ChatGPTCLIBot/wiki)
 
 # Features/Manual:
 1. **Long term memory support!** Keep hitting the 4096 tokens context limit? Worry no more with this CLI Bot. It has nearly INFINITE context memory(If you have infinite disk space lol), all thanks to Embeddings! If you want to see how this program handles embeddings internally, set `debug_reference` to `true` in `config.json`!

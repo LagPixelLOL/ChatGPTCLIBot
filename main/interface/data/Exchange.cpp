@@ -41,14 +41,30 @@ namespace chat {
             throw std::invalid_argument("Key time_stamp is not an integer.");
         }
         input_ = it_input->get<std::string>();
-        input_embeddings_ = it_input_embeddings->get<std::vector<float>>();
+        for (const auto& e : *it_input_embeddings) {
+            if (e.is_string()) {
+                input_embeddings_.push_back(base64::b64_str_to_float(e.get<std::string>()));
+            } else if (e.is_number()) {
+                input_embeddings_.push_back(e.get<float>());
+            } else {
+                throw std::invalid_argument("Key input_embeddings has an invalid element.");
+            }
+        }
         time_ms_ = it_time_stamp->get<long long>();
         auto it_response = j.find("response");
         if (it_response != j.end() && it_response->is_string()) {
             response_ = it_response->get<std::string>();
             auto it_response_embeddings = j.find("response_embeddings");
             if (it_response_embeddings != j.end() && it_response_embeddings->is_array()) {
-                response_embeddings_ = it_response_embeddings->get<std::vector<float>>();
+                for (const auto& e : *it_response_embeddings) {
+                    if (e.is_string()) {
+                        response_embeddings_.push_back(base64::b64_str_to_float(e.get<std::string>()));
+                    } else if (e.is_number()) {
+                        response_embeddings_.push_back(e.get<float>());
+                    } else {
+                        throw std::invalid_argument("Key response_embeddings has an invalid element.");
+                    }
+                }
             }
         }
     }
@@ -75,12 +91,12 @@ namespace chat {
     nlohmann::json Exchange::to_json() const {
         nlohmann::json j = nlohmann::json::object();
         j["input"] = getInput();
-        j["input_embeddings"] = getInputEmbeddings();
+        j["input_embeddings"] = base64::embeddings_to_b64_json_array(getInputEmbeddings());
         j["time_stamp"] = getTimeMS();
         if (hasResponse()) {
             j["response"] = getResponse();
             if (hasResponseEmbeddings()) {
-                j["response_embeddings"] = getResponseEmbeddings();
+                j["response_embeddings"] = base64::embeddings_to_b64_json_array(getResponseEmbeddings());
             }
         }
         return j;

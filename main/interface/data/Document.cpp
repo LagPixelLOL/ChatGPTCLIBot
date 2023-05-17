@@ -29,10 +29,13 @@ namespace doc {
         }
         text_ = it_text->get<std::string>();
         for (const nlohmann::json& e : *it_embeddings) {
-            if (!e.is_number()) {
-                throw std::invalid_argument("Elements of 'embeddings' field must be numbers.");
+            if (e.is_string()) {
+                embeddings_.push_back(base64::b64_str_to_float(e.get<std::string>()));
+            } else if (e.is_number()) {
+                embeddings_.push_back(e.get<float>());
+            } else {
+                throw std::invalid_argument("Argument must contain 'embeddings' field of type string or number.");
             }
-            embeddings_.emplace_back(e.get<float>());
         }
     }
 
@@ -45,7 +48,7 @@ namespace doc {
     nlohmann::json Document::to_json() const {
         nlohmann::json j = nlohmann::json::object();
         j["text"] = text_;
-        j["embeddings"] = embeddings_;
+        j["embeddings"] = base64::embeddings_to_b64_json_array(embeddings_);
         return j;
     }
 

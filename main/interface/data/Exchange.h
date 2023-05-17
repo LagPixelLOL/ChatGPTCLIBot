@@ -6,6 +6,7 @@
 #define GPT3BOT_EXCHANGE_H
 
 #include "../model/Embedding.h"
+#include "../util/Base64.h"
 #include "utility"
 
 namespace chat {

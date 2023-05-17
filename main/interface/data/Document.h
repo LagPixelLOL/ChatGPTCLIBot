@@ -9,6 +9,7 @@
 #include "../cpp-tiktoken/pcre2_regex.h"
 #include "../util/TokenUtils.h"
 #include "../util/FileUtils.h"
+#include "../util/Base64.h"
 
 namespace doc {
 
