@@ -6,6 +6,7 @@
 #define GPT3BOT_REQUEST_H
 
 #include "RequestObject.h"
+#include "unordered_map"
 
 namespace curl {
 
