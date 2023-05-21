@@ -19,7 +19,25 @@ int main() {
 #else
         //Test
         std::cout << "Running test..." << std::endl;
-        doc::test_split_text();
+        //doc::test_split_text();
+
+        std::vector<std::shared_ptr<curl::RequestObject>> requests;
+        for (uint32_t i = 0; i < 100; i++) {
+            auto request = std::make_shared<curl::RequestObject>(curl::RequestObject::construct_http_get( //Potential exception throw.
+                    "https://httpbin.org/ip", [i](const std::vector<char>& vec, CURL*){
+                std::cout << "#" << i << ": " << std::string(vec.begin(), vec.end()) << std::endl;
+            }, {}, 5));
+            requests.push_back(request);
+        }
+        curl::multi_perform(requests); //Potential exception throw.
+        for (const auto& request : requests) {
+            try {
+                request->get_exception(); //Potential exception throw.
+            } catch (const std::exception& e) {
+                std::cout << "Exception: " << e.what() << std::endl;
+            }
+        }
+
         std::cout << "Test finished." << std::endl;
 #endif
     } catch (const std::exception& e) {

@@ -5,22 +5,9 @@
 #ifndef GPT3BOT_REQUEST_H
 #define GPT3BOT_REQUEST_H
 
-#include "../util/CURLUtils.h"
-#include "../util/SystemUtils.h"
-#include "stdexcept"
-#include "functional"
-#include "optional"
-#include "vector"
+#include "RequestObject.h"
 
 namespace curl {
-
-    class request_failed : public std::runtime_error {
-    public:
-        request_failed() noexcept;
-        explicit request_failed(const std::string& message) noexcept;
-        explicit request_failed(const char* message) noexcept;
-        ~request_failed() override;
-    };
 
     void http_get(const std::string& url, const std::function<void(const std::vector<char>&, CURL*)>& callback
                   = [](const auto&, const auto*){}, const std::vector<std::string>& headers = {}, const int& timeout_s = 10,
@@ -41,6 +28,7 @@ namespace curl {
                        const std::vector<std::string>& headers, const int& timeout_s,
                        const std::function<int(curl_off_t, curl_off_t, curl_off_t, curl_off_t)>& progress_callback
                        = [](auto, auto, auto, auto){return 0;});
+    void multi_perform(const std::vector<std::shared_ptr<RequestObject>>& requests);
 } // curl
 
 #endif //GPT3BOT_REQUEST_H

@@ -40,8 +40,19 @@ namespace util {
 
     void set_curl_proxy(CURL* curl, const std::string& proxy) {
         if (!proxy.empty()) {
+            std::string proxy_lower = proxy;
+            std::transform(proxy_lower.begin(), proxy_lower.end(), proxy_lower.begin(), tolower);
             curl_easy_setopt(curl, CURLOPT_PROXY, proxy.c_str());
-            curl_easy_setopt(curl, CURLOPT_PROXYTYPE, CURLPROXY_HTTP);
+            int proxy_type = CURLPROXY_HTTP;
+            if (boost::starts_with(proxy_lower, "socks")) {
+                proxy_type = CURLPROXY_SOCKS5;
+                if (proxy_lower.size() >= 6 && proxy_lower[5] == '4') {
+                    proxy_type = CURLPROXY_SOCKS4;
+                }
+            } else if (boost::starts_with(proxy_lower, "https")) {
+                proxy_type = CURLPROXY_HTTPS;
+            }
+            curl_easy_setopt(curl, CURLOPT_PROXYTYPE, proxy_type);
         }
     }
 
