@@ -7,6 +7,7 @@
 
 #include "GPTMain.h"
 #include "interface/model/FineTune.h"
+#include "thread"
 
 namespace fth {
 
