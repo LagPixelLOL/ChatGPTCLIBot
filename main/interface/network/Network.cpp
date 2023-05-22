@@ -6,9 +6,6 @@
 
 namespace api {
 
-    void handle_streamed_response(const std::vector<char>& raw_vec, const bool& is_new_api,
-                                  const std::function<void(const std::string& streamed_response)>& stream_callback);
-
     /**
      * Call the OpenAI API with a custom lambda function as callback.
      */

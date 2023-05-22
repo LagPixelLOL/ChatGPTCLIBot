@@ -140,7 +140,7 @@ namespace doc {
      * @param tokens_per_chunk The maximum number of tokens per chunk, tokenizer is CL100K_BASE.
      * @return A list of split text chunks.
      */
-    std::vector<std::string> split_text(const std::string& text, const unsigned int& tokens_per_chunk) {
+    std::vector<std::string> split_text(const std::string& text, const unsigned int& tokens_per_chunk, const bool& remove_new_lines) {
         if (text.empty() || text.find_first_not_of(' ') == std::string::npos || tokens_per_chunk <= 0) {
             return {};
         }
@@ -188,13 +188,18 @@ namespace doc {
                 tokens.erase(tokens.begin(), tokens.begin() + static_cast<long long>(chunk.size()));
                 continue;
             }
-            process_append_str(text_to_append); //Remove leading and trailing whitespace and replace multiple newlines with a single space.
+            if (remove_new_lines) {
+                //Remove leading and trailing whitespace and replace multiple newlines with a single space.
+                process_append_str(text_to_append);
+            }
             chunks.emplace_back(text_to_append);
             tokens.erase(tokens.begin(), tokens.begin() + static_cast<long long>(chunk.size()));
         }
         if (!tokens.empty()) {
             std::string remaining_text = tokenizer->decode(tokens);
-            process_append_str(remaining_text);
+            if (remove_new_lines) {
+                process_append_str(remaining_text);
+            }
             chunks.emplace_back(remaining_text);
         }
         return chunks;

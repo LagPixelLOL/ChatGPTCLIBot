@@ -62,11 +62,12 @@ namespace GPT {
         }
         p_check_set_api_key();
         while (true) {
-            util::print_cs("Please choose whether you want to load the initial prompt, load the saved chat history,\n"
-                           "load the saved document Q&A, or create a new document Q&A.\n"
-                           "(Input " + GOLDEN_TEXT("i") + " for initial, " + GOLDEN_TEXT("s") + " for saved,\n "
-                           + GOLDEN_TEXT("d") + " for load doc Q&A, " + GOLDEN_TEXT("c") + " for create new doc Q&A,\n "
-                           + GOLDEN_TEXT("f") + " for fine tune helper, or press " + ENTER + " directly to use initial): ");
+            util::print_cs("Please choose whether you want to load the initial prompt,\nload the saved chat history, "
+                           "load the saved document Q&A,\ncreate a new document Q&A, enter fine tune helper,\nor translate texts.\n"
+                           "(Input " + GOLDEN_TEXT("i") + " for initial, " + GOLDEN_TEXT("s") + " for saved, "
+                           + GOLDEN_TEXT("d") + " for load doc Q&A,\n " + GOLDEN_TEXT("c") + " for create new doc Q&A, "
+                           + GOLDEN_TEXT("f") + " for fine tune helper, " + GOLDEN_TEXT("t") + " for translator,\n "
+                           + "or press " + ENTER + " directly to use initial): ");
             std::string chose_mode;
             getline(std::cin, chose_mode);
             std::transform(chose_mode.begin(), chose_mode.end(), chose_mode.begin(), tolower);
@@ -118,6 +119,9 @@ namespace GPT {
                 break;
             } else if (chose_mode == "f") {
                 fth::fine_tune_helper_main();
+                return;
+            } else if (chose_mode == "t") {
+                translator::translator_main(config);
                 return;
             } else {
                 util::println_warn("Invalid input, please try again.");
@@ -206,7 +210,8 @@ namespace GPT {
                 completion.setStreamCallback([&response](const auto& streamed_response){
                     try {
                         nlohmann::json j = nlohmann::json::parse(streamed_response);
-                        if (j.count("error") > 0 && j["error"].is_object()) {
+                        auto it_error = j.find("error");
+                        if (it_error != j.end() && it_error->is_object()) {
                             response = j.dump();
                             return;
                         }

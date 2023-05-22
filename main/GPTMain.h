@@ -9,6 +9,7 @@
 #include "Config.h"
 #include "Command.h"
 #include "FineTuneHelper.h"
+#include "Translator.h"
 #include "csignal"
 
 #define PATH_S(path) Term::color_fg(125, 225, 255) + "\"" + (path).string() + "\""

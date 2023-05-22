@@ -27,7 +27,8 @@ Please check the Wiki for more information: [Click Me](https://github.com/LagPix
 14. Ctrl+V pasting support, you can paste text from your clipboard by pressing Ctrl+V.
 15. Full UTF-8 support, you can type in any language you want!
 16. Full of colors(If your terminal supports it)!
-17. Fine tune helper, you can fine tune base models with this program(Only for professional users).
+17. Fine tune helper, you can fine tune base models more easily(Only for professional users).
+18. Auto translator, you can translate text files automatically.
 
 Written in C++ (Libraries used:
 [Boost](https://www.boost.org/),

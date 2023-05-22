@@ -60,14 +60,14 @@ namespace curl {
     }
 
     RequestObject::~RequestObject() {
-        if (curl) {
-            curl_easy_cleanup(curl);
+        if (mime) {
+            curl_mime_free(mime);
         }
         if (headers_c) {
             curl_slist_free_all(headers_c);
         }
-        if (mime) {
-            curl_mime_free(mime);
+        if (curl) {
+            curl_easy_cleanup(curl);
         }
     }
 

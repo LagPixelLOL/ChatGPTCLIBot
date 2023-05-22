@@ -19,6 +19,8 @@ namespace api {
                   const std::function<int(curl_off_t, curl_off_t, curl_off_t, curl_off_t)>& progress_callback
                   = [](auto, auto, auto, auto){return 0;});
     bool is_new_api(const std::string& model_name);
+    void handle_streamed_response(const std::vector<char>& raw_vec, const bool& is_new_api,
+                                  const std::function<void(const std::string& streamed_response)>& stream_callback);
 } // api
 
 #endif //GPT3BOT_NETWORK_H

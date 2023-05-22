@@ -17,6 +17,7 @@ namespace api {
         INVALID_PREFIX,
         INVALID_LENGTH,
         QUOTA_EXCEEDED,
+        RATE_LIMIT_REACHED,
         INVALID_KEY,
         API_REQUEST_FAILED
     };

@@ -144,6 +144,8 @@ namespace api {
                 std::string error_type = it_type->get<std::string>();
                 if (error_type == "insufficient_quota") {
                     status_in = APIKeyStatus::QUOTA_EXCEEDED;
+                } else if (error_type == "tokens" || error_type == "requests") {
+                    status_in = APIKeyStatus::RATE_LIMIT_REACHED;
                 } else if (!print_err_msg) {
                     util::println_err("API returned error type. Type: " + error_type);
                 }

@@ -319,10 +319,9 @@ namespace fth {
     }
 
     inline void merge() {
-        static std::vector<std::string> input_history;
-        std::cout << "Please enter the filenames you want to merge.\n"
-                     "(Note: Separate each filename with newline): ";
+        std::cout << "Please enter the filenames you want to merge(Note: Separate each filename with newline)." << std::endl;
         std::vector<std::string> filenames;
+        static std::vector<std::string> input_history;
         boost::split(filenames, util::get_multiline(input_history), boost::is_any_of("\n"));
         nlohmann::json merged = nlohmann::json::array();
         for (auto& filename : filenames) {
