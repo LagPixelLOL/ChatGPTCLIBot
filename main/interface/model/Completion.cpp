@@ -17,7 +17,7 @@ namespace chat {
         if (!chat_history->empty()) {
             if (documents) {
                 constructed_initial = prompt::construct_reference(initial_prompt, chat_history->back()->getInputEmbeddings(),
-                                                                  *documents, max_reference_length);
+                                                                  documents, max_reference_length);
             } else {
                 constructed_initial = prompt::construct_reference(initial_prompt, chat_history->back()->getInputEmbeddings(),
                                                                   chat_history, search_response, max_reference_length,
@@ -34,10 +34,9 @@ namespace chat {
      * @throw std::exception When an error occurred.
      */
     void Completion::call_api() const {
-        ExchangeHistory tmp = *chat_history;
-        prompt::erase_except_back(tmp, max_short_memory_length);
-        api::call_api(constructed_initial, tmp.to_messages(), api_key, model, temperature, max_tokens, top_p, frequency_penalty,
-                      presence_penalty, logit_bias, me_id, bot_id, stream_callback, progress_callback);
+        api::call_api(constructed_initial, prompt::construct_from_back(*chat_history, max_short_memory_length).to_messages(), api_key,
+                      model, temperature, max_tokens, top_p, frequency_penalty, presence_penalty, logit_bias, me_id, bot_id,
+                      stream_callback, progress_callback);
     }
 
     const std::string& Completion::getApiKey() const {
@@ -141,11 +140,11 @@ namespace chat {
         max_reference_length = maxReferenceLength;
     }
 
-    const std::optional<std::vector<doc::Document>>& Completion::getDocuments() const {
+    const std::shared_ptr<std::vector<std::shared_ptr<doc::Document>>>& Completion::getDocuments() const {
         return documents;
     }
 
-    void Completion::setDocuments(const std::optional<std::vector<doc::Document>>& documents_) {
+    void Completion::setDocuments(const std::shared_ptr<std::vector<std::shared_ptr<doc::Document>>>& documents_) {
         documents = documents_;
     }
 

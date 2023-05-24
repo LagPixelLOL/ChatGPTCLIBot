@@ -10,13 +10,13 @@
 
 namespace chat {
 
-    class ExchangeHistory : public db::MemoryAdaptor<chat::Exchange> {
-        using Memory = std::list<std::shared_ptr<chat::Exchange>>;
+    class ExchangeHistory : public db::MemoryAdaptor<Exchange> {
 
     public:
         ExchangeHistory();
         explicit ExchangeHistory(const Memory& memory);
         explicit ExchangeHistory(const nlohmann::json& j);
+        template<typename IteratorType> ExchangeHistory(IteratorType first_i, IteratorType last_e) : MemoryAdaptor(first_i, last_e) {}
         ~ExchangeHistory() override;
 
         ExchangeHistory& operator=(const MemoryAdaptor& other) override;

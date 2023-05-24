@@ -29,9 +29,9 @@ namespace doc {
         [[maybe_unused]] void setContent(const std::string& text, const std::vector<float>& embeddings);
     };
 
-    std::vector<Document> from_raw(const std::vector<std::string>& texts, const std::vector<std::vector<float>>& embeddings);
-    std::vector<Document> from_json(const nlohmann::json& j);
-    nlohmann::json to_json(const std::vector<Document>& documents);
+    std::vector<std::shared_ptr<Document>> from_raw(const std::vector<std::string>& texts, const std::vector<std::vector<float>>& embeddings);
+    std::vector<std::shared_ptr<Document>> from_json(const nlohmann::json& j);
+    nlohmann::json to_json(const std::vector<std::shared_ptr<Document>>& documents);
     std::vector<std::string> split_text(const std::string& text, const unsigned int& tokens_per_chunk, const bool& remove_new_lines = true);
     [[maybe_unused]] void test_split_text();
 } // doc

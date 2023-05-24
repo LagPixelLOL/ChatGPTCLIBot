@@ -14,6 +14,7 @@
 
 #define USER_COLOR Term::color_fg(175, 200, 255)
 #define BOT_COLOR Term::color_fg(175, 255, 225)
+#define SIMILARITY_THRESHOLD 0.8 //Similarity >= 0.8 is considered as a match.
 
 namespace prompt {
 
@@ -47,9 +48,8 @@ namespace prompt {
     std::string to_string(const std::string& initial_prompt, const std::shared_ptr<chat::ExchangeHistory>& chat_history,
                           const std::string& me_id, const std::string& bot_id, const unsigned int& max_length,
                           const bool& add_color, const bool& space_between_exchanges) {
-        chat::ExchangeHistory tmp = *chat_history;
-        erase_except_back(tmp, max_length);
-        return to_string(initial_prompt, tmp.to_messages(), me_id, bot_id, add_color, space_between_exchanges);
+        return to_string(initial_prompt, construct_from_back(*chat_history, max_length).to_messages(), me_id, bot_id, add_color,
+                         space_between_exchanges);
     }
 
     inline void append_time(std::string& s) {
@@ -70,7 +70,7 @@ namespace prompt {
                         similarity = response_similarity;
                     }
                 }
-                if (similarity >= 0.8) { //Similarity >= 0.8 is considered as a match.
+                if (similarity >= SIMILARITY_THRESHOLD) {
                     computed_exchanges.emplace_back(exchange, similarity);
                 }
             }
@@ -78,14 +78,14 @@ namespace prompt {
         return {computed_exchanges.begin(), computed_exchanges.end()};
     }
 
-    inline std::vector<std::tuple<doc::Document, double, size_t>> async_find_similar(const std::vector<float>& input_embeddings,
-                                                                                     const std::vector<doc::Document>& documents) {
-        tbb::concurrent_vector<std::tuple<doc::Document, double, size_t>> computed_documents;
+    inline std::vector<std::tuple<std::shared_ptr<doc::Document>, double, size_t>> async_find_similar(
+            const std::vector<float>& input_embeddings, const std::vector<std::shared_ptr<doc::Document>>& documents) {
+        tbb::concurrent_vector<std::tuple<std::shared_ptr<doc::Document>, double, size_t>> computed_documents;
         tbb::parallel_for(tbb::blocked_range<size_t>(0, documents.size()), [&](const tbb::blocked_range<size_t>& r){
             for (size_t i = r.begin(); i != r.end(); i++) {
-                const doc::Document& document = documents[i];
-                double similarity = emb::cosine_similarity(document.getEmbeddings(), input_embeddings);
-                if (similarity >= 0.8) {
+                const std::shared_ptr<doc::Document>& document = documents[i];
+                double similarity = emb::cosine_similarity(document->getEmbeddings(), input_embeddings);
+                if (similarity >= SIMILARITY_THRESHOLD) {
                     computed_documents.emplace_back(document, similarity, i);
                 }
             }
@@ -111,6 +111,7 @@ namespace prompt {
         } else {
             chat_history_vec.clear();
         }
+        //vector<pair<exchange, similarity>>
         auto computed_exchanges = async_find_similar(input_embeddings, chat_history_vec, search_response);
         if (computed_exchanges.empty()) {
             return initial_prompt;
@@ -143,13 +144,14 @@ namespace prompt {
      * @return The constructed initial prompt.
      */
     std::string construct_reference(std::string initial_prompt, const std::vector<float>& input_embeddings,
-                                    const std::vector<doc::Document>& documents, const unsigned int& max_reference_length) {
+                                    const std::shared_ptr<std::vector<std::shared_ptr<doc::Document>>>& documents,
+                                    const unsigned int& max_reference_length) {
         append_time(initial_prompt);
         if (max_reference_length == 0) {
             return initial_prompt;
         }
-        //tuple<document, similarity, index>
-        auto computed_documents = async_find_similar(input_embeddings, documents);
+        //vector<tuple<document, similarity, index>>
+        auto computed_documents = async_find_similar(input_embeddings, *documents);
         if (computed_documents.empty()) {
             return initial_prompt;
         }
@@ -164,7 +166,7 @@ namespace prompt {
         std::string ref;
         size_t index = 0;
         for (const auto& reference : computed_documents) {
-            ref.append("\n\nDocument snippet " + std::to_string(++index) + ": \"" + std::get<0>(reference).getText() + "\"");
+            ref.append("\n\nDocument snippet " + std::to_string(++index) + ": \"" + std::get<0>(reference)->getText() + "\"");
         }
         if (boost::starts_with(ref, "\n\n")) {
             ref.erase(0, 2);

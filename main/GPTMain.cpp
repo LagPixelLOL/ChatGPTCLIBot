@@ -151,7 +151,8 @@ namespace GPT {
                 continue;
             }
             cmd::ReturnOpCode rc = cmd::handle_command(input, config.initial_prompt, config.chat_history, me_id, bot_id,
-                                                       config.max_display_length, config.space_between_exchanges, config.documentQA_mode);
+                                                       config.max_display_length, config.space_between_exchanges,
+                                                       config.documents.operator bool());
             if (rc == cmd::ReturnOpCode::CONTINUE) {
                 continue;
             } else if (rc == cmd::ReturnOpCode::STOP) {
@@ -162,11 +163,11 @@ namespace GPT {
             api::APIKeyStatus key_status = api::APIKeyStatus::VALID;
             std::vector<std::vector<float>> emb_response;
             std::vector<std::string> texts{input};
-            bool need_to_get_response_embeddings = false;
-            if (config.search_response && !config.documentQA_mode && !config.chat_history->empty()) {
+            bool get_response_embeddings = false;
+            if (config.search_response && !config.documents && !config.chat_history->empty()) {
                 const chat::Exchange& last_exchange = *config.chat_history->back();
                 if (!last_exchange.hasResponseEmbeddings() && last_exchange.hasResponse()) {
-                    need_to_get_response_embeddings = true;
+                    get_response_embeddings = true;
                     texts.emplace_back(last_exchange.getResponse());
                 }
             }
@@ -184,7 +185,7 @@ namespace GPT {
                 print_enter_next_cycle();
                 continue;
             }
-            if (need_to_get_response_embeddings) {
+            if (get_response_embeddings) {
                 config.chat_history->back()->setResponseEmbeddings(emb_response[1]);
             }
             /* No need to do prompts.pop_back() before this line. */

@@ -25,7 +25,7 @@ namespace config {
         completion.setLogitBias(logit_bias);
         completion.setMaxShortMemoryLength(max_short_memory_length);
         completion.setMaxReferenceLength(max_reference_length);
-        if (documentQA_mode) {
+        if (documents) {
             completion.setDocuments(documents);
         }
         completion.setSearchResponse(search_response);
@@ -265,9 +265,8 @@ namespace config {
         if (it_initial == j.end() || !it_initial->is_string()) {
             throw std::invalid_argument("Argument initial is not a string.");
         }
-        documents = doc::from_json(*it_documents);
+        documents = std::make_shared<std::vector<std::shared_ptr<doc::Document>>>(doc::from_json(*it_documents));
         initial_prompt = it_initial->get<std::string>();
-        documentQA_mode = true;
         log_callback({Log::Level::INFO, "Document Q&A loaded."});
     }
 

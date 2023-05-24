@@ -23,7 +23,7 @@ namespace chat {
         std::vector<std::pair<std::string, float>> logit_bias;
         unsigned int max_short_memory_length = 4;
         unsigned int max_reference_length = 4;
-        std::optional<std::vector<doc::Document>> documents = std::nullopt;
+        std::shared_ptr<std::vector<std::shared_ptr<doc::Document>>> documents;
         bool search_response = true;
         std::string me_id = "Me";
         std::string bot_id = "You";
@@ -62,8 +62,8 @@ namespace chat {
         void setMaxShortMemoryLength(unsigned int maxShortMemoryLength);
         [[nodiscard]] unsigned int getMaxReferenceLength() const;
         void setMaxReferenceLength(unsigned int maxReferenceLength);
-        [[nodiscard]] const std::optional<std::vector<doc::Document>>& getDocuments() const;
-        void setDocuments(const std::optional<std::vector<doc::Document>>& documents_);
+        [[nodiscard]] const std::shared_ptr<std::vector<std::shared_ptr<doc::Document>>>& getDocuments() const;
+        void setDocuments(const std::shared_ptr<std::vector<std::shared_ptr<doc::Document>>>& documents_);
         [[nodiscard]] bool shouldSearchResponse() const;
         void setSearchResponse(bool searchResponse);
         [[nodiscard]] const std::string& getMeID() const;

@@ -13,12 +13,17 @@ namespace db {
 
     template<typename MemoryType>
     class MemoryAdaptor {
+    public:
         using Memory = std::list<std::shared_ptr<MemoryType>>;
+        using iterator = typename Memory::iterator;
+        using const_iterator = typename Memory::const_iterator;
+    private:
         Memory memory;
 
     public:
         MemoryAdaptor() = default;
         explicit MemoryAdaptor(const Memory& memory) : memory(memory) {}
+        template<typename IteratorType> MemoryAdaptor(IteratorType first_i, IteratorType last_e) : memory(first_i, last_e) {}
         virtual ~MemoryAdaptor() = default;
 
         virtual MemoryAdaptor& operator=(const MemoryAdaptor& other) { //NOLINT(misc-unconventional-assign-operator)
@@ -81,43 +86,43 @@ namespace db {
             return memory.empty();
         }
 
-        typename Memory::iterator begin() noexcept {
+        iterator begin() noexcept {
             return memory.begin();
         }
 
-        typename Memory::iterator end() noexcept {
+        iterator end() noexcept {
             return memory.end();
         }
 
-        typename Memory::const_iterator cbegin() const noexcept {
+        const_iterator cbegin() const noexcept {
             return memory.cbegin();
         }
 
-        typename Memory::const_iterator cend() const noexcept {
+        const_iterator cend() const noexcept {
             return memory.cend();
         }
 
-        typename Memory::const_iterator begin() const noexcept {
+        const_iterator begin() const noexcept {
             return cbegin();
         }
 
-        typename Memory::const_iterator end() const noexcept {
+        const_iterator end() const noexcept {
             return cend();
         }
 
-        typename Memory::iterator erase(typename Memory::iterator pos) {
+        iterator erase(typename Memory::iterator pos) {
             return memory.erase(pos);
         }
 
-        typename Memory::const_iterator erase(typename Memory::const_iterator pos) {
+        const_iterator erase(typename Memory::const_iterator pos) {
             return memory.erase(pos);
         }
 
-        typename Memory::iterator erase(typename Memory::iterator begin, typename Memory::iterator end) {
+        iterator erase(typename Memory::iterator begin, typename Memory::iterator end) {
             return memory.erase(begin, end);
         }
 
-        typename Memory::const_iterator erase(typename Memory::const_iterator begin, typename Memory::const_iterator end) {
+        const_iterator erase(typename Memory::const_iterator begin, typename Memory::const_iterator end) {
             return memory.erase(begin, end);
         }
     };

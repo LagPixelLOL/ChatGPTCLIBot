@@ -72,14 +72,15 @@ namespace doc {
      * @throw std::invalid_argument If the two lists have different sizes.
      * @return A list of Document objects.
      */
-    std::vector<Document> from_raw(const std::vector<std::string>& texts, const std::vector<std::vector<float>>& embeddings) {
+    std::vector<std::shared_ptr<Document>> from_raw(const std::vector<std::string>& texts,
+                                                    const std::vector<std::vector<float>>& embeddings) {
         if (texts.size() != embeddings.size()) {
             throw std::invalid_argument("Texts and embeddings must have the same size.");
         }
-        std::vector<Document> result;
+        std::vector<std::shared_ptr<Document>> result;
         result.reserve(texts.size());
-        for (int i = 0; i < texts.size(); ++i) {
-            result.emplace_back(texts[i], embeddings[i]);
+        for (size_t i = 0; i < texts.size(); i++) {
+            result.push_back(std::make_shared<Document>(texts[i], embeddings[i]));
         }
         return result;
     }
@@ -90,14 +91,14 @@ namespace doc {
      * @throw std::invalid_argument If the json array is not valid.
      * @return A list of Document objects.
      */
-    std::vector<Document> from_json(const nlohmann::json& j) {
+    std::vector<std::shared_ptr<Document>> from_json(const nlohmann::json& j) {
         if (!j.is_array()) {
             throw std::invalid_argument("Argument j must be a json array.");
         }
-        std::vector<Document> result;
+        std::vector<std::shared_ptr<Document>> result;
         result.reserve(j.size());
         for (const nlohmann::json& e : j) {
-            result.emplace_back(e);
+            result.push_back(std::make_shared<Document>(e));
         }
         return result;
     }
@@ -107,10 +108,10 @@ namespace doc {
      * @param documents A list of Document objects.
      * @return A json array containing json objects of type Document.
      */
-    nlohmann::json to_json(const std::vector<Document>& documents) {
+    nlohmann::json to_json(const std::vector<std::shared_ptr<Document>>& documents) {
         nlohmann::json j = nlohmann::json::array();
-        for (const Document& e : documents) {
-            j.push_back(e.to_json());
+        for (const auto& e : documents) {
+            j.push_back(e->to_json());
         }
         return j;
     }

@@ -35,8 +35,7 @@ namespace config {
         unsigned int max_display_length = 100;
         unsigned int max_short_memory_length = 4;
         unsigned int max_reference_length = 4;
-        std::vector<doc::Document> documents;
-        bool documentQA_mode = false;
+        std::shared_ptr<std::vector<std::shared_ptr<doc::Document>>> documents;
         bool search_response = true;
         bool space_between_exchanges = false;
         bool debug_reference = false;
