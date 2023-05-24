@@ -43,7 +43,7 @@ namespace ChatGPT {
 
 namespace prompt {
     template<typename ListType, typename ReturnType = ListType>
-    using check_bidir_it = std::enable_if<std::is_same<typename std::iterator_traits<typename ListType::iterator>::iterator_category,
+    using check_bidir_it = typename std::enable_if<std::is_same<typename std::iterator_traits<typename ListType::iterator>::iterator_category,
     std::bidirectional_iterator_tag>::value, ReturnType>::type;
     template<typename ListType, typename ReturnType = ListType>
     using check_ra_it = typename std::enable_if<std::is_same<typename std::iterator_traits<typename ListType::iterator>::iterator_category,
