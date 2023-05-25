@@ -4,6 +4,10 @@
 
 #include "Translator.h"
 
+#ifdef max
+#undef max
+#endif
+
 namespace translator {
     const std::string translator_initial_prompt = "After this message you will translate every user messages to %1%\n"
                                                   "You need to keep the original markdown and format\n%2%"
@@ -39,27 +43,6 @@ namespace translator {
                 std::pair<size_t, std::string> text_to_translate = *chunk_pool.begin();
                 chunk_pool.erase(chunk_pool.begin());
                 chat::Messages message({{text_to_translate.second, chat::Messages::Role::USER}});
-                nlohmann::json payload = {{"model", config.get_model()}, {"temperature", 0}, {"stream", true}};
-                unsigned int model_max_tokens = util::get_max_tokens(config.get_model());
-                unsigned int token_count; //No need to initialize.
-                if (!is_new_api_) {
-                    std::string prompt = GPT::to_payload(initial_prompt, message, GPT::me_id, GPT::bot_id);
-                    if ((token_count = util::get_token_count(prompt, config.get_model())) >= model_max_tokens) {
-                        throw util::max_tokens_exceeded("Max tokens exceeded in prompt: " + std::to_string(token_count)
-                        + " >= " + std::to_string(model_max_tokens));
-                    }
-                    payload["prompt"] = prompt;
-                    static const std::string suffix = ": ";
-                    payload["stop"] = {GPT::me_id + suffix, GPT::bot_id + suffix};
-                } else {
-                    nlohmann::json messages = ChatGPT::to_payload(initial_prompt, message, config.get_model(), GPT::me_id, GPT::bot_id);
-                    if ((token_count = util::get_token_count(messages, config.get_model())) >= model_max_tokens) {
-                        throw util::max_tokens_exceeded("Max tokens exceeded in messages: " + std::to_string(token_count)
-                        + " >= " + std::to_string(model_max_tokens));
-                    }
-                    payload["messages"] = messages;
-                }
-                payload["max_tokens"] = model_max_tokens - token_count;
                 responses.emplace_back(text_to_translate.first, "");
                 original_chunks.emplace_back(text_to_translate.second);
                 requests.push_back(std::make_shared<curl::RequestObject>(curl::RequestObject::construct_http_post(
@@ -76,7 +59,8 @@ namespace translator {
                         } catch (const nlohmann::json::parse_error& e) {}
                         response.append(streamed_response);
                     });
-                }, payload.dump(), headers, 20)));
+                }, api::to_payload(initial_prompt, message, config.get_model(), is_new_api_, 0, std::numeric_limits<int>::max(),
+                                   1, 0, 0, {}, GPT::me_id, GPT::bot_id).dump(), headers, 20)));
             }
             if (rate_limit_reached) {
                 util::println_info("Rate limit reached, waiting for 60 seconds...");
