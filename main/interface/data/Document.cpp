@@ -129,8 +129,8 @@ namespace doc {
     }
 
     inline void process_append_str(std::string& s) {
-        static const PCRERegex regex("\n+");
-        regex.replace_all(s, " "); //Match one or more newlines and replace them with a single space.
+        static const PCRERegex regex("\\n+");
+        regex.replace_all(s, " "); //Match one or more new lines and replace them with a single space.
         s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch){return !std::isspace(ch);}));
         s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch){return !std::isspace(ch);}).base(), s.end());
     }
@@ -190,7 +190,7 @@ namespace doc {
                 continue;
             }
             if (remove_new_lines) {
-                //Remove leading and trailing whitespace and replace multiple newlines with a single space.
+                //Remove leading and trailing whitespaces and replace multiple new lines with a single space.
                 process_append_str(text_to_append);
             }
             chunks.emplace_back(text_to_append);

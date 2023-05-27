@@ -38,19 +38,22 @@ namespace api {
     void handle_streamed_response(const std::vector<char>& raw_vec, const bool& is_new_api,
                                   const std::function<void(const std::string& streamed_response)>& stream_callback) {
         std::vector<std::string> split_str;
-        boost::split_regex(split_str, std::string(raw_vec.begin(), raw_vec.end()), boost::regex("\\n\\ndata: "));
-        for (auto& str : split_str) {
-            if (boost::starts_with(str, "data: ")) {
-                str.erase(0, 6);
+        boost::split_regex(split_str, std::string(raw_vec.begin(), raw_vec.end()), boost::regex("\\n\\ndata: *"));
+        for (auto& s : split_str) {
+            if (boost::starts_with(s, "data: ")) {
+                s.erase(0, 6);
             }
-            if (boost::ends_with(str, "\n\n")) {
-                str.erase(str.size() - 2);
+            //Remove leading and trailing whitespaces and new lines.
+            s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char c){return !std::isspace(c) && c != '\n';}));
+            s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char c){return !std::isspace(c) && c != '\n';}).base(), s.end());
+            if (s.empty()) {
+                continue;
             }
-            if (boost::starts_with(str, "[DONE]")) {
+            if (s == "[DONE]") {
                 break;
             }
             try {
-                nlohmann::json j = nlohmann::json::parse(str);
+                nlohmann::json j = nlohmann::json::parse(s);
                 std::string response;
                 auto it_choices = j.find("choices");
                 if (it_choices != j.end() && it_choices->is_array()) {
