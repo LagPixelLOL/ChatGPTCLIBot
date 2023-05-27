@@ -13,6 +13,7 @@ namespace config {
 
     chat::Completion Config::to_completion() const {
         chat::Completion completion;
+        completion.setAPIBaseURL(api_base_url);
         completion.setAPIKey(api::get_key());
         completion.setModel(model);
         completion.setInitialPrompt(initial_prompt);
@@ -44,6 +45,13 @@ namespace config {
         }
         nlohmann::json j = nlohmann::json::parse(file::read_text_file(config_path));
         bool error = false;
+        auto it_api_base_url = j.find("api_base_url");
+        if (it_api_base_url != j.end() && it_api_base_url->is_string()) {
+            api_base_url = it_api_base_url->get<std::string>();
+        } else {
+            log_callback({Log::Level::ERR, "Argument api_base_url is not a string."});
+            error = true;
+        }
         auto it_api_key = j.find("api_key");
         if (it_api_key != j.end()) {
             if (!it_api_key->is_null()) {
@@ -217,6 +225,7 @@ namespace config {
     void Config::save_config(const std::function<void(const Log::LogMsg<std::filesystem::path>& msg)>& log_callback) {
         log_callback({Log::Level::INFO, "Saving config to file...", config_path});
         nlohmann::json j;
+        j["api_base_url"] = api_base_url;
         std::vector<std::string> api_keys = api::get_keys();
         if (api_keys.empty()) {
             j["api_key"] = nlohmann::json::value_t::null;

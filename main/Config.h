@@ -18,6 +18,7 @@ namespace config {
         const std::string f_initial = "initial";
         const std::string f_saved = "saved";
         const std::string f_documentQA = "documentQA";
+        std::string api_base_url = "https://api.openai.com";
     private:
         std::string model = "gpt-3.5-turbo";
         bool is_new_api_ = true;

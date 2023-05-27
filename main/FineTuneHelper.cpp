@@ -7,9 +7,9 @@
 namespace fth {
     const std::filesystem::path f_finetune = "finetune";
     const std::filesystem::path f_download = "download";
-    const std::string url_files = "https://api.openai.com/v1/files";
-    const std::string url_fine_tunes = "https://api.openai.com/v1/fine-tunes";
-    const std::string url_models = "https://api.openai.com/v1/models";
+    const std::string url_files = "/v1/files";
+    const std::string url_fine_tunes = "/v1/fine-tunes";
+    const std::string url_models = "/v1/models";
     
     inline void print_api_response(const std::string& response) {
         std::cout << "API response:\n" << response << (response.ends_with('\n') ? "" : "\n");
@@ -83,7 +83,7 @@ namespace fth {
         util::println_info("Conversion completed.");
     }
 
-    inline void upload() {
+    inline void upload(const config::Config& config) {
         std::cout << "Please enter the converted source's filename you want to upload: ";
         std::string cs_filename;
         getline(std::cin, cs_filename);
@@ -134,7 +134,7 @@ namespace fth {
         util::println_info("Uploading converted source...");
         std::string response;
         try {
-            curl::upload_binary(url_files, [&response](const std::vector<char>& vec, CURL*){
+            curl::upload_binary(config.api_base_url + url_files, [&response](const std::vector<char>& vec, CURL*){
                 response.append(vec.begin(), vec.end());
             }, "purpose", "fine-tune", "file", std::vector<char>(jsonl.begin(), jsonl.end()), cs_filename
             + ".jsonl", "application/json", {"Authorization: Bearer " + api::get_key()}, 10);
@@ -146,7 +146,7 @@ namespace fth {
         util::println_info("Upload completed.");
     }
 
-    inline void upload_binary() {
+    inline void upload_binary(const config::Config& config) {
         std::cout << "Please enter the full filename you want to upload.\n"
                      "(Note: You need to enter the file extension as well): ";
         std::string filename;
@@ -168,7 +168,7 @@ namespace fth {
         util::println_info("Uploading file...");
         std::string response;
         try {
-            curl::upload_binary(url_files, [&response](const std::vector<char>& vec, CURL*){
+            curl::upload_binary(config.api_base_url + url_files, [&response](const std::vector<char>& vec, CURL*){
                 response.append(vec.begin(), vec.end());
             }, "purpose", "fine-tune", "file", content, filename, "", {"Authorization: Bearer " + api::get_key()}, 10);
         } catch (const std::exception& e) {
@@ -179,11 +179,11 @@ namespace fth {
         util::println_info("Upload completed.");
     }
 
-    inline void view() {
+    inline void view(const config::Config& config) {
         util::println_info("Getting file list from API...");
         std::string response;
         try {
-            curl::http_get(url_files, [&response](const std::vector<char>& vec, CURL*){
+            curl::http_get(config.api_base_url + url_files, [&response](const std::vector<char>& vec, CURL*){
                 response.append(vec.begin(), vec.end());
             }, {"Authorization: Bearer " + api::get_key()});
         } catch (const std::exception& e) {
@@ -249,7 +249,7 @@ namespace fth {
         util::println_info("Getting file list completed.");
     }
 
-    inline void delete_() {
+    inline void delete_(const config::Config& config) {
         std::cout << "Please enter the file's ID you want to delete.\n(Note: It's the ID, NOT the filename): ";
         std::string file_id;
         getline(std::cin, file_id);
@@ -260,7 +260,7 @@ namespace fth {
         util::println_info("Deleting file...");
         std::string response;
         try {
-            curl::http_delete(url_files + '/' + file_id, [&response](const std::vector<char>& vec, CURL*){
+            curl::http_delete(config.api_base_url + url_files + '/' + file_id, [&response](const std::vector<char>& vec, CURL*){
                 response.append(vec.begin(), vec.end());
             }, {"Authorization: Bearer " + api::get_key()});
         } catch (const std::exception& e) {
@@ -271,7 +271,7 @@ namespace fth {
         util::println_info("Deletion completed.");
     }
 
-    inline void download() {
+    inline void download(const config::Config& config) {
         if (!create_folder(f_download)) {
             return;
         }
@@ -292,7 +292,7 @@ namespace fth {
         util::println_info("Downloading file...", false);
         std::vector<char> response;
         try {
-            curl::http_get(url_files + '/' + file_id + "/content", [&response](const std::vector<char>& vec, CURL*){
+            curl::http_get(config.api_base_url + url_files + '/' + file_id + "/content", [&response](const std::vector<char>& vec, CURL*){
                 response.insert(response.end(), vec.begin(), vec.end());
             }, {"Authorization: Bearer " + api::get_key()});
         } catch (const std::exception& e) {
@@ -370,7 +370,7 @@ namespace fth {
         util::println_info("Merging completed.");
     }
 
-    inline void create_fine_tune() {
+    inline void create_fine_tune(const config::Config& config) {
         std::cout << "Please enter the file ID you want to use for this fine tune task.\n"
                      "(Note: It's the ID, NOT the filename): ";
         std::string file_id;
@@ -400,7 +400,7 @@ namespace fth {
         util::println_info("Creating fine tune task...");
         std::string response;
         try {
-            curl::http_post(url_fine_tunes, [&response](const std::vector<char>& vec, CURL*){
+            curl::http_post(config.api_base_url + url_fine_tunes, [&response](const std::vector<char>& vec, CURL*){
                 response.append(vec.begin(), vec.end());
             }, payload.dump(), headers);
         } catch (const std::exception& e) {
@@ -411,11 +411,11 @@ namespace fth {
         util::println_info("Fine tune task creation completed.");
     }
 
-    inline void list_fine_tunes() {
+    inline void list_fine_tunes(const config::Config& config) {
         util::println_info("Getting fine tune tasks from API...");
         std::string response;
         try {
-            curl::http_get(url_fine_tunes, [&response](const std::vector<char>& vec, CURL*){
+            curl::http_get(config.api_base_url + url_fine_tunes, [&response](const std::vector<char>& vec, CURL*){
                 response.append(vec.begin(), vec.end());
             }, {"Authorization: Bearer " + api::get_key()});
         } catch (const std::exception& e) {
@@ -467,7 +467,7 @@ namespace fth {
         util::println_info("Getting fine tune tasks completed.");
     }
 
-    inline void retrieve_fine_tune() {
+    inline void retrieve_fine_tune(const config::Config& config) {
         std::cout << "Please enter the fine tune ID you want to retrieve.\n(Note: It's the ID, NOT the model name): ";
         std::string fine_tune_id;
         getline(std::cin, fine_tune_id);
@@ -478,7 +478,7 @@ namespace fth {
         util::println_info("Getting fine tune task...");
         std::string response;
         try {
-            curl::http_get(url_fine_tunes + '/' + fine_tune_id, [&response](const std::vector<char>& vec, CURL*){
+            curl::http_get(config.api_base_url + url_fine_tunes + '/' + fine_tune_id, [&response](const std::vector<char>& vec, CURL*){
                 response.append(vec.begin(), vec.end());
             }, {"Authorization: Bearer " + api::get_key()});
         } catch (const std::exception& e) {
@@ -489,7 +489,7 @@ namespace fth {
         util::println_info("Getting fine tune task completed.");
     }
 
-    inline void cancel_fine_tune() {
+    inline void cancel_fine_tune(const config::Config& config) {
         std::cout << "Please enter the fine tune ID you want to cancel.\n"
                      "(Note: It's the ID, NOT the model name): ";
         std::string fine_tune_id;
@@ -501,7 +501,8 @@ namespace fth {
         util::println_info("Canceling fine tune task...");
         std::string response;
         try {
-            curl::http_post(url_fine_tunes + '/' + fine_tune_id + "/cancel", [&response](const std::vector<char>& vec, CURL*){
+            curl::http_post(config.api_base_url + url_fine_tunes + '/' + fine_tune_id + "/cancel",
+                            [&response](const std::vector<char>& vec, CURL*){
                 response.append(vec.begin(), vec.end());
             }, "", {"Authorization: Bearer " + api::get_key()});
         } catch (const std::exception& e) {
@@ -512,7 +513,7 @@ namespace fth {
         util::println_info("Fine tune task cancellation completed.");
     }
 
-    inline void delete_model() {
+    inline void delete_model(const config::Config& config) {
         std::cout << "Please enter the model name you want to delete: ";
         std::string model_name;
         getline(std::cin, model_name);
@@ -523,7 +524,7 @@ namespace fth {
         util::println_info("Deleting model...");
         std::string response;
         try {
-            curl::http_delete(url_models + '/' + model_name, [&response](const std::vector<char>& vec, CURL*){
+            curl::http_delete(config.api_base_url + url_models + '/' + model_name, [&response](const std::vector<char>& vec, CURL*){
                 response.append(vec.begin(), vec.end());
             }, {"Authorization: Bearer " + api::get_key()});
         } catch (const std::exception& e) {
@@ -534,7 +535,7 @@ namespace fth {
         util::println_info("Model deletion completed.");
     }
 
-    void fine_tune_helper_main() {
+    void fine_tune_helper_main(const config::Config& config) {
         while (true) {
             util::print_cs("Please choose whether you want to convert source, upload file,\n"
                            "view files, delete files, download file, merge files,\n"
@@ -552,28 +553,28 @@ namespace fth {
             if (chose_mode == "c") {
                 convert();
             } else if (chose_mode == "u") {
-                upload();
+                upload(config);
             } else if (chose_mode == "ub") {
                 //For testing purpose.
-                upload_binary();
+                upload_binary(config);
             } else if (chose_mode == "v") {
-                view();
+                view(config);
             } else if (chose_mode == "d") {
-                delete_();
+                delete_(config);
             } else if (chose_mode == "dl") {
-                download();
+                download(config);
             } else if (chose_mode == "m") {
                 merge();
             } else if (chose_mode == "cf") {
-                create_fine_tune();
+                create_fine_tune(config);
             } else if (chose_mode == "lf") {
-                list_fine_tunes();
+                list_fine_tunes(config);
             } else if (chose_mode == "rf") {
-                retrieve_fine_tune();
+                retrieve_fine_tune(config);
             } else if (chose_mode == "cn") {
-                cancel_fine_tune();
+                cancel_fine_tune(config);
             } else if (chose_mode == "dm") {
-                delete_model();
+                delete_model(config);
             } else if (chose_mode == "q") {
                 break;
             } else {

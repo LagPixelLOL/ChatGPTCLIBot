@@ -11,7 +11,7 @@
 
 namespace fth {
 
-    void fine_tune_helper_main();
+    void fine_tune_helper_main(const config::Config& config);
 } // fth
 
 #endif //GPT3BOT_FINETUNEHELPER_H

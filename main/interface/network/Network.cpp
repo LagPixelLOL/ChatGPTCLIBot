@@ -14,9 +14,10 @@ namespace api {
                   const float& top_p, const float& frequency_penalty, const float& presence_penalty,
                   const std::vector<std::pair<std::string, float>>& logit_bias, const std::string& me_id, const std::string& bot_id,
                   const std::function<void(const std::string& streamed_response)>& stream_callback,
-                  const std::function<int(curl_off_t, curl_off_t, curl_off_t, curl_off_t)>& progress_callback) {
+                  const std::function<int(curl_off_t, curl_off_t, curl_off_t, curl_off_t)>& progress_callback,
+                  const std::string& api_base_url) {
         bool is_new_api_ = is_new_api(model);
-        std::string url = is_new_api_ ? "https://api.openai.com/v1/chat/completions" : "https://api.openai.com/v1/completions";
+        std::string url = api_base_url + (is_new_api_ ? "/v1/chat/completions" : "/v1/completions");
         std::vector<std::string> headers = {"Content-Type: application/json"};
         std::string auth = "Authorization: Bearer ";
         headers.emplace_back(auth.append(api_key));
@@ -45,7 +46,7 @@ namespace api {
             if (boost::ends_with(str, "\n\n")) {
                 str.erase(str.size() - 2);
             }
-            if (str == "[DONE]") {
+            if (boost::starts_with(str, "[DONE]")) {
                 break;
             }
             try {

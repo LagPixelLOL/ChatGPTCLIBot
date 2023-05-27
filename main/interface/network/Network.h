@@ -17,7 +17,7 @@ namespace api {
                   const std::vector<std::pair<std::string, float>>& logit_bias = {}, const std::string& me_id = "Me",
                   const std::string& bot_id = "You", const std::function<void(const std::string& streamed_response)>& stream_callback
                   = [](const auto&){}, const std::function<int(curl_off_t, curl_off_t, curl_off_t, curl_off_t)>& progress_callback
-                  = [](auto, auto, auto, auto){return 0;});
+                  = [](auto, auto, auto, auto){return 0;}, const std::string& api_base_url = "https://api.openai.com");
     bool is_new_api(const std::string& model_name);
     void handle_streamed_response(const std::vector<char>& raw_vec, const bool& is_new_api,
                                   const std::function<void(const std::string& streamed_response)>& stream_callback);

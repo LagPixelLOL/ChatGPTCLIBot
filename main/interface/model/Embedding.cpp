@@ -30,7 +30,8 @@ namespace emb {
      * @return A list of embeddings, one for each text, the order is preserved.
      */
     std::vector<std::vector<float>> get_embeddings(const std::vector<std::string>& texts, const std::string& api_key,
-                                                   api::APIKeyStatus& key_status_in, const std::function<int(curl_off_t, curl_off_t,
+                                                   api::APIKeyStatus& key_status_in, const std::string& api_base_url,
+                                                   const std::function<int(curl_off_t, curl_off_t,
                                                            curl_off_t, curl_off_t)>& progress_callback) {
         static const std::string model = "text-embedding-ada-002";
         if (texts.empty()) {
@@ -51,9 +52,11 @@ namespace emb {
         for (const auto& text : texts) {
             inputs.emplace_back(text);
         }
-        nlohmann::json payload = {{"model", model}, {"input", inputs}};
+        nlohmann::json payload = nlohmann::json::object();
+        payload.emplace("model", model);
+        payload.emplace("input", inputs);
         std::string response;
-        curl::http_post("https://api.openai.com/v1/embeddings", [&](const std::vector<char>& vec, CURL*){
+        curl::http_post(api_base_url + "/v1/embeddings", [&](const std::vector<char>& vec, CURL*){
             response.append(vec.begin(), vec.end());
         }, payload.dump(), headers, 10, progress_callback);
         try {

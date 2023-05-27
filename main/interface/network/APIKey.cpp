@@ -11,21 +11,17 @@ namespace api {
      * Get the API key from console.
      * @return The API key.
      */
-    std::string get_key_from_console() {
+    std::string get_key_from_console(const std::string& api_base_url) {
         std::string api_key;
         while (true) {
             std::cout << "Please enter your OpenAI API key: ";
             getline(std::cin, api_key);
-            APIKeyStatus status = check_key(api_key);
+            APIKeyStatus status = check_key(api_key, api_base_url);
             if (status == APIKeyStatus::VALID) {
                 util::println_info("API key is valid.");
                 break;
             } else if (status == APIKeyStatus::EMPTY) {
                 util::println_warn("API key cannot be empty, please try again.");
-            } else if (status == APIKeyStatus::INVALID_PREFIX) {
-                util::println_warn("API key must start with \"sk-\", please try again.");
-            } else if (status == APIKeyStatus::INVALID_LENGTH) {
-                util::println_warn("API key must be 51 characters long, please try again.");
             } else if (status == APIKeyStatus::QUOTA_EXCEEDED) {
                 util::println_warn("This API key has exceeded its quota, please try again.");
             } else if (status == APIKeyStatus::INVALID_KEY) {
@@ -85,23 +81,21 @@ namespace api {
         api_keys_ = api_keys;
     }
 
-    APIKeyStatus check_key(const std::string& api_key) {
+    APIKeyStatus check_key(const std::string& api_key, const std::string& api_base_url) {
         util::println_info("Checking API key...");
         if (api_key.empty()) {
             return APIKeyStatus::EMPTY;
-        } else if (!boost::starts_with(api_key, "sk-")) {
-            return APIKeyStatus::INVALID_PREFIX;
-        } else if (api_key.length() != 51) {
-            return APIKeyStatus::INVALID_LENGTH;
         }
         std::vector<std::string> headers = {"Content-Type: application/json"};
         std::string auth = "Authorization: Bearer ";
         headers.push_back(auth.append(api_key));
-        nlohmann::json payload = {{"model", "text-embedding-ada-002"}, {"input", ""}};
+        nlohmann::json payload = nlohmann::json::object();
+        payload.emplace("model", "text-embedding-ada-002");
+        payload.emplace("input", nlohmann::json{"Test"});
         APIKeyStatus status = APIKeyStatus::API_REQUEST_FAILED;
         std::string response;
         try {
-            curl::http_post("https://api.openai.com/v1/embeddings", [&](const std::vector<char>& vec, CURL*){
+            curl::http_post(api_base_url + "/v1/embeddings", [&](const std::vector<char>& vec, CURL*){
                 response.append(vec.begin(), vec.end());
             }, payload.dump(), headers);
         } catch (const std::exception& e) {

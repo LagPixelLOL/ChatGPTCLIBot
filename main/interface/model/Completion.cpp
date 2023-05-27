@@ -36,7 +36,15 @@ namespace chat {
     void Completion::call_api() const {
         api::call_api(constructed_initial, prompt::construct_from_back(*chat_history, max_short_memory_length).to_messages(), api_key,
                       model, temperature, max_tokens, top_p, frequency_penalty, presence_penalty, logit_bias, me_id, bot_id,
-                      stream_callback, progress_callback);
+                      stream_callback, progress_callback, api_base_url);
+    }
+
+    const std::string& Completion::getAPIBaseURL() const {
+        return api_base_url;
+    }
+
+    void Completion::setAPIBaseURL(const std::string& api_base_url_) {
+        api_base_url = api_base_url_;
     }
 
     const std::string& Completion::getApiKey() const {

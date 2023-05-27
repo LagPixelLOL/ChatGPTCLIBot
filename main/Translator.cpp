@@ -27,7 +27,7 @@ namespace translator {
         std::string initial_prompt = (boost::format(translator_initial_prompt) % target_language % (additional_instructions.empty() ? "" :
                 "Additional instructions:\n\"\"\"\n" + additional_instructions + "\n\"\"\"\n")).str();
         bool is_new_api_ = api::is_new_api(config.get_model());
-        std::string url = is_new_api_ ? "https://api.openai.com/v1/chat/completions" : "https://api.openai.com/v1/completions";
+        std::string url = config.api_base_url + (is_new_api_ ? "/v1/chat/completions" : "/v1/completions");
         std::vector<std::string> headers = {"Content-Type: application/json"};
         std::string auth = "Authorization: Bearer ";
         headers.emplace_back(auth.append(api::get_key()));

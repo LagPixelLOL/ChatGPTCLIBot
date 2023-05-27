@@ -118,7 +118,7 @@ namespace GPT {
                 }
                 break;
             } else if (chose_mode == "f") {
-                fth::fine_tune_helper_main();
+                fth::fine_tune_helper_main(config);
                 return;
             } else if (chose_mode == "t") {
                 translator::translator_main(config);
@@ -173,7 +173,7 @@ namespace GPT {
             }
             try {
                 ctrl_c_flag = false;
-                emb_response = emb::get_embeddings(texts, api_key, key_status, progress_callback);
+                emb_response = emb::get_embeddings(texts, api_key, key_status, config.api_base_url, progress_callback);
             } catch (const std::exception& e) {
                 std::string err_msg(e.what());
                 if (!err_msg.empty()) {
@@ -457,7 +457,7 @@ namespace GPT {
         api::APIKeyStatus key_status = api::APIKeyStatus::VALID;
         std::vector<std::vector<float>> emb_response;
         try {
-            emb_response = emb::get_embeddings(chunks, api::get_key(), key_status);
+            emb_response = emb::get_embeddings(chunks, api::get_key(), key_status, config.api_base_url);
         } catch (const std::exception& e) {
             std::string err_msg(e.what());
             if (!err_msg.empty()) {
@@ -550,7 +550,7 @@ namespace GPT {
      */
     bool p_check_set_api_key() {
         if (!api::has_key()) {
-            api::set_key(api::get_key_from_console());
+            api::set_key(api::get_key_from_console(config.api_base_url));
             return p_save_config();
         }
         return true;

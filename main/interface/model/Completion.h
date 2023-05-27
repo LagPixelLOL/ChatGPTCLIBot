@@ -10,8 +10,9 @@
 namespace chat {
 
     class Completion {
+        std::string api_base_url = "https://api.openai.com";
         std::string api_key;
-        std::string model;
+        std::string model = "gpt-3.5-turbo";
         std::string initial_prompt;
         std::string constructed_initial;
         std::shared_ptr<chat::ExchangeHistory> chat_history = std::make_shared<chat::ExchangeHistory>();
@@ -37,6 +38,8 @@ namespace chat {
         void construct_initial();
         void call_api() const;
 
+        [[nodiscard]] const std::string& getAPIBaseURL() const;
+        void setAPIBaseURL(const std::string& api_base_url_);
         [[nodiscard]] const std::string& getApiKey() const;
         void setAPIKey(const std::string& apiKey);
         [[nodiscard]] const std::string& getModel() const;
