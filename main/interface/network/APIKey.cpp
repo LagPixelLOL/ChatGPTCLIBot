@@ -127,11 +127,9 @@ namespace api {
         if (it_err != json_to_check.end() && it_err->is_object()) {
             status_in = APIKeyStatus::API_REQUEST_FAILED;
             std::optional<std::string> message;
-            if (print_err_msg) {
-                auto it_message = it_err->find("message");
-                if (it_message != it_err->end() && it_message->is_string()) {
-                    message = it_message->get<std::string>();
-                }
+            auto it_message = it_err->find("message");
+            if (it_message != it_err->end() && it_message->is_string()) {
+                message = it_message->get<std::string>();
             }
             auto it_code = it_err->find("code");
             nlohmann::json::const_iterator it_type;
@@ -159,7 +157,7 @@ namespace api {
             } else {
                 util::println_err("API returned unknown error. Json: " + json_to_check.dump(2));
             }
-            if (message) {
+            if (print_err_msg && message) {
                 util::println_err("\nAPI returned error: " + (status_in != APIKeyStatus::INVALID_KEY ? *message : "The API key is invalid."));
             }
             return true;
