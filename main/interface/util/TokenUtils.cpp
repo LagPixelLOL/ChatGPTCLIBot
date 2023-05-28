@@ -31,14 +31,16 @@ namespace util {
         unsigned int token_count = 3; //Chat completion models will always have 3 tokens at the end.
         for (const auto& message : messages) {
             if (!message.is_object()) {
-                throw std::invalid_argument("Message must be an json object.");
+                throw std::invalid_argument("Message must be a json object.");
             }
-            if (!message.contains("content") || !message["content"].is_string()) {
+            auto it_content = message.find("content");
+            if (it_content == message.end() || !it_content->is_string()) {
                 throw std::invalid_argument("Message must contain a valid content field.");
             }
-            token_count += encoder->encode(message["content"].get<std::string>()).size();
-            if (message.contains("name") && message["name"].is_string()) {
-                token_count += encoder->encode(message["name"].get<std::string>()).size() + tokens_per_name;
+            token_count += encoder->encode(it_content->get<std::string>()).size();
+            auto it_name = message.find("name");
+            if (it_name != message.end() && it_name->is_string()) {
+                token_count += encoder->encode(it_name->get<std::string>()).size() + tokens_per_name;
             }
             token_count += tokens_per_message;
         }
