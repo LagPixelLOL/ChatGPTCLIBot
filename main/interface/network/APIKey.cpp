@@ -123,10 +123,19 @@ namespace api {
     bool check_err_obj(const nlohmann::json& json_to_check, APIKeyStatus& status_in, const bool& print_err_msg) {
         status_in = APIKeyStatus::VALID;
         auto it_err = json_to_check.find("error");
+        nlohmann::json::const_iterator it_status;
         if (it_err != json_to_check.end() && it_err->is_object()) {
             status_in = APIKeyStatus::API_REQUEST_FAILED;
+            std::optional<std::string> message;
+            if (print_err_msg) {
+                auto it_message = it_err->find("message");
+                if (it_message != it_err->end() && it_message->is_string()) {
+                    message = it_message->get<std::string>();
+                }
+            }
             auto it_code = it_err->find("code");
             nlohmann::json::const_iterator it_type;
+            nlohmann::json::const_iterator it_discord;
             if (it_code != it_err->end() && it_code->is_string()) {
                 std::string error_code = it_code->get<std::string>();
                 if (error_code == "invalid_api_key" || error_code == "account_deactivated") {
@@ -143,14 +152,23 @@ namespace api {
                 } else if (!print_err_msg) {
                     util::println_err("API returned error type. Type: " + error_type);
                 }
+            } else if ((it_discord = it_err->find("discord")) != it_err->end() && it_discord->is_string() && message) {
+                if (boost::starts_with(*message, "CATTO: Your API KEY is INVALID")) {
+                    status_in = APIKeyStatus::INVALID_KEY;
+                }
             } else {
                 util::println_err("API returned unknown error. Json: " + json_to_check.dump(2));
             }
+            if (message) {
+                util::println_err("\nAPI returned error: " + (status_in != APIKeyStatus::INVALID_KEY ? *message : "The API key is invalid."));
+            }
+            return true;
+        } else if ((it_status = json_to_check.find("status")) != json_to_check.end() && it_status->is_boolean() && !it_status->get<bool>()) {
+            status_in = APIKeyStatus::API_REQUEST_FAILED;
             if (print_err_msg) {
-                auto it_message = it_err->find("message");
-                if (it_message != it_err->end() && it_message->is_string()) {
-                    util::println_err("\nAPI returned error: " + (status_in != APIKeyStatus::INVALID_KEY ?
-                    it_message->get<std::string>() : "The API key is invalid."));
+                auto it_response = json_to_check.find("response");
+                if (it_response != json_to_check.end() && it_response->is_string()) {
+                    util::println_err("\nAPI returned error: " + it_response->get<std::string>());
                 }
             }
             return true;

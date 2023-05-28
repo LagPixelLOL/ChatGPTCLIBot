@@ -212,7 +212,9 @@ namespace GPT {
                     try {
                         nlohmann::json j = nlohmann::json::parse(streamed_response);
                         auto it_error = j.find("error");
-                        if (it_error != j.end() && it_error->is_object()) {
+                        nlohmann::json::const_iterator it_status;
+                        if (it_error != j.end() && it_error->is_object() || (it_status = j.find("status")) != j.end()
+                        && it_status->is_boolean() && !it_status->get<bool>()) {
                             response = j.dump();
                             return;
                         }
