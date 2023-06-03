@@ -25,7 +25,7 @@ namespace api {
             curl::http_post(url, [&](const std::vector<char>& vec, CURL* curl){
                 handle_streamed_response(vec, is_new_api_, stream_callback);
             }, to_payload(constructed_initial, chat_history, model, is_new_api_, temperature, max_tokens, top_p, frequency_penalty,
-                          presence_penalty, logit_bias, me_id, bot_id).dump(), headers, 20, progress_callback);
+                          presence_penalty, logit_bias, me_id, bot_id).dump(), headers, 40, progress_callback);
         } catch (const std::exception& e) {
             throw curl::request_failed(e.what());
         }

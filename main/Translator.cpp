@@ -62,7 +62,7 @@ namespace translator {
                         response.append(streamed_response);
                     });
                 }, api::to_payload(initial_prompt, message, config.get_model(), is_new_api_, 0, std::numeric_limits<int>::max(),
-                                   1, 0, 0, {}, GPT::me_id, GPT::bot_id).dump(), headers, 20)));
+                                   1, 0, 0, {}, GPT::me_id, GPT::bot_id).dump(), headers, 40)));
             }
             if (rate_limit_reached) {
                 util::println_info("Rate limit reached, waiting for 60 seconds...");
