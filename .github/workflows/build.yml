@@ -17,7 +17,7 @@ jobs:
           - os: macos-12
             triplet: x64-osx
     steps:
-    - uses: actions/checkout@v3.3.0
+    - uses: actions/checkout@v3.5.2
       with:
         submodules: 'recursive'
     - name: Initialize submodules
@@ -27,12 +27,12 @@ jobs:
     - name: Get cmake
       uses: lukka/get-cmake@latest
     - name: Run vcpkg
-      uses: lukka/run-vcpkg@v10.7
+      uses: lukka/run-vcpkg@v11.1
       with:
-        vcpkgGitCommitId: e52999ee1a61bfea654733712288c5d4469d38bc
+        vcpkgGitCommitId: 662dbb50e63af15baa2909b7eac5b1b87e86a0aa
         vcpkgDirectory: '${{github.workspace}}/vcpkg'
     - name: Run cmake(Build Release)
-      uses: lukka/run-cmake@v10.3
+      uses: lukka/run-cmake@v10.5
       with:
         cmakeListsTxtPath: '${{github.workspace}}/CMakeLists.txt'
         configurePreset: 'ninja-multi-vcpkg'
