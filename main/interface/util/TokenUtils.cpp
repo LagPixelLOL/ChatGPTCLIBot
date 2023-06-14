@@ -54,8 +54,7 @@ namespace util {
     LanguageModel get_tokenizer(const std::string& model_name) {
         static const std::vector<std::pair<std::string, LanguageModel>> prefix_to_tokenizer = {
                 //Chat completion models:
-                {"gpt-4", LanguageModel::CL100K_BASE},
-                {"gpt-3.5-turbo", LanguageModel::CL100K_BASE},
+                {"gpt-", LanguageModel::CL100K_BASE},
                 //Text completion models:
                 {"text-davinci-003", LanguageModel::P50K_BASE},
                 {"text-davinci-002", LanguageModel::P50K_BASE},
@@ -92,6 +91,7 @@ namespace util {
                 //Chat completion models:
                 {"gpt-4-32k", 32767},
                 {"gpt-4", 8191},
+                {"gpt-3.5-turbo-16k", 16383},
                 {"gpt-3.5-turbo", 4095},
                 //Text completion models:
                 {"text-davinci-003", 4095},
