@@ -28,12 +28,14 @@ int main() {
 #else
         std::cout << "An uncaught error occurred: " << e.what() << std::endl;
 #endif
+        return 1;
     } catch (...) {
 #ifndef GPT_MAIN_TEST_ENABLED
         util::println_err("An unknown error occurred.");
 #else
         std::cout << "An unknown error occurred." << std::endl;
 #endif
+        return 1;
     }
     return 0;
 }
