@@ -19,7 +19,7 @@ namespace chat {
         float temperature = 1;
         float top_p = 1;
         int max_tokens = 500;
-        float presence_penalty = 0.6;
+        float presence_penalty = 0;
         float frequency_penalty = 0;
         std::vector<std::pair<std::string, float>> logit_bias;
         unsigned int max_short_memory_length = 4;

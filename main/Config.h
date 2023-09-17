@@ -27,7 +27,7 @@ namespace config {
         int max_tokens = 500;
         float top_p = 1;
         float frequency_penalty = 0;
-        float presence_penalty = 0.6;
+        float presence_penalty = 0;
         std::vector<std::pair<std::string, float>> logit_bias;
         std::string initial_prompt = "You are an AI chat bot named Sapphire\n"
                                      "You are friendly and intelligent\n"
