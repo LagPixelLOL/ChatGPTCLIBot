@@ -39,7 +39,8 @@ namespace api {
                                   const std::function<void(const std::string& streamed_response)>& stream_callback) {
         std::vector<std::string> split_str;
         boost::split_regex(split_str, std::string(raw_vec.begin(), raw_vec.end()), boost::regex("\\n\\ndata: *"));
-        for (auto& s : split_str) {
+        for (auto& raw_str : split_str) {
+            std::string s = raw_str;
             if (boost::starts_with(s, "data:")) {
                 s.erase(0, 5);
             }
@@ -83,7 +84,8 @@ namespace api {
                 }
                 stream_callback(response);
             } catch (const nlohmann::json::parse_error& e) {
-                throw curl::request_failed("Error parsing JSON: " + std::string(e.what()));
+                throw curl::request_failed(std::string("Error parsing JSON: ") += std::string(e.what())
+                        += std::string("\nRaw response: \"") += raw_str += std::string("\"\nProcessed response: \"") += s += "\"");
             }
         }
     }
