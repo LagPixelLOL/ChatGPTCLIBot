@@ -1,3 +1,19 @@
+# NOTICE: NO LONGER MAINTAINED
+Goodbye everyone!
+
+As you might have noticed, the landscape of LLMs has changed dramatically in recent months. With the introduction of models boasting a whopping 100,000+ tokens of context memory and the big players like OpenAI, Google, and Anthropic integrating RAG directly into their official websites, I feel like this repo has served its purpose.
+
+I've also been focusing on other projects and prioritizing my personal life and mental well-being. As a result, I haven't been able to dedicate time to updating this repo, which is evident from the lack of commits in the past few months.
+
+Looking back, this repo was initially created to address the limitations of the 4096 context GPT-3, as that context size was simply too small. However, with the advancements in LLMs and the emergence of better GUIs, I believe that higher context is now preferable to using embeddings for RAG.
+
+If you're looking for some awesome LLM GUIs, here are my top recommendations:
+- [SillyTavern](https://github.com/SillyTavern/SillyTavern) - Perfect for ~~bot fooking~~ roleplaying and even has RAG support!
+- [LobeChat](https://github.com/lobehub/lobe-chat) - Great for general-purpose LLM usage, although it doesn't have RAG.
+- [BetterChatGPT](https://github.com/ztjhz/BetterChatGPT) - Another fantastic option for general-purpose LLM usage, specifically designed for OpenAI. While it's not actively maintained, the UI closely resembles the original ChatGPT website.
+
+(Plz don't unstar this repo🥺)
+
 # ChatGPT CLI Bot
 Run `gpt-3.5-turbo` or any other GPT models(`text-davinci-003`) with this program! \
 Use `gpt-4` or `gpt-4-32k` to use the new GPT-4 models if you have access. \
